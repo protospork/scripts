@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 use utf8;
+use URI;
 use Xchat ':all';
 use vars qw( %config $cfgpath @blacklist $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
 
-my $ver = '2.6';
+my $ver = '2.7';
 register('relay', $ver, 'complete rewrite. again. :(', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 hook_command('dumprelaycache', \&dumpcache);
@@ -13,47 +14,54 @@ prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
 
 ##shouldn't this all be in the config file?
-my $cfgpath = 'cfg/xrelay.pm';	#this path is untested and almost definitely incorrect
+my $cfgpath = 'O:\GIT\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
 my ($anime, $music, $destsrvr) = ('#anime', '#cfounders', 'irc.adelais.net');
 my %dupe; my $last = ' ';
 
+#Sample test line:
 #	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[gg]_Bakuman_-_10_[F8D3E973].mkvhttp://www.nyaatorrents.org/?page=download&tid=178017213.52MBshut up I'm testing something
 
 
 sub whoosh {
-	my ($speaker, $msg) = ($_[0][0], $_[0][1]); my $chan = get_info('channel'); my $srvr = get_info('server');
+	my ($speaker, $msg) = ($_[0][0], $_[0][1]); 
+	my ($chan,$srvr) = (get_info('channel'),get_info('server'));
+	
 	unless ($speaker =~ /$bot/ && $chan eq $botchan){ return EAT_NONE; }
+	
 	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/){
-		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, $5, $6);
+		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, URI->new($5), $6);
 		
 		return EAT_NONE if exists($dupe{$rlsid});
 		$dupe{$rlsid} = $name;
 		
-		my $comment;
-		if (defined($7)){ $comment = "$7"; } else { $comment = "no comment"; }
+		my $comment = '';
+		if (defined($7)){ $comment = $7; }
 		
-		$name =~ s/_(?!ST\])/ /g;	#I don't get it >_>	##GX_ST's fault. probably.
-		$name =~ s/\.(?!\w{3}$|264)/ /g;	#should fix [Doremi].Motto.Ojamajo.Doremi.15.[8B6524C7].avi ##lookbehind/ahead, keep . if both are numbers
-		$name =~ s/\x{200B}//g; $comment =~ s/\x{200B}//g;	#200B is zero-width space
+		
+		$name =~ s/_(?!ST\])/ /g;        #Replace underscore with space, except for the one in GX_ST
+		$name =~ s/\.(?!\w{3}$|264)/ /g; #Replace dots with spaces
+		$name =~ s/\x{200B}//g;        #200B is zero-width space
+		
+		$comment =~ s/\x{200B}//g;     #TT throws them in for proper line-wrapping
 		$comment =~ s{#(\S+?)\@(\S+\.(?:com|net|org))}{irc://$2/$1}gi; #irc:// links
-		$comment =~ s/^no comment$//;
 		
 		$URL =~ s/download/torrentinfo/i if $URL =~ /nyaa\.eu/i;
-		$URL =~ s/download/details/i if $URL =~ /anirena/i;
-		$URL =~ s/\(/%28/g; $URL =~ s/\)/%29/;
+		$URL =~ s/download/details/i if $URL =~ /anirena/i; #does anirena even still exist
+		$URL =~ s/\(/%28/g; $URL =~ s/\)/%29/;		
 		
-		$size =~ /(\d+(?:\.\d+)?)([GMK]i?B)/; my $unit = $2; $size = $1;
+		#rounding!
+		my ($size,$unit) = ($size =~ /(\d+(?:\.\d+)?)([GMK]i?B)/); 
 		$unit =~ s/i//;
 		if ($unit eq 'GB'){ $size = sprintf "%.2f", $size; $size .= $unit; }
 		elsif ($unit eq 'MB'){ $size = sprintf "%.0f", $size; $size .= $unit; }
 		else { $size .= $unit; }
 		
-		$cat = 'Hentai (Manga)' if $URL =~ /sukebei/i;
+		$cat = 'Hentai (Manga)' if $URL =~ /sukebei/i; #am I even checking hentai anymore? I don't think I am		
 		
 		
-		do $cfgpath;	#I think I went about this backwards
+		do $cfgpath;	#load the config
 		if (! %config){ prnt("Relay can't load config\x{07}file: $!", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! @blacklist){ prnt("Relay can't load blacklist:\x{07}$!", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! $Ccomnt){ prnt("Relay can't load colorscheme:\x{07}$!", $ctrlchan, $destsrvr); return EAT_NONE; }
@@ -61,22 +69,25 @@ sub whoosh {
 		
 		my $output = "\003$Cname" . "$name" . " \003$Csize" . "$size " . "\003$Curl" . "$URL" . "\017 \003$Ccomnt" . "$comment\017";	
 		$output =~ s/\s*\003$Ccomnt *\017$//;
-		if ($cat =~ m'^Hentai'){ return EAT_NONE; $output = "\003$Chntai" . "Hentai\017" . "$output"; }
+		if ($cat =~ m'^Hentai'){ return EAT_NONE; $output = "\003$Chntai" . "Hentai\017" . "$output"; } #ahhh that's why it's not checking hentai ##todo: make this a cfg switch
 		my $spam = "bs say $spamchan $output";
 		
-		for (@blacklist){ 
+		for (@blacklist){ #wow that's ugly. I'll fix it later
 			if ((lc $name) =~ (quotemeta(lc $_))){ return EAT_NONE; } 
 			if (defined($comment)){ if ((lc $comment) =~ (quotemeta(lc $_))){ return EAT_NONE; } }
 			if ($URL =~ (quotemeta(lc $_))){ return EAT_NONE; }
 		}
 		
+		
+#aaaand we finally get down to the job at hand ##todo: rename the variables coming from the config, so I can tell what's what
 		my ($title, $value);
 		while (($title, $value) = each %config){
 			$value =~ s/\t//g;
-			my ($category, $groups, $shortname, $trackers, $badthings) = split /\|/, $value;
+			my ($category, $groups, $shortname, $trackers, $badthings) = split /\|/, $value; #this should make use of perl data structs
 			
 			$cat =~ s/Batch/Anime-Batch/;
-			next unless $cat =~ /$category/; next unless lc($name) =~ (quotemeta (lc $title));
+			next unless $cat =~ /$category/; 
+			next unless lc($name) =~ (quotemeta (lc $title));
 			
 			my ($okgroup, $oktracker, $other) = (0, 0, 0);
 			
@@ -131,12 +142,12 @@ sub sayprev {
 		prnt("Nothing has been announced yet.") ;
 		return EAT_XCHAT;
 	} else {
-		command("msg " . get_info('channel') . " $last");
+		command('msg '.get_info('channel').' '.$last);
 	}
 }
 
 sub dumpcache {
 	for (keys %dupe){ delete($dupe{$_}); }
-	prnt("Relay cache apparently deleted");
+	prnt("Relay cache emptied.");
 	return EAT_XCHAT;
 }
