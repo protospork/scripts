@@ -13,7 +13,7 @@ prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
 
 ##shouldn't this all be in the config file?
-my $cfgpath = 'X:\My Dropbox\Public\misc\perl\xchat\relay.conf';	#path to the config file
+my $cfgpath = 'cfg/xrelay.pm';	#this path is untested and almost definitely incorrect
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
 my ($anime, $music, $destsrvr) = ('#anime', '#cfounders', 'irc.adelais.net');
