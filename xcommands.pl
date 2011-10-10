@@ -4,6 +4,9 @@ use JSON;
 use Xchat qw':all';
 use HTML::TreeBuilder;
 
+#absolutely none of the commands in this script have error handling and that's terrible
+
+
 my $ver = time;
 register('Xchat Custom Commands', $ver, 'Everything, vol. 1', sub{ prnt('Xchat Commands '.$ver.' unloaded.'); });
 prnt('Xchat Commands '.$ver.' loaded.');
@@ -22,7 +25,7 @@ sub now_playing {
 }
 
 hook_command('XBMC', \&xbmc);
-sub xbmc {
+sub xbmc { #xbmcHttp is supposedly deprecated, but the thing they replaced it with is useless
 	my $text = $ua->get('http://192.168.250.125:8080/xbmcCmds/xbmcHttp?command=getcurrentlyplaying')->decoded_content;
 	my %info;
 	for (split /\n/, $text){
@@ -62,22 +65,20 @@ sub timer { #just a countdown timer
 }
 
 hook_command('twit', \&twitter);
-sub twitter { #could use some threading but I don't want to wreck this :(
+sub twitter { #this locks the whole client and isn't particularly useful
 	command('say https://twitter.com'.(HTML::TreeBuilder->new_from_content($ua->get('https://twitter.com/intent/user?screen_name='.$_[0][1])->decoded_content)->look_down(_tag => 'a', class => 'tweet-timestamp')->extract_links->[0][0]));
 	return EAT_XCHAT;
 }
-hook_command('hex', sub{prnt($_[0][1].' is '.(sprintf "%x", $_[0][1])); return EAT_XCHAT; });
-hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/; for (split //, $st){ $_ = chr((ord $_) + 65216) unless $_ !~ /[a-z]/; $_ = chr((ord $_) + 65248) unless $_ !~ /[0-9~\[\]:;'"<>}{|\\\/_,?!@#$%^&*()\-+=*]/; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
+hook_command('hex', sub{prnt($_[0][1].' is '.(sprintf "%x", $_[0][1])); return EAT_XCHAT; }); #translate a number from decimal to hex
 
+#converts ascii strings to wideface japanese characters
+hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/; for (split //, $st){ $_ = chr((ord $_) + 65216) unless $_ !~ /[a-z]/; $_ = chr((ord $_) + 65248) unless $_ !~ /[0-9~\[\]:;'"<>}{|\\\/_,?!@#$%^&*()\-+=*]/; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 
-# $_ = chr 12290 if /\./;
 
 hook_command('ign', \&ign);
-sub ign {
+sub ign { #don't remember when or why I wrote this
 	my $hi = LWP::UserAgent->new->get('http://www.jocchan.com/stuff/IGeNerator9/')->decoded_content || '<html><body><p>uhoh</p><p>balls';
 	my @ref = HTML::TreeBuilder->new_from_content($hi)->look_down(_tag => 'p');
-#	prnt join "\n", @ref;
-#	$ref =~ s{^.+(?:<br />)+.+color="#\S{6}">\s?(.+)</font>.+$}{$1}s; 
 	prnt $ref[1]->as_text;
 }

@@ -7,6 +7,9 @@ use XML::Simple;
  
 register('Forecast Backgrounds', '0.0.1', 'changes background image according to weather forecast', sub{prnt 'WeatherBG unloaded.';});
 #adapted directly from LifeIsPain's http://xchatdata.net/Scripting/PerlNonBlockingExecution
+#
+#there is a memory leak on the order of 10MB every time the script checks for weather updates
+#I can only assume XML::Simple is at fault
  
 my @result_commands = ();
 share(@result_commands);
