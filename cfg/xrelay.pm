@@ -10,7 +10,6 @@
 #	regex/strings use \x{HEX}
 
 
-
 %config = (
 	LonE			=>	"Music	|LonE						|					|fansub-torrents		|mp3",
 	nipponsei		=>	"Music	|nipponsei					|					|brokenonpurpose		|",
@@ -117,6 +116,8 @@ kanjouteki (Hi10) iPhone [P]
 					"pocket monsters"
 				);
 push @blacklist, @moreblacklist;
+
+$do_hentai = 0;
 
 ####colorscheme
 $Cname	= "09";

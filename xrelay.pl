@@ -1,9 +1,8 @@
 use strict;
 use warnings;
 use utf8;
-use URI;
 use Xchat ':all';
-use vars qw( %config $cfgpath @blacklist $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
+use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
 
 my $ver = '2.7';
 register('relay', $ver, 'complete rewrite. again. :(', \&unload);
@@ -13,7 +12,7 @@ hook_command('lastannounce', \&sayprev);
 prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
 
-##shouldn't this all be in the config file?
+##shouldn't this all be in the config file? (nope)
 my $cfgpath = 'O:\GIT\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
@@ -31,7 +30,7 @@ sub whoosh {
 	unless ($speaker =~ /$bot/ && $chan eq $botchan){ return EAT_NONE; }
 	
 	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/){
-		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, URI->new($5), $6);
+		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, $5, $6);
 		
 		return EAT_NONE if exists($dupe{$rlsid});
 		$dupe{$rlsid} = $name;
@@ -49,7 +48,7 @@ sub whoosh {
 		
 		$URL =~ s/download/torrentinfo/i if $URL =~ /nyaa\.eu/i;
 		$URL =~ s/download/details/i if $URL =~ /anirena/i; #does anirena even still exist
-		$URL =~ s/\(/%28/g; $URL =~ s/\)/%29/;		
+		$URL =~ s/\(/%28/g; $URL =~ s/\)/%29/g;		
 		
 		#rounding!
 		my ($size,$unit) = ($size =~ /(\d+(?:\.\d+)?)([GMK]i?B)/); 
@@ -58,7 +57,7 @@ sub whoosh {
 		elsif ($unit eq 'MB'){ $size = sprintf "%.0f", $size; $size .= $unit; }
 		else { $size .= $unit; }
 		
-		$cat = 'Hentai (Manga)' if $URL =~ /sukebei/i; #am I even checking hentai anymore? I don't think I am		
+		$cat = 'Hentai (Manga)' if $URL =~ /sukebei/i;	
 		
 		
 		do $cfgpath;	#load the config
@@ -69,7 +68,7 @@ sub whoosh {
 		
 		my $output = "\003$Cname" . "$name" . " \003$Csize" . "$size " . "\003$Curl" . "$URL" . "\017 \003$Ccomnt" . "$comment\017";	
 		$output =~ s/\s*\003$Ccomnt *\017$//;
-		if ($cat =~ m'^Hentai'){ return EAT_NONE; $output = "\003$Chntai" . "Hentai\017" . "$output"; } #ahhh that's why it's not checking hentai ##todo: make this a cfg switch
+		if ($cat =~ m'^Hentai'){ return EAT_NONE unless $do_hentai == 1; $output = "\003$Chntai" . "Hentai\017" . "$output"; }
 		my $spam = "bs say $spamchan $output";
 		
 		for (@blacklist){ #wow that's ugly. I'll fix it later
