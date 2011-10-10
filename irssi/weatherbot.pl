@@ -14,14 +14,14 @@ $VERSION = "3.3p";
 	license => 'GNU GPL v2 or later',
 	name => 'weatherbot',
 	description => 'a weatherbot that provides weather and forecast based on zip code',
-	url => 'https://github.com/protospork'
+	url => 'https://github.com/protospork/scripts'
 #   author => 'pleia2',
 #   contact => 'lyz\@princessleia.com ',
 #   url => 'http://www.princessleia.com'
 );
 
 #At this point it doesn't really resemble pleia2's script-
-#I don't really know how to handle the adaptation thing 'properly'.
+#I don't really know how to handle the GPL thing 'properly'.
 
 my (@memory, %savedloc);
 tie @memory, 'Tie::File', '/home/proto/.irssi/scripts/cfg/weathernicks.cfg' or die "Couldn't open weathernicks.cfg ($!)";
@@ -47,7 +47,7 @@ sub event_privmsg {
 		}
 		
 		$location =~ s/ /_/g; $location =~ s/,//g;
-		my $ua = new LWP::UserAgent;
+		my $ua = LWP::UserAgent->new();
 		$ua->timeout(10);
 		my $results = $ua->get("http://38.102.136.104/auto/raw/$location");
 		my @badarray = split(/\n/, $results->content);
@@ -66,12 +66,12 @@ sub event_privmsg {
 			$ctemp =~ s/ //;
 			if ($wind !~ / 0$/){
 				if ($ftemp < 40 && $windchill !~ /N.A/){
-					$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | Windchill $windchill\x{00B0}F | Wind $wind MPH");
+					$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | Windchill $windchill\xB0F | Wind $wind MPH");
 				} else {
-					$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | $hum Humidity | Wind $wind MPH");
+					$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Wind $wind MPH");
 				}
 			} else {
-				$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | $hum Humidity | Barometer: $bar");
+				$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Barometer: $bar");
 			}
 		}
 	} else { 
