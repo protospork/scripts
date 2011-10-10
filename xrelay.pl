@@ -4,7 +4,7 @@ use utf8;
 use Xchat ':all';
 use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
 
-my $ver = '2.7';
+my $ver = '2.8';
 register('relay', $ver, 'complete rewrite. again. :(', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 hook_command('dumprelaycache', \&dumpcache);
@@ -61,15 +61,15 @@ sub whoosh {
 		
 		
 		do $cfgpath;	#load the config
-		if (! %config){ prnt("Relay can't load config\x{07}file: $!", $ctrlchan, $destsrvr); return EAT_NONE; }
-		if (! @blacklist){ prnt("Relay can't load blacklist:\x{07}$!", $ctrlchan, $destsrvr); return EAT_NONE; }
-		if (! $Ccomnt){ prnt("Relay can't load colorscheme:\x{07}$!", $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! %config){ prnt("Relay can't load config\x07file: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! @blacklist){ prnt("Relay can't load\x07blacklist: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! $Ccomnt){ prnt("Relay can't load\x07colorscheme: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
 		
 		
-		my $output = "\003$Cname" . "$name" . " \003$Csize" . "$size " . "\003$Curl" . "$URL" . "\017 \003$Ccomnt" . "$comment\017";	
-		$output =~ s/\s*\003$Ccomnt *\017$//;
-		if ($cat =~ m'^Hentai'){ return EAT_NONE unless $do_hentai == 1; $output = "\003$Chntai" . "Hentai\017" . "$output"; }
-		my $spam = "bs say $spamchan $output";
+		my $output = "\x03".$Cname.$name." \x03".$Csize.$size." \x03".$Curl.$URL."\x0F \x03".$Ccomnt.$comment."\x0F";	
+		$output =~ s/\s*\x03$Ccomnt *\x0F$//; #just in case there's no comment
+		if ($cat =~ m'^Hentai'){ return EAT_NONE unless $do_hentai == 1; $output = "\x03".$Chntai."Hentai\x0F".$output; }
+		my $spam = 'bs say '.$spamchan.' '.$output;
 		
 		for (@blacklist){ #wow that's ugly. I'll fix it later
 			if ((lc $name) =~ (quotemeta(lc $_))){ return EAT_NONE; } 
@@ -88,24 +88,21 @@ sub whoosh {
 			next unless $cat =~ /$cfg_cat/; 
 			next unless lc($name) =~ (quotemeta (lc $cfg_title));
 			
-			my ($okgroup, $oktracker, $other) = (0, 0, 0);
+			my ($okgroup, $other) = (0, 0);
 			
 			if (defined($cfg_groups) && $cfg_groups ne ''){ for (split /,\s*/, $cfg_groups){ if ($name =~ /\[.*\Q$_\E.*\]/i){ $okgroup = 1; } } }	#\Q and \E are supposed to delimit regex-quoted things
 			else { $okgroup = 1; }
 			
-			if (defined($cfg_trackers) && $cfg_trackers ne ''){ for (split /,\s*/, $cfg_trackers){ if ((lc $URL) =~ (quotemeta(lc $_))){ $oktracker = 1; } } } #this really doesn't matter anymore, only nyaa is left
-			else { $oktracker = 1 if $URL =~ /nyaa|anirena/i; }
-			
 			if (defined($cfg_blacklist)){ for (split /,\s*/, $cfg_blacklist){ if ((lc $name) =~ (quotemeta(lc($_)))){ $other = 1; } } }
 			
-			if ($okgroup == 1 && $oktracker == 1 && $other == 0){
+			if ($okgroup == 1 && $other == 0){
 			
-				if ($cat eq 'Anime'){ command("bs say $anime $output", undef, $destsrvr); $last = $output; } 
-				elsif ($cat eq 'Music'){ command("msg $music $output", undef, $destsrvr); $last = $output; }
+				if ($cat eq 'Anime'){ command('bs say '.$anime.' '.$output, undef, $destsrvr); $last = $output; } 
+				elsif ($cat eq 'Music'){ command('msg '.$music.' '.$output, undef, $destsrvr); $last = $output; }
 				elsif ($cat =~ m'^Hentai'){ command($spam, undef, $destsrvr); return EAT_NONE; }
 				else { command($spam, undef, $destsrvr); $last = $output; return EAT_NONE; }
 				
-				command("notice $ctrlchan \00324$name (\017http://tokyotosho.info/details.php?id=$rlsid\00324)\017", $ctrlchan, $destsrvr);
+				command("notice ".$ctrlchan." \x0324".$name." (\x0Fhttp://tokyotosho.info/details.php?id=".$rlsid."\x0324)\x0F", $ctrlchan, $destsrvr);
 				if ($name =~ /$cfg_title.+?(?:S\d)?.*?([\d\.]+)/i && defined($cfg_stitle) && $cfg_stitle ne ''){ newtopic($1, $cfg_stitle); }	
 				return EAT_NONE;
 				
@@ -125,13 +122,13 @@ sub newtopic {
 	$newep =~ s/^0(\d)/$1/; $newep =~ s/\.$//;
 	set_context($anime, $destsrvr);
 	my $topic = get_info('topic');
-	if ($topic !~ /$short/i){ prnt("\00320ERROR\017\tTitle not found in topic: $short", $ctrlchan, $destsrvr); } else {
+	if ($topic !~ /$short/i){ prnt("\x0320ERROR\x0F\tTitle not found in topic: ".$short, $ctrlchan, $destsrvr); } else {
 		$topic =~ /$short (\d\d?)/i;
 		return unless defined($1);
 		if ($1 >= $newep || $newep == 720 || $newep == 1080){ return; } else {
-			command("notice $ctrlchan Topic was: $topic", $ctrlchan, $destsrvr);
+			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
 			$topic =~ s/$short \d+/$short $newep/i;
-			command("cs topic $anime $topic", $anime, $destsrvr);
+			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr);
 		}
 	}
 }

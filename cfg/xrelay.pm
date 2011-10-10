@@ -9,6 +9,7 @@
 #	ord() is BASE-10/DECIMAL
 #	regex/strings use \x{HEX}
 
+#2.8: trackers column is ignored
 
 %config = (
 	LonE			=>	"Music	|LonE						|					|fansub-torrents		|mp3",
