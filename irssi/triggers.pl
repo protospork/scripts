@@ -13,7 +13,7 @@ use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @of
 
 #todo: add a $debug switch to the config and tie all of the print statements to it
 
-$VERSION = "2.20.20";
+$VERSION = "2.20.21";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -88,11 +88,10 @@ sub event_privmsg {
 	}
 
 	return unless $return;
-#	length $return <= 120 ? $server->command("msg $target $return") : $server->command("msg $target quit it.");	#seriously. quit it.
 	$server->command("msg $target $return");
 }
 
-sub choose { #this isn't rocket science
+sub choose { 
 	my $call = shift;
 	my @choices;
 	if ($call =~ /sins?/){
@@ -179,6 +178,7 @@ sub conversion { #this doens't really work except for money
 	my $output = $req->decoded_content;
 	print $output;
 	#it's not actually real JSON :(
+	#try $json->allow_barekey(1) ?
 	$output =~ /lhs: "(.*?)",rhs: "(.*?)",error: "(.*?)"/i || return 'regex error';
 	my ($from,$to,$error) = ($1,$2,$3);
 	
@@ -194,7 +194,7 @@ sub conversion { #this doens't really work except for money
 	$error = $dunno[rand(scalar(@dunno))-1] if $error =~ /(?:Error: )?4/i;
 	return $error;
 }
-sub utfdecode {
+sub utfdecode { #why
 	my $x = my $y = uri_unescape($_[0]);
 	return $x if utf8::decode($x);
 	return $y;
@@ -213,6 +213,7 @@ sub dice {
 			$toss = 'tails';
 		}
 		
+		#can't remember why I'm doing this @prev3 shit
 		if ($toss eq $prev3[0] && $toss eq $prev3[1]){
 			push @prev3, $toss;
 			$toss .= ' '.$repeat[int(rand($#repeat))];
@@ -285,6 +286,8 @@ sub stats {
 	$chan = $1; $chan =~ s/anime/animu/;
 	$chan eq 'programming' ? return 'http://www.galador.org/irc/'.$chan.'.html' : return 'http://protospork.moap.net/'.$chan.'.html';
 }
+
+#note that this sub isn't attached to anything - I'm still using weatherbot.pl and can't remember what's broken here
 my %place;
 sub weather {	
 # timestamp | degrees F | windchill | ? | humidity | dewpoint | windchill | barometer | conditions | visibility | sunrise | sunset |

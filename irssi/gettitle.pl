@@ -21,7 +21,11 @@ $VERSION = "1.4";
 
 #TODO:
 #	-spotify
-#	-following blank gawker urls [requires js support]
+#	-following blank gawker urls [requires js support][not going to happen]
+#	-HTML indexes, either for all links reported or just for imgur
+#	-add a $debug toggle and link it to all the local print junk
+#	-move this todo to github's issue thing <_<
+#	-figure out this 'use vars' VS 'our' nonsense
 
 
 my %titlecache; my %lastlink; my %mirrored;
@@ -33,8 +37,6 @@ Irssi::signal_add_last('message irc action', 'pubmsg');
 Irssi::signal_add_last('message private', 'pubmsg');
 Irssi::command_bind('gettitle_conf_reload', \&loadconfig);
 
-#	my $json = JSON->new->utf8;
-#	$json = $json->allow_barekey(1);
 my $ua = LWP::UserAgent->new(
 	agent => 'Mozilla/5.0 (X11; U; Linux; i686; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13',
 	max_size => 60000,
