@@ -10,6 +10,8 @@ hook_print("Channel Action", \&acting, {priority => PRI_LOW});
 hook_print("Channel Action Hilight", \&actinghigh, {priority => PRI_LOW});
 
 my $sprinkles = 1; #make this 0 to turn every color effect into boring green
+my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
+my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -41,14 +43,16 @@ sub magic_happens {
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	if ($message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig){	#shorten youtube urls
-#		$message =~ s/&[^#]+//g;
-	} else { #fix some junk
-		$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
-		$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
-		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
-		$message =~ s/[\x{201c}\x{201d}]/"/g;
+	if ($nico == 1){
+		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
+	} elsif ($ytshorten == 1){
+		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
 	}
+	
+	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
+	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
+	$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
+	$message =~ s/[\x{201c}\x{201d}]/"/g;
 	
 	#ascii:
 	#[:alpha:] [:alnum:] [:digit:] [:punct:]
