@@ -78,25 +78,25 @@ sub whoosh {
 		}
 		
 		
-#aaaand we finally get down to the job at hand ##todo: rename the variables coming from the config, so I can tell what's what
-		my ($title, $value);
-		while (($title, $value) = each %config){
+#aaaand we finally get down to the job at hand
+		my ($cfg_title, $value);
+		while (($cfg_title, $value) = each %config){
 			$value =~ s/\t//g;
-			my ($category, $groups, $shortname, $trackers, $badthings) = split /\|/, $value; #this should make use of perl data structs
+			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_trackers, $cfg_blacklist) = split /\|/, $value; #this should make use of perl data structs
 			
 			$cat =~ s/Batch/Anime-Batch/;
-			next unless $cat =~ /$category/; 
-			next unless lc($name) =~ (quotemeta (lc $title));
+			next unless $cat =~ /$cfg_cat/; 
+			next unless lc($name) =~ (quotemeta (lc $cfg_title));
 			
 			my ($okgroup, $oktracker, $other) = (0, 0, 0);
 			
-			if (defined($groups) && $groups ne ''){ for (split /,\s*/, $groups){ if ($name =~ /\[.*\Q$_\E.*\]/i){ $okgroup = 1; } } }	#\Q and \E are supposed to delimit regex-quoted things
-			else { $okgroup = 1; }	#what? check if it's an okay group and then if it isn't, say it is anyway?
+			if (defined($cfg_groups) && $cfg_groups ne ''){ for (split /,\s*/, $cfg_groups){ if ($name =~ /\[.*\Q$_\E.*\]/i){ $okgroup = 1; } } }	#\Q and \E are supposed to delimit regex-quoted things
+			else { $okgroup = 1; }
 			
-			if (defined($trackers) && $trackers ne ''){ for (split /,\s*/, $trackers){ if ((lc $URL) =~ (quotemeta(lc $_))){ $oktracker = 1; } } }
+			if (defined($cfg_trackers) && $cfg_trackers ne ''){ for (split /,\s*/, $cfg_trackers){ if ((lc $URL) =~ (quotemeta(lc $_))){ $oktracker = 1; } } } #this really doesn't matter anymore, only nyaa is left
 			else { $oktracker = 1 if $URL =~ /nyaa|anirena/i; }
 			
-			if (defined($badthings)){ for (split /,\s*/, $badthings){ if ((lc $name) =~ (quotemeta(lc($_)))){ $other = 1; } } }
+			if (defined($cfg_blacklist)){ for (split /,\s*/, $cfg_blacklist){ if ((lc $name) =~ (quotemeta(lc($_)))){ $other = 1; } } }
 			
 			if ($okgroup == 1 && $oktracker == 1 && $other == 0){
 			
@@ -106,7 +106,7 @@ sub whoosh {
 				else { command($spam, undef, $destsrvr); $last = $output; return EAT_NONE; }
 				
 				command("notice $ctrlchan \00324$name (\017http://tokyotosho.info/details.php?id=$rlsid\00324)\017", $ctrlchan, $destsrvr);
-				if ($name =~ /$title.+?(?:S\d)?.*?([\d\.]+)/i && defined($shortname) && $shortname ne ''){ newtopic($1, $shortname); }	
+				if ($name =~ /$cfg_title.+?(?:S\d)?.*?([\d\.]+)/i && defined($cfg_stitle) && $cfg_stitle ne ''){ newtopic($1, $cfg_stitle); }	
 				return EAT_NONE;
 				
 			} else {
