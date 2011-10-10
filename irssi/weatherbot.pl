@@ -1,7 +1,7 @@
 # timestamp | degrees F | windchill | ? | humidity | dewpoint | windchill | barometer | conditions | visibility | sunrise | sunset | age of moon | ? | ? | ? | ? | ? | town | state | moonrise | moonset | closest airport | UV index
 
 #TODO:
-#	-consider preferring metric units for nonAMERICA locations
+#	-consider preferring metric units for non-US locations
 
 use Irssi;
 use LWP::UserAgent;
@@ -9,26 +9,32 @@ use Tie::File;
 
 $VERSION = "3.3p";
 %IRSSI = (
-    author => 'pleia2',
-    contact => 'lyz\@princessleia.com ',
-    name => 'weatherbot',
-    description => 'a weatherbot that provides weather and forecast based on zip code',
-    license => 'GNU GPL v2 or later',
-    url => 'http://www.princessleia.com'
+	author => 'protospork',
+	contact => 'protospork\@gmail.com',
+	license => 'GNU GPL v2 or later',
+	name => 'weatherbot',
+	description => 'a weatherbot that provides weather and forecast based on zip code',
+	url => 'https://github.com/protospork'
+#   author => 'pleia2',
+#   contact => 'lyz\@princessleia.com ',
+#   url => 'http://www.princessleia.com'
 );
-#at this point it doesn't really resemble pleia's script <_<
+
+#At this point it doesn't really resemble pleia2's script-
+#I don't really know how to handle the adaptation thing 'properly'.
 
 my (@memory, %savedloc);
-tie @memory, 'Tie::File', '/home/proto/.irssi/scripts/cfg/weathernicks.cfg' or die "Couldn't open weathernicks.cfg ($!)";	#THIS DOESN'T ACTUALLY WORK
-for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; }
+tie @memory, 'Tie::File', '/home/proto/.irssi/scripts/cfg/weathernicks.cfg' or die "Couldn't open weathernicks.cfg ($!)";
+for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
 
 sub event_privmsg {
-	my ($server, $data, $nick) =@_;
-	my ($target, $text) = $data =~ /^(\S*)\s:(.*)/;
-	return if ( $text !~ /^\s*\./i );
-	for (split /,/, Irssi::settings_get_str('trig_offchans')){ return if $target =~ /$_/i; }
+	my ($server, $data, $nick) = @_;
+	my ($target, $text) = split(/ :/, $data, 2);
+	
+	for (split /,/, Irssi::settings_get_str('trig_offchans')){ return if $target =~ /$_/i; } #I need to stop embedding settings in irssi
 
 	if ( $text =~ /^\s*\.w(?:eather|z)?(?:\s+(.*))?$/i ){
+	
 		if (! defined $1){ 
 			if (exists $savedloc{$nick}){
 				$location = $savedloc{$nick}
@@ -36,7 +42,10 @@ sub event_privmsg {
 				$server->command("notice $nick Could you please repeat that?"); 
 				return; 
 			} 
-		} else { $location = $1 }
+		} else { 
+			$location = $1 
+		}
+		
 		$location =~ s/ /_/g; $location =~ s/,//g;
 		my $ua = new LWP::UserAgent;
 		$ua->timeout(10);
@@ -65,6 +74,8 @@ sub event_privmsg {
 				$server->command("msg $target \002$town, $state\002 ($timestamp): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | $hum Humidity | Barometer: $bar");
 			}
 		}
+	} else { 
+		return; 
 	}
 }
 
