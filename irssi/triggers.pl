@@ -11,6 +11,8 @@ use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @of
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
+#todo: add a $debug switch to the config and tie all of the print statements to it
+
 $VERSION = "2.20.20";
 %IRSSI = (
     authors => 'protospork',
@@ -30,7 +32,7 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
-my $cfgurl = 'http://dl.dropbox.com/u/48390/misc/perl/irssi/config/triggers.pm';
+my $cfgurl = 'http://dl.dropbox.com/u/48390/misc/perl/irssi/config/triggers.pm'; #should I change this to github?
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => "/home/proto/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
@@ -45,17 +47,11 @@ sub loadconfig {
 loadconfig();
 
 sub event_privmsg {
-	my ($server, $data, $nick, $mask) =@_;
+	my ($server, $data, $nick, $mask) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
 	my $return;
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
-	
-	if ($text =~ /\x{253B}\x{2501}*\x{253B}/i){ #WHY DON'T YOU WORKKKK
-		print "table $target";
-		$server->command('msg '.$target." \x{252c}\x{2500}\x{2500}\x{252c}\x{20}\x{30ce}\x{28}\x{20}\x{309c}\x{30ce}\x{29}");
-		return;
-	}
 	
 	return if $text !~ /^\s*\.(.+?)\s*$/;
 
@@ -137,7 +133,7 @@ sub countdown {
 	}
 }
 
-sub conversion { #this should probably be taught in space camp though
+sub conversion { #this doens't really work except for money
 	#only works with three inputs
 #	my ($trig, $in, $out) = @_;
 
@@ -149,7 +145,7 @@ sub conversion { #this should probably be taught in space camp though
 	print join ', ', ($trig,$in);
 	if (defined $_[0]){ $out = uc $_[0]; print '=> '.$out; }
 	
-	if ($in =~ /BTC$/ || $out eq 'BTC'){	#this is just to keep me awake I guess
+	if ($in =~ /BTC$/ || $out eq 'BTC'){
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
 		return $prices->status_line unless $prices->is_success;
 		
