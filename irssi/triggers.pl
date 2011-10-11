@@ -11,8 +11,6 @@ use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @of
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
-#todo: add a $debug switch to the config and tie all of the print statements to it
-
 $VERSION = "2.20.21";
 %IRSSI = (
     authors => 'protospork',
