@@ -9,9 +9,10 @@ use strict;
 use warnings;
 use utf8;	#?
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
-use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @filesizecomment %shocksites $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $controlchan $ver $VERSION %IRSSI);
+use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
+@filesizecomment %shocksites $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan $ver $VERSION %IRSSI);
 
-$VERSION = "1.4";
+$VERSION = "1.5";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -22,15 +23,12 @@ $VERSION = "1.4";
 #TODO:
 #	-spotify
 #	-following blank gawker urls [requires js support][not going to happen]
-#	-HTML indexes, either for all links reported or just for imgur
-#	-add a $debug toggle and link it to all the local print junk
-#	-move this todo to github's issue thing <_<
 #	-figure out this 'use vars' VS 'our' nonsense
 
 
 my %titlecache; my %lastlink; my %mirrored;
 my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend) = (' ', ' ', ' ', (time-5));
-my $cfgurl = 'http://dl.dropbox.com/u/48390/misc/perl/irssi/config/gettitle.pm';
+my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
 Irssi::signal_add_last('message public', 'pubmsg');
 Irssi::signal_add_last('message irc action', 'pubmsg');
@@ -67,7 +65,7 @@ sub pubmsg {
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|http://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
 	
-	print $url;	#:(
+	print $url if $debugmode == 1;
 	
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
@@ -81,7 +79,7 @@ sub pubmsg {
 		
 	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
-		print $url;
+		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\?(?:\S\&)*v=)([\w-]{11})]i){
 #		if ($url !~ /^http/i){ $server->command("msg ".$target." http://".$url." (".$meanthings[(int rand scalar @meanthings)-1].")"); }
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
@@ -266,7 +264,7 @@ sub check_image_size {
 	return '0' if $url =~ /gif(?:\?.+)?$/i;	#maybe this should be configurable, but it's a fair bet a gif is going to be large
 	my $req = $ua->head($url); 
 	return 0 unless $req->is_success;	#?
-	print $req->content_type.' '.$req->content_length;
+	print $req->content_type.' '.$req->content_length if $debugmode == 1;
 	return 0 unless $req->content_type =~ /image/; 
 	if ($req->content_type =~ /gif$/i){
 		return 'WITCH';
@@ -277,7 +275,7 @@ sub check_image_size {
 
 sub sendresponse {
 	my ($title,$target,$server,$url) = @_;
-	print "=> $title";
+	print "=> $title" if $debugmode == 1;
 	if (time - $lastsend < $spam_interval && $title eq $lasttitle){
 		Irssi::timeout_add_once(($spam_interval * 1000), sendresponse(@_), @_);
 		return;
@@ -337,7 +335,7 @@ sub dontuseme {
 		$go = 1 if $chan =~ /$_/i;
 	}
 	if ($stop == 1 || $go == 0){
-		print $chan.' isn\'t in mirrorchans so I\'m switching to check size';
+		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
 		return check_image_size($url);	#I think my flow chart may be a maze by this point
 	}
 	
@@ -345,13 +343,13 @@ sub dontuseme {
 	$urlnoqueries =~ s/\?\w+$//;
 	#OH GOD YOU FORGOT TO CHECK FOR DUPES
 	if ($url =~ /s3\.amazonaws\S+\?\S+/ && defined $mirrored{$urlnoqueries}){	#there has to be a more graceful way to do this
-		$mirrored{$urlnoqueries}->[5]++ || print 'referencing fail';
+		$mirrored{$urlnoqueries}->[5]++;
 		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan <\00308$nick\017> $msg") unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$urlnoqueries}->[5] times.\017");
 		return $mirrored{$urlnoqueries}->[-1].' || '.(sprintf "%.0f", ($mirrored{$urlnoqueries}->[3]/1024))."KB || \00304Reposted ".$mirrored{$urlnoqueries}->[5]." times.\017"; 
 	} elsif (defined $mirrored{$url}){ 
-		$mirrored{$url}->[5]++ || print 'you cannot references';	#may require an arrow, I still can't references	
+		$mirrored{$url}->[5]++;
 		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan <\00308$nick\017> $msg") unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
@@ -397,7 +395,7 @@ sub imgur {
 		$go = 1 if $chan =~ /$_/i;
 	}
 	if ($stop == 1 || $go == 0){
-		print $chan.' isn\'t in mirrorchans so I\'m switching to check size';
+		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
 		return check_image_size($url);	
 	}
 	

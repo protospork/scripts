@@ -4,6 +4,7 @@ $controlchan = '#wat';	#primarily for the :c8h10n4o2.reload.config thing
 $mirrorfile = '/home/proto/mirror.txt';
 $imgurkey = 'c9358aa89d28f6bbde0984e09b990b1f'; #imgur free/anon API key
 $spam_interval = 2;	#timeout (in seconds) between lines, to stop amsg kills (damnit GV)
+$debugmode = 1;
 
 #I'm treating ignoresites as plaintext strings and regex-escaping them
 @ignoresites = qw(	
