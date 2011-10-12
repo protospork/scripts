@@ -78,7 +78,9 @@ sub event_privmsg {
 		uri_escape_utf8($_) for @terms;
 		$return = ('http://gog.is/'.(join '+', @terms));
 	} elsif (lc $terms[0] eq 'hex'){
-			$return = $nick.': '.(sprintf "%x", $terms[1]);
+		$return = $nick.': '.(sprintf "%x", $terms[1]);
+	} elsif (lc $terms[0] eq 'help'){
+		$return = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/help.markdown';
 	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
 		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ @terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); }
 		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ @terms = ($terms[0], (join '', @terms[1..$#terms])); }
