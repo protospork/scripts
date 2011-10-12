@@ -90,7 +90,7 @@
 	"fate \x{2044} zero"=>	"Anime	|commie					|F/0				|						|8bit",
 	"fate zero"		=>	"Anime	|UTW						|F/0				|						|", #utw
 	"maken-ki"		=>	"Anime	|							|					|						|",
-	symphony		=>	"Anime	|							|					|						|", #mashiro-iro symphony
+	symphony		=>	"Anime	|doki,chihiro				|					|						|", #mashiro-iro symphony
 	"ginyoku no fam"=>	"Anime	|							|					|						|", #last exile: ginyoku no fam
 	"phi brain"		=>	"Anime	|							|					|						|",
 	bakuman			=>	"Anime	|TMD,SFW					|Bakuman			|						|", #bakuman 2 #TMD and SFW
