@@ -10,7 +10,7 @@ use warnings;
 use utf8;	#?
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
-@filesizecomment %shocksites $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan $ver $VERSION %IRSSI);
+@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan $ver $VERSION %IRSSI);
 
 $VERSION = "1.5";
 %IRSSI = (
@@ -85,10 +85,6 @@ sub pubmsg {
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 	}
 	
-#	if (grep $url eq $_, (keys %shocksites)){	#eh.
-#		sendresponse($shocksites{$url},$target,$server);
-#		return;
-#	}
 	if ($url =~ /pfordee.*jpe?g/i){
 		sendresponse('that\'s probably goatse',$target,$server);
 		return;
@@ -225,10 +221,6 @@ sub get_title {
 		}
 		
 		my $person = xcc($junk->{'user'}{'screen_name'});
-#		my $clr = 0; 
-#		$clr += ord $_ for (split //, $person); 
-#		$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];
-#		$person = "\x03$clr<$person>\x0F ";
 		
 		my $title = $person.$text;
 		$title = '<protected account>' if $title eq '<> ';
@@ -314,69 +306,6 @@ sub sendmirror {
 	$server->command("dcc send $nick $mirrorfile");
 }
 
-sub dontuseme {
-	my ($url,$chan,$msg,$server,$nick) = (@_);	#msg was $data
-#	my ($chan, $msg) = split(/ :/, $data, 2);
-	#%mirrored = (
-	#	$url => [nick, channel, time, filesize, deletion, dupe_post_count, imgur_url]
-	#);
-	
-	#convert thumb URL to normal one
-	$url =~ s/\d+\.thumbs/images/;
-	$url =~ s{thumb/(\d+)s\.}{src/$1.};
-	$url =~ /^.+\.(\w{3,4})$/;
-#	unless (! $1||$1 eq ''){ $ext = $1; }
-	
-	
-	#make sure it's okay to do this here
-	my ($stop,$go) = (0,0);
-	$stop = 1 if grep $nick =~ /$_/i, (@nomirrornicks);
-	for (@mirrorchans){
-		$go = 1 if $chan =~ /$_/i;
-	}
-	if ($stop == 1 || $go == 0){
-		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
-		return check_image_size($url);	#I think my flow chart may be a maze by this point
-	}
-	
-	my $urlnoqueries = $url;
-	$urlnoqueries =~ s/\?\w+$//;
-	#OH GOD YOU FORGOT TO CHECK FOR DUPES
-	if ($url =~ /s3\.amazonaws\S+\?\S+/ && defined $mirrored{$urlnoqueries}){	#there has to be a more graceful way to do this
-		$mirrored{$urlnoqueries}->[5]++;
-		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan <\00308$nick\017> $msg") unless $chan eq $controlchan;
-		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$urlnoqueries}->[5] times.\017");
-		return $mirrored{$urlnoqueries}->[-1].' || '.(sprintf "%.0f", ($mirrored{$urlnoqueries}->[3]/1024))."KB || \00304Reposted ".$mirrored{$urlnoqueries}->[5]." times.\017"; 
-	} elsif (defined $mirrored{$url}){ 
-		$mirrored{$url}->[5]++;
-		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan <\00308$nick\017> $msg") unless $chan eq $controlchan;
-		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Reposted ".$mirrored{$url}->[5]." times.\017"; 
-	}
-	
-	#now ...actually do it
-	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url]) || print "I can't work out why it would die here";
-	#okay what broke
-	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
-	#nothing broke? weird.
-	my $hash = decode_json($resp->content) || print 'OH NO THERE ISNT ANY CONTENT';
-#	$json =~ /"hash":"([^"]+)","deletehash":"([^"]+)",.+,"size":(\d+),/i || print 'bad json regex';	#JSON is imported, you should probably be using it
-#	my ($imgurlink,$delete,$size) = ('http://i.imgur.com/'.$1.'.'.$ext,$2,$3);
-	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
-	#push all this junk into %mirrored
-	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
-	$mirrored{$urlnoqueries} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
-	print	$mirrored{$url}->[0].', '.$mirrored{$url}->[1].', '.$mirrored{$url}->[2].', '.$mirrored{$url}->[3].', '.
-			$mirrored{$url}->[4].', '.$mirrored{$url}->[5].', '.$mirrored{$url}->[6] || print 'empty mirror return values';
-	
-	#return some shit
-	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-	$server->command("msg $controlchan <\00308$nick\017> $msg") unless $chan eq $controlchan;
-	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
-	return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB'; 	
-}
 sub imgur {
 	my ($url,$chan,$msg,$server,$nick) = (@_);
 	
@@ -424,8 +353,6 @@ sub imgur {
 	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
 	#nothing broke? weird.
 	my $hash = decode_json($resp->content) || print 'OH NO THERE ISNT ANY CONTENT';
-#	$json =~ /"hash":"([^"]+)","deletehash":"([^"]+)",.+,"size":(\d+),/i || print 'bad json regex';	#JSON is imported, you should probably be using it
-#	my ($imgurlink,$delete,$size) = ('http://i.imgur.com/'.$1.'.'.$ext,$2,$3);
 	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
 	#push all this junk into %mirrored
 	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
