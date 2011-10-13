@@ -80,7 +80,7 @@ sub event_privmsg {
 	} elsif (lc $terms[0] eq 'hex'){
 		$return = $nick.': '.(sprintf "%x", $terms[1]);
 	} elsif (lc $terms[0] eq 'help'){
-		$return = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/help.markdown';
+		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.markdown';
 	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
 		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ @terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); }
 		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ @terms = ($terms[0], (join '', @terms[1..$#terms])); }
