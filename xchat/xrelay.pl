@@ -20,7 +20,7 @@ my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
 my %dupe; my $last = ' ';
 
 #Sample test line:
-#	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaatorrents.org/?page=download&tid=178017213.52MBshut up I'm testing something
+#	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaa.eu/?page=download&tid=178017213.52MBshut up I'm testing something
 
 
 sub whoosh {
@@ -82,7 +82,7 @@ sub whoosh {
 		my ($cfg_title, $value);
 		while (($cfg_title, $value) = each %config){
 			$value =~ s/\t//g;
-			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value; #this should make use of perl data structs
+			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value;
 			
 			$cat =~ s/Batch/Anime-Batch/;
 			next unless $cat =~ /$cfg_cat/; 
