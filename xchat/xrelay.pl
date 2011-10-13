@@ -16,11 +16,11 @@ sub unload { prnt "relay $ver unloaded"; }
 my $cfgpath = 'X:\My Dropbox\Public\GIT\scripts\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
-my ($anime, $music, $destsrvr) = ('#anime', '#cfounders', 'irc.adelais.net');
+my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
 my %dupe; my $last = ' ';
 
 #Sample test line:
-#	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[gg]_Bakuman_-_10_[F8D3E973].mkvhttp://www.nyaatorrents.org/?page=download&tid=178017213.52MBshut up I'm testing something
+#	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaatorrents.org/?page=download&tid=178017213.52MBshut up I'm testing something
 
 
 sub whoosh {
@@ -61,9 +61,9 @@ sub whoosh {
 		
 		
 		do $cfgpath;	#load the config
-		if (! %config){ prnt("Relay can't load config\x07file: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
-		if (! @blacklist){ prnt("Relay can't load\x07blacklist: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
-		if (! $Ccomnt){ prnt("Relay can't load\x07colorscheme: ".$!, $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! %config){ prnt("Relay can't load config\x07file", $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! @blacklist){ prnt("Relay can't load\x07blacklist", $ctrlchan, $destsrvr); return EAT_NONE; }
+		if (! $Ccomnt){ prnt("Relay can't load\x07colorscheme", $ctrlchan, $destsrvr); return EAT_NONE; }
 		
 		
 		my $output = "\x03".$Cname.$name." \x03".$Csize.$size." \x03".$Curl.$URL."\x0F \x03".$Ccomnt.$comment."\x0F";	
@@ -82,7 +82,7 @@ sub whoosh {
 		my ($cfg_title, $value);
 		while (($cfg_title, $value) = each %config){
 			$value =~ s/\t//g;
-			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_trackers, $cfg_blacklist) = split /\|/, $value; #this should make use of perl data structs
+			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value; #this should make use of perl data structs
 			
 			$cat =~ s/Batch/Anime-Batch/;
 			next unless $cat =~ /$cfg_cat/; 
@@ -90,7 +90,7 @@ sub whoosh {
 			
 			my ($okgroup, $other) = (0, 0);
 			
-			if (defined($cfg_groups) && $cfg_groups ne ''){ for (split /,\s*/, $cfg_groups){ if ($name =~ /\[.*\Q$_\E.*\]/i){ $okgroup = 1; } } }	#\Q and \E are supposed to delimit regex-quoted things
+			if (defined($cfg_groups)){ for (@$cfg_groups){ if ($name =~ /\[.*\Q$_\E.*\]/i){ $okgroup = 1; } } }	#\Q and \E are supposed to delimit regex-quoted things
 			else { $okgroup = 1; }
 			
 			if (defined($cfg_blacklist)){ for (split /,\s*/, $cfg_blacklist){ if ((lc $name) =~ (quotemeta(lc($_)))){ $other = 1; } } }
