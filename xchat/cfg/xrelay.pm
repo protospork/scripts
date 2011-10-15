@@ -17,7 +17,7 @@
 	"THORA"				=>	["Anime", ["thora"],	undef,		undef],
 	'mayo chiki'		=>	["Anime", [qw|ayako doki|], "Chiki", undef],
 	mukuchi				=>	["Anime", [qw|hadena AFFTW horrible|], "Morita-san", undef],
-	penguindrum			=>	["Anime", [qw|gg|],		"Penguins",	undef],
+	penguindrum			=>	["Anime", [qw|gg|],		"Penguins",	"reinweiss"],
 	"mardock scramble"	=>	["Anime", [undef],		undef,		undef],
 	'idolm@ster'		=>	["Anime", [qw|doki chibiki|], "Idols", "848x480"],
 #fall 2011 starts here
