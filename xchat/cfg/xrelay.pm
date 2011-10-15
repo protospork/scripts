@@ -22,15 +22,15 @@
 	'idolm@ster'		=>	["Anime", [qw|doki chibiki|], "Idols", "848x480"],
 #fall 2011 starts here
 	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", undef],
-	chihayafuru			=>	["Anime", [qw|commie|], undef,		undef],
+	chihayafuru			=>	["Anime", [qw|commie|], "Chihayafuru",	undef],
 	"gundam AGE"		=>	["Anime", [undef],		undef,		undef],
-	"guilty crown"		=>	["Anime", [undef],		undef,		undef],
+	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	undef],
 	horizon				=>	["Anime", [qw|commie|], "Horizon",	undef], #kyoukai senjou no horizon
 	"persona 4"			=>	["Anime", [qw|commie|],	"P4",		undef],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],	"F/0",		"8bit"],
 	"fate zero"			=>	["Anime", [qw|UTW|],	"F/0",		undef],
-	"maken-ki"			=>	["Anime", [undef],		undef,		undef],
-	symphony			=>	["Anime", [qw|doki chihiro|],undef,	undef], #mashiro-iro symphony
+	"maken-ki"			=>	["Anime", [undef],		"Maken-Ki",	undef],
+	symphony			=>	["Anime", [qw|doki chihiro zenyaku|],"Mashiro",	"H.264"], #mashiro-iro symphony
 	"ginyoku no fam"	=>	["Anime", [undef],		undef,		undef], #last exile: ginyoku no fam
 	"phi brain"			=>	["Anime", [undef],		undef,		undef],
 	bakuman				=>	["Anime", [qw|TMD SFW|],"Bakuman",	undef], #bakuman 2 #TMD and SFW
