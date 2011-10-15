@@ -113,8 +113,10 @@ sub pubmsg {
 		$title = get_title($url);
 	} else { 
 		sendresponse($title,$target,$server); 
-		$titlecache{$url}{'url'} = $title;
-		$titlecache{$url}{'time'} = time;
+		unless ($title =~ /^Error/){
+			$titlecache{$url}{'url'} = $title;
+			$titlecache{$url}{'time'} = time;
+		}
 		return; 
 	}
 	
