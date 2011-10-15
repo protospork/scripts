@@ -334,16 +334,18 @@ sub imgur {
 #	$urlnoqueries =~ s/\?\w+$//;
 	$url->query(undef);
 	
+	$msg = ' '.$msg; #this was marginally easier than adding the space to a bunch of other lines
+	
 	#OH GOD YOU FORGOT TO CHECK FOR DUPES
 	if ($url =~ /s3\.amazonaws\S+\?\S+/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this
 		$mirrored{$url}->[5]++;
-		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
+		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Reposted ".$mirrored{$url}->[5]." times.\017"; 
 	} elsif (defined $mirrored{$url}){ 
 		$mirrored{$url}->[5]++;
-		$msg =~ s/$url/$mirrored{$url}->[-1]/g;
+		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Reposted ".$mirrored{$url}->[5]." times.\017"; 
@@ -363,7 +365,7 @@ sub imgur {
 			$mirrored{$url}->[4].', '.$mirrored{$url}->[5].', '.$mirrored{$url}->[6] || print 'empty mirror return values';
 	
 	#return some shit
-	$msg =~ s/$url/$mirrored{$url}->[-1]/g;
+	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
 	return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB'; 	
