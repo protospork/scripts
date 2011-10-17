@@ -69,9 +69,9 @@ sub get_sched {
 		
 		#let's make the epoch time a little more useful
 		my $done = [gmtime $json->{$_}{'EdTime'}];
-		$done = ((sprintf "%02d", $done->[2]).':'.(sprintf "%02d", $done->[1]).' GMT '.(100 + $done->[5]).'-'.(sprintf "%02d", 1 + $done->[4]).'-'.(sprintf "%02d", $done->[3]));
+		$done = ((sprintf "%02d", $done->[2]).':'.(sprintf "%02d", $done->[1]).' GMT '.(1900 + $done->[5]).'-'.(sprintf "%02d", 1 + $done->[4]).'-'.(sprintf "%02d", $done->[3]));
 		
-		$out .= $ttls->[1].' ('.$ttls->[0].') '.$json->{$_}{'Count'}.'ends at '.$done.' on '.$json->{$_}{'ChName'}."\n";
+		$out .= $ttls->[1].' ('.$ttls->[0].') episode '.$json->{$_}{'Count'}.' ends at '.$done.' on '.$json->{$_}{'ChName'}."\n";
 	}
 	if ($dbg){
 		open my $sched, '>:utf8', 'airtimes_'.time.'.txt' || die $!;
@@ -79,10 +79,11 @@ sub get_sched {
 		close $sched;
 		say 'schedule summary printed.';
 	}
+	say $out;
 }
 sub get_titles {
 	if ($titles{$_[0]}){
-		say 'title '$_[0].' already cached.' if $dbg;
+		say 'title '.$_[0].' already cached.' if $dbg;
 	} else {
 		$syoboi->query_form({TID => $_[0], Req => 'TitleLarge'});
 		say $syoboi if $dbg;
