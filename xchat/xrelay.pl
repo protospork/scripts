@@ -2,12 +2,16 @@ use strict;
 use warnings;
 use utf8;
 use Xchat ':all';
-use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
+use vars qw( %config $cfgpath @blacklist $do_hentai $do_airtime $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
+use URI;
+use JSON;
+use LWP;
 
-my $ver = '2.8';
+my $ver = '3.0';
 register('relay', $ver, 'complete rewrite. again. :(', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 hook_command('dumprelaycache', \&dumpcache);
+hook_command('dumprelaytimers', \&dump_timers);
 hook_command('lastannounce', \&sayprev);
 prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
@@ -17,7 +21,9 @@ my $cfgpath = 'X:\My Dropbox\Public\GIT\scripts\xchat\cfg\xrelay.pm';	#I'm doome
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
 my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
-my %dupe; my $last = ' ';
+my %dupe; my $last = ' '; my $airtimes_set = 0;
+my %titles; #cached 'TID => [TitleEN, Title]' from syoboi
+my @timers;
 
 #Sample test line:
 #	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaa.eu/?page=download&tid=178017213.52MBshut up I'm testing something
@@ -65,6 +71,10 @@ sub whoosh {
 		if (! @blacklist){ prnt("Relay can't load\x07blacklist", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! $Ccomnt){ prnt("Relay can't load\x07colorscheme", $ctrlchan, $destsrvr); return EAT_NONE; }
 		
+		#add timers to announce when a show has aired
+		if ($do_airtime &&! $airtimes_set){
+			set_airtimes(\%config);
+		}
 		
 		my $output = "\x03".$Cname.$name." \x03".$Csize.$size." \x03".$Curl.$URL."\x0F \x03".$Ccomnt.$comment."\x0F";	
 		$output =~ s/\s*\x03$Ccomnt *\x0F$//; #just in case there's no comment
@@ -81,8 +91,8 @@ sub whoosh {
 #aaaand we finally get down to the job at hand
 		my ($cfg_title, $value);
 		while (($cfg_title, $value) = each %config){
-			$value =~ s/\t//g;
-			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value;
+#			$value =~ s/\t//g; #what
+			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist, $cfg_syo_tid) = @$value;
 			
 			$cat =~ s/Batch/Anime-Batch/;
 			next unless $cat =~ /$cfg_cat/; 
@@ -123,7 +133,7 @@ sub newtopic {
 	set_context($anime, $destsrvr);
 	my $topic = get_info('topic');
 	if ($topic !~ /$short/i){ prnt("\x0320ERROR\x0F\tTitle not found in topic: ".$short, $ctrlchan, $destsrvr); } else {
-		$topic =~ /$short (\d\d?)/i;
+		$topic =~ /$short (\d+)/i; #was (\d\d?), broke three digit epnos
 		return unless defined($1);
 		if ($1 >= $newep || $newep == 720 || $newep == 1080){ return; } else {
 			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
@@ -146,4 +156,110 @@ sub dumpcache {
 	for (keys %dupe){ delete($dupe{$_}); }
 	prnt("Relay cache emptied.");
 	return EAT_XCHAT;
+}
+
+sub set_airtimes {
+	$airtimes_set = 1;
+	set_context($anime, $destsrvr);
+	my ($cfg,$topic) = ($_[0], get_info('topic'));
+	
+	my $TIDs = {}; #build a list of unique TIDs to request
+	for (values %{$cfg}){
+		if ($_->[4] && $_->[2]){
+			$TIDs->{$_->[4]} = $_->[2];
+		}
+	}
+	
+	for (keys %{$TIDs}){
+		my $short = $TIDs->{$_};
+		if ($topic =~ /$short (\d+)/i){
+			my $epno = $1; $epno++;
+			my $info = get_airtime($_, $epno);
+			if ($info =~ /^ERROR/){
+				prnt($info, $ctrlchan, $destsrvr);
+				return;
+			}
+			
+			my $neat_time = [localtime $info->[1]];
+			$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
+			
+			my $timer = Xchat::hook_timer($info->[0], \&place_timer($info, $epno, $_));
+			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
+			push @timers, $timer;
+		} else {
+			next;
+		}		
+	}
+}
+
+sub place_timer {
+	my ($info, $epno, $tid) = @_;
+	command('msg '.$ctrlchan.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
+#	add_airtime($epno, $tid); #oh god the recursion oh god
+	return REMOVE; 
+}
+sub dump_timers {
+	for (@timers){
+		prnt('Unhooking '.$_, $ctrlchan, $destsrvr);
+		unhook $_;
+	}
+	@timers = ( );
+	$airtimes_set = 0;
+}
+
+sub add_airtime { #this sub can't be trusted don't use it
+	my ($epno,$tid) = ($_[0] + 1, $_[1]);
+	my $info = get_airtime($tid, $epno);
+	if ($info =~ /^ERROR/){
+		prnt($info, $ctrlchan, $destsrvr);
+		return;
+	}
+	
+	my $neat_time = [localtime $info->[1]];
+	$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
+	
+	my $timer = Xchat::hook_timer($info->[0], \&place_timer($info, $epno));
+	prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' at '.$neat_time, $ctrlchan, $destsrvr);
+	push @timers, $timer;
+}
+
+sub get_airtime { #there needs to be a pretty-print return option for the inevitable trigger
+	my $tid = shift;
+	my $ep = shift;
+	my $url = URI->new('http://cal.syoboi.jp/json.php');
+	$url->query_form({TID => $tid, Req => 'ProgramByCount', Count => $ep});
+	
+	my $req = LWP::UserAgent->new()->get($url);
+	return 'ERROR '.$req->status_code unless $req->is_success;
+	
+	my $json = JSON->new->pretty(1)->utf8(1)->decode($req->content)->{'Programs'} || return 'ERROR: Invalid JSON';	
+	my $timeout;
+	for (sort keys %{$json}){ #should only need the first item from this loop
+		my $ttls = get_titles($json->{$_}{'TID'});
+		
+		return 'ERROR: '.$ttls->[0].' '.$json->{$_}{'Count'}.' already aired.' if time > $json->{$_}{'EdTime'};
+		$timeout = $json->{$_}{'EdTime'} - time;
+		$timeout *= 1000; #we need milliseconds for hook_timer
+		return [$timeout, $json->{$_}{'EdTime'}, $ttls->[0], $ttls->[1], $json->{$_}{'ChName'}, $json->{$_}{'Count'}];
+	}	
+}
+
+sub get_titles {
+	if ($titles{$_[0]}){
+		return $titles{$_[0]};
+	} else {
+		my $syoboi = URI->new('http://cal.syoboi.jp/json.php');
+		$syoboi->query_form({TID => $_[0], Req => 'TitleLarge'});
+		
+		my $req = LWP::UserAgent->new()->get($syoboi);
+		return 'ERROR: '.$req->status_code unless $req->is_success;
+		
+		my $json = JSON->new->pretty(1)->utf8(1)->decode($req->content)->{'Titles'}{$_[0]} || die $!;
+		
+		return 'ERROR: TID mismatch' unless $_[0] eq $json->{'TID'};
+		
+		$titles{$json->{'TID'}} = [$json->{'TitleEN'}, $json->{'Title'}];
+		
+		return $titles{$_[0]};
+	}
 }

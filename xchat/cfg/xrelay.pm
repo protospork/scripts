@@ -29,7 +29,7 @@
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			undef,		2260],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			"8bit",		2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			undef,		2277],
-	"maken-ki"			=>	["Anime", [undef],			"Maken-Ki",		undef,		2269],
+	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	"8bit",		2269],
 	symphony			=>	["Anime", [qw|doki chihiro zenyaku|],"Mashiro",	"H.264",2256], #mashiro-iro symphony
 	"ginyoku no fam"	=>	["Anime", [undef],			undef,			undef,		2253], #last exile: ginyoku no fam
 	"phi brain"			=>	["Anime", [undef],			undef,			undef,		2257],
@@ -60,6 +60,7 @@ kanjouteki (Hi10) iPhone [P]
 push @blacklist, @moreblacklist;
 
 $do_hentai = 0;
+$do_airtime = 1;
 
 ####colorscheme
 $Cname	= "09";
