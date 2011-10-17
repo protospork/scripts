@@ -1,4 +1,4 @@
-#item (show) => "category|group,group2|topicname|tracker,tracker2,etc|blacklist,of,terms"
+#item (show) => ["cat", ["group1", "group2"], "stitle", "blacklist", airtime]
 #TODO:
 #TOSHO HAS NEW CATEGORIES
 
@@ -10,37 +10,38 @@
 #	regex/strings use \x{HEX}
 
 %config = (
-	LonE				=>	["Music", [qw|LonE|],	undef,		undef],
-	nipponsei			=>	["Music", [qw|nipponsei|], undef,	undef],
-	eng					=>	["Hentai", [undef],		undef,		"raw"],	#english hentai on ehtracker\sukebei, hopefully
-	"[BSS]"				=>	["Anime", [qw|BSS|],	undef,		".avi"],
-	"THORA"				=>	["Anime", ["thora"],	undef,		undef],
-	'mayo chiki'		=>	["Anime", [qw|ayako doki|], "Chiki", undef],
-	mukuchi				=>	["Anime", [qw|hadena AFFTW horrible|], "Morita-san", undef],
-	penguindrum			=>	["Anime", [qw|gg|],		"Penguins",	"reinweiss"],
-	"mardock scramble"	=>	["Anime", [undef],		undef,		undef],
-	'idolm@ster'		=>	["Anime", [qw|doki chibiki|], "Idols", "848x480"],
+	LonE				=>	["Music", [qw|LonE|],		undef,			undef,		undef],
+	nipponsei			=>	["Music", [qw|nipponsei|],	undef,			undef,		undef],
+	eng					=>	["Hentai", [undef],			undef,			"raw",		undef],	#english hentai on ehtracker\sukebei, hopefully
+	"[BSS]"				=>	["Anime", [qw|BSS|],		undef,			".avi",		undef],
+	"THORA"				=>	["Anime", ["thora"],		undef,			undef,		undef],
+	'mayo chiki'		=>	["Anime", [qw|ayako doki|], "Chiki",		undef,		2198],
+	mukuchi				=>	["Anime", [qw|hadena AFFTW horrible|], "Morita-san", undef,2306],
+	penguindrum			=>	["Anime", [qw|gg|],			"Penguins",		"reinweiss",2225],
+	"mardock scramble"	=>	["Anime", [undef],			undef,			undef,		undef],
+	'idolm@ster'		=>	["Anime", [qw|doki chibiki|], "Idols",		"848x480",	2194],
 #fall 2011 starts here
-	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", undef],
-	chihayafuru			=>	["Anime", [qw|commie|], "Chihayafuru",	undef],
-	"gundam AGE"		=>	["Anime", [undef],		undef,		undef],
-	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	undef],
-	horizon				=>	["Anime", [qw|commie|], "Horizon",	undef], #kyoukai senjou no horizon
-	"persona 4"			=>	["Anime", [qw|commie|],	"P4",		undef],
-	"fate \x{2044} zero"=>	["Anime", [qw|commie|],	"F/0",		"8bit"],
-	"fate zero"			=>	["Anime", [qw|UTW|],	"F/0",		undef],
-	"maken-ki"			=>	["Anime", [undef],		"Maken-Ki",	undef],
-	symphony			=>	["Anime", [qw|doki chihiro zenyaku|],"Mashiro",	"H.264"], #mashiro-iro symphony
-	"ginyoku no fam"	=>	["Anime", [undef],		undef,		undef], #last exile: ginyoku no fam
-	"phi brain"			=>	["Anime", [undef],		undef,		undef],
-	bakuman				=>	["Anime", [qw|TMD SFW|],"Bakuman",	undef], #bakuman 2 #TMD and SFW
-	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],	"BokuTomo", undef], #boku ha/wa tomodachi ga sukunai
-	"Cursed x Curious"	=>	["Anime", [qw|UTW|],	"C3",		undef], #cube[d] x cursed x curious [C3]
-	"C\xB3"				=>	["Anime", [qw|commie|], "C3",		undef],
-	"ben-to"			=>	["Anime", [qw'gg'],		"Ben-to",	undef],
-	"mouretsu pirates"	=>	["Anime", [undef],		undef,		undef],
-	tamayura			=>	["Anime", [undef],		undef,		undef],
-	"Working'!!"		=>	["Anime", [qw'gg'],		"Working",	undef]
+	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", undef,2288],
+	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihayafuru",	undef,		2271],
+	"gundam AGE"		=>	["Anime", [undef],			undef,			undef,		2266],
+	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	undef,		2259],
+	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		undef,		2254], #kyoukai senjou no horizon
+	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			undef,		2260],
+	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			"8bit",		2277],
+	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			undef,		2277],
+	"maken-ki"			=>	["Anime", [undef],			"Maken-Ki",		undef,		2269],
+	symphony			=>	["Anime", [qw|doki chihiro zenyaku|],"Mashiro",	"H.264",2256], #mashiro-iro symphony
+	"ginyoku no fam"	=>	["Anime", [undef],			undef,			undef,		2253], #last exile: ginyoku no fam
+	"phi brain"			=>	["Anime", [undef],			undef,			undef,		2257],
+	bakuman				=>	["Anime", [qw|TMD SFW|],	"Bakuman",		undef,		2295], #bakuman 2 #TMD and SFW
+	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	undef,		2270], #boku ha/wa tomodachi ga sukunai
+	"Cursed x Curious"	=>	["Anime", [qw|UTW|],		"C3",			undef,		2274], #cube[d] x cursed x curious [C3]
+	"C\xB3"				=>	["Anime", [qw|commie|], 	"C3",			undef,		2274],
+	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		undef,		2275],
+	"mouretsu pirates"	=>	["Anime", [undef],			undef,			undef,		undef],
+	tamayura			=>	["Anime", [undef],			undef,			undef,		2263],
+	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		undef,		2249],
+	'mirai nikki'		=>	["Anime", [undef],			"Nikki",		undef,		2273]
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
