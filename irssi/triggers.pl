@@ -36,7 +36,7 @@ sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg ##env{home} thing is untested <_<
 	unless ($req->is_success){ print $req->status_line; return; }
 
-	do '/home/proto/.irssi/scripts/cfg/triggers.pm';
+	do $ENV{HOME}.'.irssi/scripts/cfg/triggers.pm';
 	unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
 
 	print "triggers: config $cfgver successfully loaded";
