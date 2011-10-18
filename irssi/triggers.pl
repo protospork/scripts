@@ -33,7 +33,7 @@ my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one 
 my $cfgurl = 'http://dl.dropbox.com/u/48390/misc/perl/irssi/config/triggers.pm'; #should I change this to github?
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => "/home/proto/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
+	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg ##env{home} thing is untested <_<
 	unless ($req->is_success){ print $req->status_line; return; }
 
 	do '/home/proto/.irssi/scripts/cfg/triggers.pm';
