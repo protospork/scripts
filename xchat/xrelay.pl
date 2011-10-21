@@ -183,7 +183,7 @@ sub set_airtimes {
 			my $neat_time = [localtime $info->[1]];
 			$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
 			
-			my $timer = hook_timer($info->[0], \&place_timer($info, $epno, $_));
+			my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
 			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
 			push @timers, $timer;
 		} else {
@@ -194,9 +194,8 @@ sub set_airtimes {
 
 sub place_timer {
 	my ($info, $epno, $tid) = @_;
-	command('msg '.$ctrlchan.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
+	command('msg '.$anime.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
 #	add_airtime($epno, $tid); #oh god the recursion oh god
-	return REMOVE; 
 }
 sub dump_timers {
 	for (@timers){
