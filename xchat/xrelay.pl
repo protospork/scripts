@@ -183,7 +183,7 @@ sub set_airtimes {
 			my $neat_time = [localtime $info->[1]];
 			$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
 			
-			my $timer = Xchat::hook_timer($info->[0], \&place_timer($info, $epno, $_));
+			my $timer = hook_timer($info->[0], \&place_timer($info, $epno, $_));
 			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
 			push @timers, $timer;
 		} else {
