@@ -20,6 +20,10 @@ sub now_playing {
 	$text =~ s/^OnStatus\('|'\)$//g;
 	my @info = split /'?,\s*'?/, $text;
 	my $filesize = sprintf "%.2f", ((stat($info[-1]))[7] / 1048576);
+	if ($info[5] =~ s/^00://){
+		$info[3] =~ s/^00://;
+	}
+	
 	command 'action np: '.$info[0].' || '.$info[1].': '.$info[3].'/'.$info[5].' || Size: '.$filesize.'MB';
 	return EAT_XCHAT;
 }
