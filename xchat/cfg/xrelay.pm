@@ -23,7 +23,7 @@
 #fall 2011 starts here
 #	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", undef,2288],
 	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihayafuru",	undef,		2271],
-	"gundam AGE"		=>	["Anime", [undef],			undef,			undef,		2266],
+	"gundam AGE"		=>	["Anime", [sage],			'AGE',			undef,		2266],
 	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	undef,		2259],
 	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		undef,		2254], #kyoukai senjou no horizon
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			undef,		2260],

@@ -172,7 +172,7 @@ sub set_airtimes {
 	
 	for (keys %{$TIDs}){
 		my $short = $TIDs->{$_};
-		if ($topic =~ /$short (\d+)/i){
+		if ($topic =~ /$short (\d+)/i){ # this method will only announce an airtime if the title is in the topic- I'm not too sure how I feel about that :\
 			my $epno = $1; $epno++;
 			my $info = get_airtime($_, $epno);
 			if ($info =~ /^ERROR/){
@@ -217,7 +217,7 @@ sub add_airtime { #this sub can't be trusted don't use it
 	my $neat_time = [localtime $info->[1]];
 	$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
 	
-	my $timer = Xchat::hook_timer($info->[0], \&place_timer($info, $epno));
+	my $timer = hook_timer($info->[0], \&place_timer($info, $epno));
 	prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' at '.$neat_time, $ctrlchan, $destsrvr);
 	push @timers, $timer;
 }
