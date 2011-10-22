@@ -224,7 +224,7 @@ sub get_title {
 		
 		my $person = xcc($junk->{'user'}{'screen_name'});
 		
-		my $title = $person.$text;
+		my $title = $person.' '.$text;
 		$title = '<protected account>' if $title eq '<> ';
 		return $title;
 	} elsif ($url =~ /gdata\.youtube\.com.+alt=jsonc/){
