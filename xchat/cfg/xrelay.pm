@@ -43,7 +43,9 @@
 	tamayura			=>	["Anime", [undef],			undef,			undef,		2263],
 	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		undef,		2249],
 	'mirai nikki'		=>	["Anime", [undef],			"Nikki",		undef,		2273],
-	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			undef,		undef] #comedy web series
+	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			undef,		undef], #comedy web series
+	'majikoi'			=>	["Anime", ['horrible'],		undef,			undef,		2276],
+	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			undef,		2276]
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
