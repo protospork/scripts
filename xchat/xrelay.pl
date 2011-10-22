@@ -194,7 +194,7 @@ sub set_airtimes {
 
 sub place_timer {
 	my ($info, $epno, $tid) = @_;
-	command('msg '.$anime.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
+	command('bs say '.$anime.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
 #	add_airtime($epno, $tid); #oh god the recursion oh god
 }
 sub dump_timers {
