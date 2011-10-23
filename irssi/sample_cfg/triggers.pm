@@ -25,4 +25,5 @@ $maxdicedisplayed = 7;
 	skyrim => '1320969600',
 	christmas => '1324771200'
 );
-$cfgver = '2011.10.12';
+$debug = 1; #enables extra error messages
+$cfgver = '2011.10.12-SAMPLE';

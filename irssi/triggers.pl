@@ -7,7 +7,7 @@ use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
 
-use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work.
+use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work.
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
@@ -30,14 +30,14 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
-my $cfgurl = 'http://dl.dropbox.com/u/48390/misc/perl/irssi/config/triggers.pm'; #should I change this to github?
+my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm'; #should I change this to github?
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg ##env{home} thing is untested <_<
-	unless ($req->is_success){ print $req->status_line; return; }
+		unless ($req->is_success){ print $req->status_line; return; }
 
-	do $ENV{HOME}.'.irssi/scripts/cfg/triggers.pm';
-	unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
+	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
+		unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
 
 	print "triggers: config $cfgver successfully loaded";
 	$lastcfgcheck = time;
@@ -48,6 +48,7 @@ sub event_privmsg {
 	my ($server, $data, $nick, $mask) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
 	my $return;
+	
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
 	
@@ -58,12 +59,18 @@ sub event_privmsg {
 	if ($terms[0] =~ /^(flip|ro(se|ll))$/i){ #diceroll
 		$return = dice(@terms);
 	} elsif ($terms[0] =~ /^anim[eu]$/i){ #anime suggestions
-		grep lc $target eq lc $_, (@animuchans) ? $return = animu() : return;
+		grep lc $target eq lc $_, (@animuchans) 
+			? $return = animu() 
+			: return;
 	} elsif ($terms[0] =~ /^identify$/i){
 		ident($server);
 		return;
 	} elsif ($terms[0] =~ /^farnsworth$/i){
-		if ($terms[0] eq uc $terms[0]){ $return = farnsworth(1); } else { $return = farnsworth(); }
+		if ($terms[0] eq uc $terms[0]){ 
+			$return = farnsworth(1); 
+		} else { 
+			$return = farnsworth(); 
+		}
 	} elsif ($terms[0] =~ /^stats$/i){
 		$return = stats($target);
 	} elsif ($terms[0] =~ /^(choose|sins?)$/i){ #THINK SO THAT I MAY NOT HAVE TO
@@ -72,18 +79,24 @@ sub event_privmsg {
 		$return = countdown(@terms);
 	} elsif (lc $terms[0] eq 'rehash'){
 		$return = 'uhoh';
-		$return = 'config '.$cfgver.' loaded' if loadconfig();
+		$return = 'config '.$cfgver.' loaded' 
+			if loadconfig();
 	} elsif (lc $terms[0] eq 'gs'){ #google search results page
 		shift @terms; 
-		uri_escape_utf8($_) for @terms;
+		uri_escape_utf8($_) 
+			for @terms;
 		$return = ('http://gog.is/'.(join '+', @terms));
 	} elsif (lc $terms[0] eq 'hex'){
 		$return = $nick.': '.(sprintf "%x", $terms[1]);
 	} elsif (lc $terms[0] eq 'help'){
 		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.markdown';
 	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
-		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ @terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); }
-		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ @terms = ($terms[0], (join '', @terms[1..$#terms])); }
+		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
+			@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
+		}
+		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
+			@terms = ($terms[0], (join '', @terms[1..$#terms])); 
+		}
 		$return = conversion(@terms);
 	}
 
@@ -102,7 +115,8 @@ sub choose {
 		@choices = @_;
 	}
 	
-	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] if scalar @choices == 1;
+	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] 
+		if scalar @choices == 1;
 	
 	my %chcs; #choose 1, 1, 1, 1, 1
 	for (@choices){ $chcs{$_}++; }
@@ -115,9 +129,9 @@ sub choose {
 
 sub countdown {
 	shift;
-	print $_[0];
+	print $_[0] if $debug;
 	shift if $_[0] =~ /is/i;
-	print $_[0];
+	print $_[0] if $debug;
 	print $timers{$_[0]}.' - '.time || 'AAAH';
 	if ($timers{$_[0]}){
 		my $until = $timers{$_[0]} - time;
@@ -128,7 +142,7 @@ sub countdown {
 		if ($until > 60){ $string .= int($until / 60).' minutes '; $until = $until % 60; }
 		return ($string.'until '.$_[0]);
 	} else {
-		return 'what';
+		return $dunno[(int rand $#dunno +1) -1];
 	}
 }
 
@@ -141,8 +155,8 @@ sub conversion { #this doens't really work except for money
 	my $in = uc shift;
 	$in =~ s/to$//;
 	my $out;
-	print join ', ', ($trig,$in);
-	if (defined $_[0]){ $out = uc $_[0]; print '=> '.$out; }
+	print join ', ', ($trig,$in) if $debug;
+	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
 	
 	if ($in =~ /BTC$/ || $out eq 'BTC'){
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
@@ -170,13 +184,13 @@ sub conversion { #this doens't really work except for money
 	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8($in);
 	$construct .= '=?'.uri_escape_utf8($out) if defined $out;
 	
-	print $construct;	
+	print $construct if $debug;	
 	
 	my $req = $ua->get($construct);
 	return $req->status_line unless $req->is_success;
 	
 	my $output = $req->decoded_content;
-	print $output;
+	print $output if $debug;
 	#it's not actually real JSON :(
 	#try $json->allow_barekey(1) ?
 	$output =~ /lhs: "(.*?)",rhs: "(.*?)",error: "(.*?)"/i || return 'regex error';
@@ -201,8 +215,7 @@ sub utfdecode { #why
 }
 my @prev3 = ('heads','tails','heads');
 sub dice {
-	my $flavor = $_[0];
-	$flavor = lc $flavor;
+	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
 		return join ' ', roll(5,6);
 	} elsif ($flavor eq 'flip'){
@@ -234,7 +247,11 @@ sub dice {
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 300;
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[0] > 300;
 		return $throws[0] if $xdy[0] == 1;
-		$xdy[0] <= $maxdicedisplayed ? return (join ' + ', @throws)." = $total" : return $total;	
+		if ($xdy[0] <= $maxdicedisplayed){
+			return (join ' + ', @throws)." = $total";
+		} else {
+			return $total;	
+		}
 	}
 }
 sub roll {
@@ -253,7 +270,7 @@ sub ident {
 	sleep 4;
 	$server->command("msg nickserv identify ".$botpass);
 }
-sub animu {
+sub animu { #I'm not sure this needs to bother holding back on the downloads
 	my @lines;
 	if (time - $animulastgrab > 172800){
 		print 'downloading animu.txt';
