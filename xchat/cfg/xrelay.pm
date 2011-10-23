@@ -32,9 +32,9 @@
 	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	"8bit",		2269],
 	symphony			=>	["Anime", [qw|doki chihiro zenyaku|],"Mashiro",	"H.264",2256], #mashiro-iro symphony
 	"ginyoku no fam"	=>	["Anime", [undef],			'Last Exile',	undef,		2253], #last exile: ginyoku no fam
-	'last exile'		=>	["Anime", [undef],			'Last Exile',	undef,		2253],#commie
+	'last exile'		=>	["Anime", [qw[commie sfw]],	'Last Exile',	"8bit",		2253],#commie
 	"phi brain"			=>	["Anime", [undef],			undef,			undef,		2257],
-	bakuman				=>	["Anime", [qw|sage TMD SFW|],	"Bakuman",		undef,	2295], #bakuman 2 #TMD and SFW
+	bakuman				=>	["Anime", [qw|sage TMD SFW|],"Bakuman",		'8-bit',	2295], #bakuman 2 #TMD-a-destiny and SFW-sage ##use two entries if you can't fix sage's 8bit nonsense
 	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	undef,		2270], #boku ha/wa tomodachi ga sukunai
 	"Cursed x Curious"	=>	["Anime", [qw|UTW|],		"C3",			undef,		2274], #cube[d] x cursed x curious [C3]
 	"C\xB3"				=>	["Anime", [qw|commie|], 	"C3",			undef,		2274],
