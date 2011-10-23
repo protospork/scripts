@@ -32,7 +32,8 @@
 	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	[qw'W 10bit hi10p'],	2269],
 	symphony			=>	["Anime", [qw|zenyaku oyatsu|],"Mashiro",	[undef],		2256], #mashiro-iro symphony
 	"mashiroiro symphony"=>	["Anime", [qw|doki chihiro|],"Mashiro",		[qw'W Hi10P'],	2256],
-	'last exile'		=>	["Anime", [qw[commie sfw]],	'Last Exile',	[qw'400p xvid'],2253],
+	'last exile'		=>	["Anime", [qw[commie]],	'Last Exile',	[qw'400p xvid'],2253],
+	'silver wing'		=>	["Anime", [qw|SFW|],		'Last Exile',	[qw|W Hi10P|],	2253],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		2257],
 	bakuman				=>	["Anime", [qw|TMD|],		"Bakuman",		[undef],		2295], #bakuman 2
 	'bakuman S2'		=>	["Anime", [qw|SFW sage|],	"Bakuman",		[qw'W Hi10P'],	2295],
