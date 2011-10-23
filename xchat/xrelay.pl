@@ -127,12 +127,23 @@ sub whoosh {
 			}
 			
 			if (defined($cfg_blacklist)){ 
-#				for (split /,\s*/, $cfg_blacklist){ 
-#					$other = 1
-#						if $name =~ /\Q$_\E/i;
-#				} 
-				$other = 1
-					if grep $name =~ /\Q$_\E/i, (split /,\s*/, $cfg_blacklist); #needs to be arrayfied
+				my $wl = 0;
+				if ($cfg_blacklist->[0] =~ /w/i){ #our blacklist becomes a whitelist
+					$wl = 1;
+					shift @$cfg_blacklist;
+				}
+				
+				for (@$cfg_blacklist){ 
+					if ($wl == 1){
+						if ($name =~ /\Q$_\E/i){				
+							$other = 0;
+						}
+					} else {
+						if ($name =~ /\Q$_\E/i){				
+							$other = 1;
+						}
+					}
+				}
 			}
 			
 			if ($okgroup == 1 && $other == 0){
