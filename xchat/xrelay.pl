@@ -159,25 +159,10 @@ sub whoosh {
 					else {
 						#it's the right release from the wrong group
 						#I'm reasonably sure this one should never match
-						$other = 1;
+						$other = 1
+							unless $okgroup == 1;
 					}
 				}
-#				my $wl = 0;
-#				if ($cfg_blacklist->[0] =~ /w/i){ #our blacklist becomes a whitelist
-#					$wl = 1;
-#					shift @$cfg_blacklist;
-#				}
-#				for (@$cfg_blacklist){ 
-#					if ($wl == 1){
-#						if ($name =~ /\Q$_\E/i){				
-#							$other = 0;
-#						}
-#					} else {
-#						if ($name =~ /\Q$_\E/i){				
-#							$other = 1;
-#						}
-#					}
-#				}
 			}
 			
 			if ($okgroup == 1 && $other == 0){
@@ -334,7 +319,7 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 	for (sort keys %{$json}){ #should only need the first item from this loop
 		my $ttls = get_titles($json->{$_}{'TID'});
 		
-		return 'ERROR: '.$ttls->[0].' '.$json->{$_}{'Count'}.' already aired.' if time > $json->{$_}{'EdTime'};
+		return 'ERROR: '.$ttls->[0].'/'.$ttls->[1].' '.$json->{$_}{'Count'}.' already aired.' if time > $json->{$_}{'EdTime'};
 		$timeout = $json->{$_}{'EdTime'} - time;
 		$timeout *= 1000; #we need milliseconds for hook_timer
 		return [$timeout, $json->{$_}{'EdTime'}, $ttls->[0], $ttls->[1], $json->{$_}{'ChName'}, $json->{$_}{'Count'}];
