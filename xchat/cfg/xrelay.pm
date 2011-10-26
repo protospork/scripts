@@ -1,7 +1,7 @@
 #item (show) => ["cat", ["group1", "group2"], "stitle", "blacklist", airtime]
-#TODO:
-#TOSHO HAS NEW CATEGORIES
 
+#Sample test line:
+#	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaa.eu/?page=download&tid=178017213.52MBshut up I'm testing something
 
 #	UNICODE:
 #	U+[codepoint]s from wikipedia are HEX

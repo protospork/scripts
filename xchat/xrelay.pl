@@ -7,12 +7,11 @@ use URI;
 use JSON;
 use LWP;
 
-my $ver = '3.1';
-register('relay', $ver, 'complete rewrite. again. :(', \&unload);
+my $ver = '3.11';
+register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
-hook_command('dumprelaycache', \&dumpcache);
-hook_command('dumprelaytimers', \&dump_timers);
-hook_command('lastannounce', \&sayprev);
+
+
 prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
 
@@ -23,7 +22,14 @@ my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for ev
 my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
 my %dupe; my $last = ' '; my $airtimes_set = 0;
 my %titles; #cached 'TID => [TitleEN, Title]' from syoboi
-my @timers;
+my @timers; my %timers;
+
+hook_command('lastannounce', \&sayprev);
+hook_command('dumprelaycache', \&dumpcache);
+
+hook_command('dumprelaytimers', \&dump_timers);
+hook_command('loadrelaytimers', sub { if ($airtimes_set){ prnt 'dump existing timers first'; return; } else { set_airtimes(); } });
+hook_command('listrelaytimers', \&list_timers);
 
 #Sample test line:
 #	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaa.eu/?page=download&tid=178017213.52MBshut up I'm testing something
@@ -118,31 +124,39 @@ sub whoosh {
 			if (defined($cfg_groups)){ 
 				$okgroup = 1 
 					if grep $name =~ /\[.*\Q$_\E.*\]/i, (@$cfg_groups);
-			} else { 
+			}
+			else { 
+				#we'll still take what we can get
 				$okgroup = 1; 
 			}
 			
 			if (defined($cfg_blacklist)){ 
 				for (@$cfg_blacklist){
+					last if $_ == undef;
+						
 					my ($grp, $term) = (split /:/, $_, 2)
 						|| prnt "There's an uhoh in the blacklisting section";
 					my $wl = $term =~ s/^\^//;
 					
-					if ($wl && $name =~ $grp){
+					if ($wl && $okgroup){
 						if ($name =~ /\Q$term\E/i){
-							#send it
-						} else {
+							#check the next
+						}
+						else {
 							#it's the wrong release from the right group
 							$other = 1;
 						}
-					} elsif (! $wl && $name =~ $grp){
+					}
+					elsif (! $wl && $okgroup){
 						if ($name =~ /\Q$term\E/i){
 							#it's the wrong release from the right group
 							$other = 1;
-						} else {
-							#send it
 						}
-					} else {
+						else {
+							#check the next
+						}
+					}
+					else {
 						#it's the right release from the wrong group
 						#I'm reasonably sure this one should never match
 						$other = 1;
@@ -153,7 +167,6 @@ sub whoosh {
 #					$wl = 1;
 #					shift @$cfg_blacklist;
 #				}
-				
 #				for (@$cfg_blacklist){ 
 #					if ($wl == 1){
 #						if ($name =~ /\Q$_\E/i){				
@@ -196,7 +209,8 @@ sub whoosh {
 				
 				return EAT_NONE;
 				
-			} else {
+			}
+			else {
 				command($spam, undef, $destsrvr);
 				$last = $output;
 				return EAT_NONE;
@@ -254,21 +268,23 @@ sub set_airtimes {
 	set_context($anime, $destsrvr);
 	my ($cfg,$topic) = ($_[0], get_info('topic'));
 	
-	my $TIDs = {}; #build a list of unique TIDs to request
+	#build a list of unique TIDs to request
+	my $TIDs = {}; 
 	for (values %{$cfg}){
+		#my ($tid, $stitle) = ($_->[4], $_->[2]);
 		if ($_->[4] && $_->[2]){
 			$TIDs->{$_->[4]} = $_->[2];
 		}
 	}
-	
+	#I could probably combine these two loops but :effort:
 	for (keys %{$TIDs}){
 		my $short = $TIDs->{$_};
-		if ($topic =~ /$short (\d+)/i){ # this method will only announce an airtime if the title is in the topic- I'm not too sure how I feel about that :\
+		if ($topic =~ /$short +(\d+)/i){ # this method will only announce an airtime if the title is in the topic- I'm not too sure how I feel about that :\
 			my $epno = $1; $epno++;
 			my $info = get_airtime($_, $epno);
 			if ($info =~ /^ERROR/){
 				prnt($info, $ctrlchan, $destsrvr);
-				return;
+				next;
 			}
 			
 			my $neat_time = [localtime $info->[1]];
@@ -276,7 +292,8 @@ sub set_airtimes {
 			
 			my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
 			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
-			push @timers, $timer;
+#			push @timers, $timer;
+			$timers{$short} = $timer;
 		} else {
 			next;
 		}		
@@ -289,28 +306,18 @@ sub place_timer {
 #	add_airtime($epno, $tid); #oh god the recursion oh god
 }
 sub dump_timers {
-	for (@timers){
+	for (values %timers){
 		prnt('Unhooking '.$_, $ctrlchan, $destsrvr);
 		unhook $_;
 	}
-	@timers = ( );
+#	@timers = ( );
+	%timers = ( );
 	$airtimes_set = 0;
 }
-
-sub add_airtime { #this sub can't be trusted don't use it
-	my ($epno,$tid) = ($_[0] + 1, $_[1]);
-	my $info = get_airtime($tid, $epno);
-	if ($info =~ /^ERROR/){
-		prnt($info, $ctrlchan, $destsrvr);
-		return;
+sub list_timers {
+	for (keys %timers){
+		prnt $_.': '.$timers{$_};
 	}
-	
-	my $neat_time = [localtime $info->[1]];
-	$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
-	
-	my $timer = hook_timer($info->[0], \&place_timer($info, $epno));
-	prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' at '.$neat_time, $ctrlchan, $destsrvr);
-	push @timers, $timer;
 }
 
 sub get_airtime { #there needs to be a pretty-print return option for the inevitable trigger
