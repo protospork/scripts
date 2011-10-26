@@ -7,7 +7,7 @@ use URI;
 use JSON;
 use LWP;
 
-my $ver = '3.0';
+my $ver = '3.1';
 register('relay', $ver, 'complete rewrite. again. :(', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 hook_command('dumprelaycache', \&dumpcache);
@@ -116,10 +116,6 @@ sub whoosh {
 			my ($okgroup, $other) = (0, 0);
 			
 			if (defined($cfg_groups)){ 
-#				for (@$cfg_groups){ 
-#					$okgroup = 1
-#						if $name =~ /\[.*\Q$_\E.*\]/i;
-#				} 
 				$okgroup = 1 
 					if grep $name =~ /\[.*\Q$_\E.*\]/i, (@$cfg_groups);
 			} else { 
@@ -127,23 +123,48 @@ sub whoosh {
 			}
 			
 			if (defined($cfg_blacklist)){ 
-				my $wl = 0;
-				if ($cfg_blacklist->[0] =~ /w/i){ #our blacklist becomes a whitelist
-					$wl = 1;
-					shift @$cfg_blacklist;
-				}
-				
-				for (@$cfg_blacklist){ 
-					if ($wl == 1){
-						if ($name =~ /\Q$_\E/i){				
-							$other = 0;
-						}
-					} else {
-						if ($name =~ /\Q$_\E/i){				
+				for (@$cfg_blacklist){
+					my ($grp, $term) = (split /:/, $_, 2)
+						|| prnt "There's an uhoh in the blacklisting section";
+					my $wl = $term =~ s/^\^//;
+					
+					if ($wl && $name =~ $grp){
+						if ($name =~ /\Q$term\E/i){
+							#send it
+						} else {
+							#it's the wrong release from the right group
 							$other = 1;
 						}
+					} elsif (! $wl && $name =~ $grp){
+						if ($name =~ /\Q$term\E/i){
+							#it's the wrong release from the right group
+							$other = 1;
+						} else {
+							#send it
+						}
+					} else {
+						#it's the right release from the wrong group
+						#I'm reasonably sure this one should never match
+						$other = 1;
 					}
 				}
+#				my $wl = 0;
+#				if ($cfg_blacklist->[0] =~ /w/i){ #our blacklist becomes a whitelist
+#					$wl = 1;
+#					shift @$cfg_blacklist;
+#				}
+				
+#				for (@$cfg_blacklist){ 
+#					if ($wl == 1){
+#						if ($name =~ /\Q$_\E/i){				
+#							$other = 0;
+#						}
+#					} else {
+#						if ($name =~ /\Q$_\E/i){				
+#							$other = 1;
+#						}
+#					}
+#				}
 			}
 			
 			if ($okgroup == 1 && $other == 0){
