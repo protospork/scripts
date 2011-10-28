@@ -97,7 +97,9 @@ sub magic_happens {
 			
 			push @end, $_; 
 		} 
-		$message = join ' ', @end;
+#		$message = join ' ', @end;
+		$" = ' '; #p sure this is the default, dunno if other scripts share the builtin vars
+		$message = "@end";
 		
 		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ #this is halfassed as shit fix it later
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help

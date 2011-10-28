@@ -43,7 +43,7 @@
 	"mouretsu pirates"	=>	["Anime", [undef],			undef,			[undef],		undef],
 	tamayura			=>	["Anime", [undef],			undef,			[undef],		2263],
 	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		[undef],		2249],
-	'mirai nikki'		=>	["Anime", [undef],			"Nikki",		[undef],		2273],
+	'mirai nikki'		=>	["Anime", ['SS'],			"Nikki",		[undef],		2273],
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
 	'majikoi'			=>	["Anime", ['horrible'],		undef,			[undef],		2276],
 	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			['hiryuu:^hi10p'],	2276]
