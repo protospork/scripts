@@ -1,14 +1,16 @@
 use Modern::Perl;
-use LWP;
 use LWP::Simple;
 use File::Path qw(make_path);
 use HTML::TreeBuilder;
-#Yes, this script uses both LWP and LWP::Simple. No, I am not sorry.
 
 #todo: can't trigger pages past 1
 
 my $wingit = $#ARGV; #if you launch the script with -q (or -anythingelse <_<) it won't prompt for album names
 my $album = $ARGV[-1] || die "give it a URL";
+#hardcoding proxies baaaad
+my $ua = LWP::UserAgent->new();
+$ua->proxy('http', 'http://192.168.250.125:3128/');
+# $ua->show_progress(1); #dear god that's ugly
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
@@ -16,7 +18,7 @@ if ($album =~ m{/a/}){
 	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
 }
 say $album;
-my $page = LWP::UserAgent->new()->get($album) or die "$!";
+my $page = $ua->get($album) or die "$!";
 die $page->status_line unless $page->is_success;
 
 #why did I use treebuilder for so little?
@@ -39,7 +41,9 @@ length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
 
 sub downloadalbum {
-	make_path("imgur/".$albumname);	#for some reason mkdir doesn't work.
+	#for some reason mkdir doesn't work.
+	make_path("imgur/".$albumname);	
+	
 	chdir("imgur/".$albumname);
 	my @files = glob "*";	#dupe detection database
 	my ($counter, $dupe) = (0, 0);
@@ -51,8 +55,9 @@ sub downloadalbum {
 			$dupe = 1;
 		}
 		if ($dupe == 1){ print("$_ :: Duplicate\n"); $dupe = 0; next; }
-		my $status = getstore("http://i.imgur.com/" . $_ . ".jpg", $newfilename); 
-		print("$_ :: $newfilename :: $status\n");
+		my $img = $ua->mirror("http://i.imgur.com/" . $_ . ".jpg", $newfilename); 
+		
+		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.$img->content_length.' bytes');
 	}
 }
 print $albumname;
