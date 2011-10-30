@@ -130,10 +130,10 @@ sub choose {
 sub countdown {
 	shift;
 	print $_[0] if $debug;
-	shift if $_[0] =~ /is/i;
+	shift @_ if $_[0] =~ /is/i;
 	print $_[0] if $debug;
-	print $timers{$_[0]}.' - '.time || 'AAAH';
-	if ($timers{$_[0]}){
+	print $timers{uc $_[0]}.' - '.time || 'AAAH';
+	if ($timers{uc $_[0]}){
 		my $until = $timers{$_[0]} - time;
 		my $string;
 		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
