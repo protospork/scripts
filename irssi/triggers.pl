@@ -76,7 +76,7 @@ sub event_privmsg {
 	} elsif ($terms[0] =~ /^(choose|sins?)$/i){ #THINK SO THAT I MAY NOT HAVE TO
 		$return = choose(@terms);
 	} elsif ($terms[0] =~ /^when$/i){
-		$return = countdown(@terms);
+		$return = countdown($terms[-1]); #now it's single word only but it's better than that magical 'is' problem
 	} elsif (lc $terms[0] eq 'rehash'){
 		$return = 'uhoh';
 		$return = 'config '.$cfgver.' loaded' 
@@ -128,13 +128,13 @@ sub choose {
 }
 
 sub countdown {
-	shift;
+#	shift;
 	print $_[0] if $debug;
-	shift @_ if $_[0] =~ /is/i;
-	print $_[0] if $debug;
+#	shift @_ if $_[0] =~ /is/i;
+#	print $_[0] if $debug;
 	print $timers{uc $_[0]}.' - '.time || 'AAAH';
 	if ($timers{uc $_[0]}){
-		my $until = $timers{$_[0]} - time;
+		my $until = $timers{uc $_[0]} - time;
 		my $string;
 		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
 		if ($until > 86400){ $string .= int($until / 86400).' days '; $until = $until % 86400; }
