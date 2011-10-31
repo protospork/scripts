@@ -342,13 +342,13 @@ sub imgur {
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Reposted ".$mirrored{$url}->[5]." times.\017"; 
+		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017"; 
 	} elsif (defined $mirrored{$url}){ 
 		$mirrored{$url}->[5]++;
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Reposted ".$mirrored{$url}->[5]." times.\017"; 
+		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017"; 
 	}
 	
 	#now ...actually do it
