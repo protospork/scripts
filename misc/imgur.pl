@@ -3,7 +3,9 @@ use LWP::Simple;
 use File::Path qw(make_path);
 use HTML::TreeBuilder;
 
-#todo: can't trigger pages past 1
+#todo:	can't trigger pages past 1
+#		can't into named albums
+#		doesn't do anything about bad downloads
 
 my $wingit = $#ARGV; #if you launch the script with -q (or -anythingelse <_<) it won't prompt for album names
 my $album = $ARGV[-1] || die "give it a URL";
@@ -14,9 +16,13 @@ $ua->proxy('http', 'http://192.168.250.125:3128/');
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
-	$album =~ s{/\d$|#\w+$}{};	#remove anchors to get down to the root of the album
+	$album =~ s{/\d$|#\w*$}{};	#remove anchors to get down to the root of the album
 	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
+} else {
+	die;
+	#the named albums' `browse` buttons point to a conventional url
 }
+
 say $album;
 my $page = $ua->get($album) or die "$!";
 die $page->status_line unless $page->is_success;
