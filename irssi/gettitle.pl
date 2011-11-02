@@ -150,7 +150,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	} elsif ($url =~ s{youtube\.com/watch#!}{youtube.com/watch?}i || $url =~ s{m\.youtube\.com/\S+v=([^?&=]{11})}{youtu.be/$1}i){ $return = $url." ($insult)";
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
 	} elsif ($url =~ s{(?:www\.)?(?:(?<!ca\.)(kotaku|lifehacker|gawker|io9|gizmodo|deadspin|jezebel|jalopnik))\.com/(?:#!)?(\d+)/(\S+)}{ca.$1.com/$2/$3-also-$nick-sucks}i){ int rand 5 >= 4 ? return 'gross' : return 0;
-	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; }
+	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; 
+	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; }
 	
 	
 	
