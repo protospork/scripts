@@ -3,7 +3,6 @@ use Irssi::Irc;
 use LWP::UserAgent;
 use HTML::Entities;	#?
 use JSON;
-#use Modern::Perl;	#:(
 use URI;
 use strict;
 use warnings;
@@ -19,11 +18,6 @@ $VERSION = "1.5";
     name => 'url thingy',
     description => 'grabs page titles'
 );
-
-#TODO:
-#	-spotify
-#	-following blank gawker urls [requires js support][not going to happen]
-#	-figure out this 'use vars' VS 'our' nonsense
 
 
 my %titlecache; my %lastlink; my %mirrored;
@@ -81,7 +75,6 @@ sub pubmsg {
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\?(?:\S\&)*v=)([\w-]{11})]i){
-#		if ($url !~ /^http/i){ $server->command("msg ".$target." http://".$url." (".$meanthings[(int rand scalar @meanthings)-1].")"); }
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 	}
 	
@@ -155,7 +148,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	
 	
 	
-	return $return;	#I'm not really sure why I bothered doing it this way
+	return $return;
 }
 
 sub moreshenanigans {	#now, play around with the titles themselves
@@ -211,8 +204,6 @@ sub get_title {
 		$title =~ s/_th//;
 		return $title;
 	} elsif ($url =~ /api\.twitter\.com/){	#read entire tweets instead of just 'Twitter'
-#malformed JSON string, neither array, object, number, string or atom, at character offset 0 (before 
-#"Can't connect to gda...") at /home/proto/.irssi/scripts/autorun/gettitle.pl line 233, <$fh> line 6356
 		my $junk;
 		unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; }
 
@@ -239,11 +230,10 @@ sub get_title {
 		return $title;
 	} elsif ($url =~ m{deviantart\.com/art/}){
 		my $title;
-#		$page->content =~ m|id="download-button" href="([^"]+)"|;
 		$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
 		$title = $1 || $2 || 'http://www.deviantart.com/download/deviantart_is_broken';
 		return $title;
-	} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i) {	#don't use as_string you fucking moron
+	} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i) {
 		my $title = $1;		
 		decode_entities($title);
 		
@@ -316,7 +306,6 @@ sub imgur {
 	$url =~ s/\d+\.thumbs/images/;
 	$url =~ s{thumb/(\d+)s\.}{src/$1.};
 	$url =~ /^.+\.(\w{3,4})$/;
-#	unless (! $1||$1 eq ''){ $ext = $1; }
 	$url = URI->new($url);
 	
 	
@@ -332,10 +321,9 @@ sub imgur {
 	}
 	
 	my $urlqueries = $url->clone( );
-#	$urlnoqueries =~ s/\?\w+$//;
 	$url->query(undef);
 	
-	$msg = ' '.$msg; #this was marginally easier than adding the space to a bunch of other lines
+	$msg = ' '.$msg;
 	
 	#OH GOD YOU FORGOT TO CHECK FOR DUPES
 	if ($url =~ /s3\.amazonaws\S+\?\S+/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this

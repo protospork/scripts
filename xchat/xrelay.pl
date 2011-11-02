@@ -6,7 +6,7 @@ use vars qw( %config $cfgpath @blacklist $do_hentai $do_airtime $Ccomnt $Cname $
 use URI;
 use JSON;
 use LWP;
-use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core anyway
+use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core
 
 my $ver = '3.13';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
@@ -16,7 +16,6 @@ hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 prnt("relay $ver loaded");
 sub unload { prnt "relay $ver unloaded"; }
 
-##shouldn't this all be in the config file? (nope)
 my $cfgpath = 'X:\My Dropbox\Public\GIT\scripts\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
