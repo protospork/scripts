@@ -33,7 +33,7 @@ my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one 
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm'; #should I change this to github?
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg ##env{home} thing is untested <_<
+	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
 		unless ($req->is_success){ print $req->status_line; return; }
 
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
@@ -89,7 +89,7 @@ sub event_privmsg {
 	} elsif (lc $terms[0] eq 'hex'){
 		$return = $nick.': '.(sprintf "%x", $terms[1]);
 	} elsif (lc $terms[0] eq 'help'){
-		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.markdown';
+		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd';
 	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
 		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
 			@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
@@ -124,14 +124,14 @@ sub choose {
 		return ':| '.$meanthings[(int rand scalar @meanthings)-1];
 	}
 	
+	#hehe
+	return 'Nah' if int rand 100 <= 4;
+	
 	return $choices[(int rand ($#choices + 1))-1];
 }
 
 sub countdown {
-#	shift;
 	print $_[0] if $debug;
-#	shift @_ if $_[0] =~ /is/i;
-#	print $_[0] if $debug;
 	print $timers{uc $_[0]}.' - '.time || 'AAAH';
 	if ($timers{uc $_[0]}){
 		my $until = $timers{uc $_[0]} - time;
