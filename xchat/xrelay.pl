@@ -6,8 +6,9 @@ use vars qw( %config $cfgpath @blacklist $do_hentai $do_airtime $Ccomnt $Cname $
 use URI;
 use JSON;
 use LWP;
+use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core anyway
 
-my $ver = '3.12';
+my $ver = '3.13';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -326,6 +327,10 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 	my $timeout;
 	for (sort keys %{$json}){ #should only need the first item from this loop
 		my $ttls = get_titles($json->{$_}{'TID'});
+		
+		if (! $ttls->[0]){
+			$ttls->[0] = unidecode($ttls->[1]);
+		}
 		
 		if (time > $json->{$_}{'EdTime'}){
 			return 'EXCEPTION: '.$ttls->[0].'/'.$ttls->[1].' '.$json->{$_}{'Count'}.' already aired.';			

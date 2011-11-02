@@ -3,6 +3,7 @@ use LWP;
 use JSON;
 use Xchat qw':all';
 use HTML::TreeBuilder;
+use Text::Unidecode;
 
 #absolutely none of the commands in this script have error handling and that's terrible
 
@@ -78,6 +79,9 @@ hook_command('hex', sub{prnt($_[0][1].' is '.(sprintf "%x", $_[0][1])); return E
 #converts ascii strings to wideface japanese characters
 hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/; for (split //, $st){ $_ = chr((ord $_) + 65216) unless $_ !~ /[a-z]/; $_ = chr((ord $_) + 65248) unless $_ !~ /[0-9~\[\]:;'"<>}{|\\\/_,?!@#$%^&*()\-+=*]/; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
+
+#translits kana/kanji to romaji
+hook_command('translit', sub{command('say '.unidecode($_[1][1])); return EAT_XCHAT; });
 
 
 hook_command('ign', \&ign);
