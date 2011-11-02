@@ -97,7 +97,7 @@ sub body {
 	$browser->proxy('http', 'http://192.168.250.125:3128/');
 	my $page = $browser->get($thread);
 	unless ($page->is_success) {
-		my $uhoh = $browser->get('http://www.4chan.com');
+		my $uhoh = $browser->get('http://www.4chan.com'); #I wonder how squid will affect this. hm.
 		if ($uhoh->is_success) {
 			say "404 at " . time;
 			done();
@@ -122,7 +122,7 @@ sub body {
 	my @junk = $html =~
 m{(<span class="filesize">File : .+?src=http.+?name=".+?class="filetitle">.+?class="postername".+?<span id=".+?class="quotejs">.+?</blockquote>|class="quotejs">[\dx]+</a>.+?<span class="filesize">.+?</blockquote>)}gsi
 	  ;                                                                #fuckin /b/ with those Xes
-	exit print "bad regex ln90 or page GET failed" unless exists $junk[0];    #exists on an array is deprecated, I believe
+	exit print "bad regex ln123 or page GET failed" unless exists $junk[0];    #exists on an array is deprecated, I believe
 
 	#	open TEST, '>', 'test.txt';	print TEST (join "\n\n", @junk); close TEST;
 
@@ -135,8 +135,7 @@ m{(<span class="filesize">File : .+?src=http.+?name=".+?class="filetitle">.+?cla
 		if ($rename == 1) {                                                   #conditionally restore original names to images
 			($realname{$link}) = $trash =~ m{title="([^"]+?)"}si;
 			$realname{$link} =~ s/\.+/./g;
-			$realname{$link} =~ s/ +/_/g;
-			$realname{$link} =~ s/\?/_/g;
+			$realname{$link} =~ s/ +|\?/_/g;
 		} else {
 			($realname{$link}) = $link =~ m{\S+/(\d+\.\w+)$};
 		}
