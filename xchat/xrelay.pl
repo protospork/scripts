@@ -7,7 +7,7 @@ use URI;
 use JSON;
 use LWP;
 
-my $ver = '3.11';
+my $ver = '3.12';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -270,6 +270,14 @@ sub set_airtimes {
 			if ($info =~ /^ERROR/){
 				prnt($info, $ctrlchan, $destsrvr);
 				next;
+			} elsif ($info =~ /^EXCEPTION/){
+				prnt($info, $ctrlchan, $destsrvr);
+				undef $info;
+				$info = get_airtime($_, ++$epno);
+				if ($info =~ /^ERROR|EXCEPTION/){ #I'm fucking retarded
+					prnt($info, $ctrlchan, $destsrvr);
+					next;
+				}
 			}
 			
 			my $neat_time = [localtime $info->[1]];
@@ -319,7 +327,9 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 	for (sort keys %{$json}){ #should only need the first item from this loop
 		my $ttls = get_titles($json->{$_}{'TID'});
 		
-		return 'ERROR: '.$ttls->[0].'/'.$ttls->[1].' '.$json->{$_}{'Count'}.' already aired.' if time > $json->{$_}{'EdTime'};
+		if (time > $json->{$_}{'EdTime'}){
+			return 'EXCEPTION: '.$ttls->[0].'/'.$ttls->[1].' '.$json->{$_}{'Count'}.' already aired.';			
+		}
 		$timeout = $json->{$_}{'EdTime'} - time;
 		$timeout *= 1000; #we need milliseconds for hook_timer
 		return [$timeout, $json->{$_}{'EdTime'}, $ttls->[0], $ttls->[1], $json->{$_}{'ChName'}, $json->{$_}{'Count'}];
