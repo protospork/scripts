@@ -81,12 +81,9 @@ hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/;
 hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 
 #translits kana/kanji to romaji
-hook_command('translit', sub{command('say '.unidecode($_[1][1])); return EAT_XCHAT; });
-
-
-hook_command('ign', \&ign);
-sub ign { #don't remember when or why I wrote this
-	my $hi = LWP::UserAgent->new->get('http://www.jocchan.com/stuff/IGeNerator9/')->decoded_content || '<html><body><p>uhoh</p><p>balls';
-	my @ref = HTML::TreeBuilder->new_from_content($hi)->look_down(_tag => 'p');
-	prnt $ref[1]->as_text;
+hook_command('translit', \&tlit); #this is fine except in the sense that it doesn't fucking work
+sub tlit {
+	my $line = Text::Unidecode::unidecode($_[1][1]);
+	command('say '.$line); 
+	return EAT_XCHAT; 
 }
