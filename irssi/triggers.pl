@@ -72,18 +72,18 @@ sub event_privmsg {
 		identify	=>	\&ident($server)		
 	);
 	my %calls = (
-		when		=>	\&countdown(@_), #can only handle a single word
-		roll		=>	\&dice(@_),
-		choose		=>	\&choose(@_),
-		gs			=>	sub { shift @_; uri_escape_utf8($_) for @_; return ('http://gog.is/'.(join '+', @_)); },
-		'hex'		=>	sub { return ($nick.': '.(sprintf "%x", $_[1])); },
+		when		=>	\&countdown(@terms), #can only handle a single word
+		roll		=>	\&dice(@terms),
+		choose		=>	\&choose(@terms),
+		gs			=>	sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); },
+		'hex'		=>	sub { return ($nick.': '.(sprintf "%x", $terms[1])); },
 		help		=>	sub { return 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd'; }, #check out github pages
 		
-		c			=>	\&conversion(@_), #augh
-		calc		=>	\&conversion(@_),
-		'x'			=>	\&conversion(@_),
-		xe			=>	\&conversion(@_),
-		cvt			=>	\&conversion(@_)
+		c			=>	\&conversion(@terms), #augh
+		calc		=>	\&conversion(@terms),
+		'x'			=>	\&conversion(@terms),
+		xe			=>	\&conversion(@terms),
+		cvt			=>	\&conversion(@terms)
 	);
 	
 	if (scalar @terms == 1){
@@ -91,7 +91,7 @@ sub event_privmsg {
 	} else {
 		$return = ($calls{$terms[0]} || sub { return 'STILL NO'; })->(@terms);
 	}
-	$server->command($msg.' '.$target.' '.$return);
+	$server->command('msg '.$target.' '.$return);
 }
 
 sub choose { 
