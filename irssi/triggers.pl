@@ -8,7 +8,7 @@ use vars qw($VERSION %IRSSI);
 use JSON;
 use feature 'switch';
 
-use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work.
+use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
@@ -31,11 +31,11 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
-my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm'; #should I change this to github?
+my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
-		unless ($req->is_success){ print $req->status_line; return; }
+		unless ($req->is_success){ die $req->status_line; }
 
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
 		unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
@@ -62,7 +62,7 @@ sub event_privmsg {
 		when (/^flip|^ro(ll|se)/i){	$return = dice	(@terms); }
 		when (/^sins?$|^choose/i){	$return = choose(@terms); }
 		when (/^farnsworth$/i){		$return = ($_ eq uc $_ ? farnsworth(1) : farnsworth()); }
-		when (/^anim[eu]$/i){		$return = animu(); }
+		when (/^anim[eu]$/i){		$return = animu() if grep $target eq $_, @animuchans; }
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when/i){			$return = countdown(@terms); }
@@ -70,43 +70,10 @@ sub event_privmsg {
 		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
 		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
+		default { $return = 'uhoh'; }
 	}
-	my %triggers = (
-#'toss me some random numbers'
-		flip		=>	\&dice('flip'),
-		rose		=>	\&dice('rose'),
-		sins		=>	\&choose('sins'),
-		'sin'		=>	\&choose('sins'),		
-#'grab things from a text file'
-		farnsworth	=>	\&farnsworth, #ideally move the case check into the sub
-		FARNSWORTH	=>	\&farnsworth(1),
-		anime		=>	\&animu($target), #needs channel check moved into the sub, currently does nothing with that $target
-		animu		=>	\&animu($target),
-		stats		=>	\&stats($target),
-		identify	=>	\&ident($server)		
-	);
-	my %calls = (
-		when		=>	\&countdown(@terms), #can only handle a single word
-		roll		=>	\&dice(@terms),
-		choose		=>	\&choose(@terms),
-		gs			=>	sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); },
-		'hex'		=>	sub { return ($nick.': '.(sprintf "%x", $terms[1])); },
-		help		=>	sub { return 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd'; }, #check out github pages
-		
-		c			=>	\&conversion(@terms), #augh
-		calc		=>	\&conversion(@terms),
-		'x'			=>	\&conversion(@terms),
-		xe			=>	\&conversion(@terms),
-		cvt			=>	\&conversion(@terms)
-	);
-	
-#	if (scalar @terms == 1){
-#		$return = ($triggers{$terms[0]} || sub { return 'NO'; })->();
-#	} else {
-#		$return = ($calls{$terms[0]} || sub { return 'STILL NO'; })->(@terms);
-#	}
-#	$server->command('msg '.$target.' '.$return);
-#}
+	$server->command('msg '.$target.' '.$return);
+}
 
 sub choose { 
 	my $call = shift;
@@ -116,7 +83,7 @@ sub choose {
 	} elsif ((join ' ', (@_)) =~ /,/){
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
-		@choices = @_;
+		scalar @_ >= 2 ? @choices = @_ : return 'it helps to have something to choose from';
 	}
 	
 	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] 
@@ -135,7 +102,7 @@ sub choose {
 }
 
 sub countdown {
-	if (! @_){ #help message
+	if (! @_ || scalar @_ == 0){ #help message
 		return (join ', ', keys %timers);
 	}
 	print $_[-1] if $debug;
@@ -149,7 +116,7 @@ sub countdown {
 		if ($until > 60){ $string .= int($until / 60).' minutes '; $until = $until % 60; }
 		return ($string.'until '.$_[-1]);
 	} else {
-		return $dunno[(int rand $#dunno +1) -1];
+		return lc(join ', ', keys %timers);
 	}
 }
 
