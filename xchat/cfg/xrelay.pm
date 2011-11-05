@@ -31,7 +31,7 @@
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			[undef],		2260],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		2277],
-	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	['fffpeeps:^10bit', 'hiryuu:^hi10p'],	2269],
+	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	['fffpeeps:^10bit', 'hiryuu:^Hi10P'],	2269],
 	symphony			=>	["Anime", [qw|zenyaku doki|],"Mashiro",		['doki:^hi10p'],2256], #mashiro-iro symphony
 	'last exile'		=>	["Anime", [qw[commie sfw]],	'Last Exile',	['sfw:^hi10p'],	2253],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		2257],
@@ -46,7 +46,7 @@
 	'mirai nikki'		=>	["Anime", ['SS'],			"Nikki",		[undef],		2273],
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
 	'majikoi'			=>	["Anime", ['horrible'],		undef,			[undef],		2276],
-	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			['hiryuu:^hi10p'],	2276],
+	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			['hiryuu:^Hi10P'],	2276],
 	'shana final'		=>	["Anime", ['eclipse'],		'Shana',		[undef],		undef] #anidb is down so I have no idea about the TID
 );
 @blacklist = qw( 

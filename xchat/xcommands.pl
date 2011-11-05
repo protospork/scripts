@@ -81,9 +81,13 @@ hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/;
 hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 
 #translits kana/kanji to romaji
-hook_command('translit', \&tlit); #this is fine except in the sense that it doesn't fucking work
+hook_command('translit', \&trans); #this is fine except in the sense that it doesn't fucking work
 sub tlit {
-	my $line = Text::Unidecode::unidecode($_[1][1]);
+	my $line = unidecode($_[1][1]);
 	command('say '.$line); 
 	return EAT_XCHAT; 
+}
+sub trans { #jesus fucking christ seriously
+	my $line = $_[1][1];
+	command('eval use Text::Unidecode; $text = "'.$line.'"; Xchat::command("say ".unidecode($text));';
 }
