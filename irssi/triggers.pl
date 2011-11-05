@@ -121,6 +121,9 @@ sub choose {
 }
 
 sub countdown {
+	if (! @_){ #help message
+		return (join ', ', keys %timers);
+	}
 	print $_[-1] if $debug;
 	print $timers{uc $_[-1]}.' - '.time || 'AAAH';
 	if ($timers{uc $_[-1]}){
