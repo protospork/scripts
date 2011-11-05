@@ -94,66 +94,6 @@ sub event_privmsg {
 	$server->command($msg.' '.$target.' '.$return);
 }
 
-sub dontcallme {
-	my ($server, $data, $nick, $mask) = @_;
-	my ($target, $text) = split(/ :/, $data, 2);
-	my $return;
-	
-	loadconfig() if time - $lastcfgcheck > 86400;
-	return if grep lc $target eq lc $_, (@offchans);
-	
-	return if $text !~ /^\s*\.(.+?)\s*$/;
-
-	my @terms = split /\s+/, $1;
-		
-	if ($terms[0] =~ /^(flip|ro(se|ll))$/i){ #diceroll
-		$return = dice(@terms);
-	} elsif ($terms[0] =~ /^anim[eu]$/i){ #anime suggestions
-		grep lc $target eq lc $_, (@animuchans) 
-			? $return = animu() 
-			: return;
-	} elsif ($terms[0] =~ /^identify$/i){
-		ident($server);
-		return;
-	} elsif ($terms[0] =~ /^farnsworth$/i){
-		if ($terms[0] eq uc $terms[0]){ 
-			$return = farnsworth(1); 
-		} else { 
-			$return = farnsworth(); 
-		}
-	} elsif ($terms[0] =~ /^stats$/i){
-		$return = stats($target);
-	} elsif ($terms[0] =~ /^(choose|sins?)$/i){ #THINK SO THAT I MAY NOT HAVE TO
-		$return = choose(@terms);
-	} elsif ($terms[0] =~ /^when$/i){
-		$return = countdown($terms[-1]); #now it's single word only but it's better than that magical 'is' problem
-	} elsif (lc $terms[0] eq 'rehash'){
-		$return = 'uhoh';
-		$return = 'config '.$cfgver.' loaded' 
-			if loadconfig();
-	} elsif (lc $terms[0] eq 'gs'){ #google search results page
-		shift @terms; 
-		uri_escape_utf8($_) 
-			for @terms;
-		$return = ('http://gog.is/'.(join '+', @terms));
-	} elsif (lc $terms[0] eq 'hex'){
-		$return = $nick.': '.(sprintf "%x", $terms[1]);
-	} elsif (lc $terms[0] eq 'help'){
-		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd';
-	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
-		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
-			@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
-		}
-		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
-			@terms = ($terms[0], (join '', @terms[1..$#terms])); 
-		}
-		$return = conversion(@terms);
-	}
-
-	return unless $return;
-	$server->command("msg $target $return");
-}
-
 sub choose { 
 	my $call = shift;
 	my @choices;
