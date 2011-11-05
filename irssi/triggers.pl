@@ -6,6 +6,7 @@ use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
+use feature 'switch';
 
 use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work.
 
@@ -57,6 +58,19 @@ sub event_privmsg {
 	my @terms = split /\s+/, $1;
 	
 	#a 'trigger' doesn't have any additional info after it (needless distinction? probably)
+	given ($terms[0]){
+		when (/^flip|^ro(ll|se)/i){	$return = dice	(@terms); }
+		when (/^sins?$|^choose/i){	$return = choose(@terms); }
+		when (/^farnsworth$/i){		$return = ($_ eq uc $_ ? farnsworth(1) : farnsworth()); }
+		when (/^anim[eu]$/i){		$return = animu(); }
+		when (/^stats$/i){			$return = status($target); }
+		when (/^identify$/){		$return = ident($server); }
+		when (/^when/i){			$return = countdown(@terms); }
+		when (/^gs/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
+		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
+		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
+		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms);
+	}
 	my %triggers = (
 #'toss me some random numbers'
 		flip		=>	\&dice('flip'),
@@ -86,13 +100,13 @@ sub event_privmsg {
 		cvt			=>	\&conversion(@terms)
 	);
 	
-	if (scalar @terms == 1){
-		$return = ($triggers{$terms[0]} || sub { return 'NO'; })->();
-	} else {
-		$return = ($calls{$terms[0]} || sub { return 'STILL NO'; })->(@terms);
-	}
-	$server->command('msg '.$target.' '.$return);
-}
+#	if (scalar @terms == 1){
+#		$return = ($triggers{$terms[0]} || sub { return 'NO'; })->();
+#	} else {
+#		$return = ($calls{$terms[0]} || sub { return 'STILL NO'; })->(@terms);
+#	}
+#	$server->command('msg '.$target.' '.$return);
+#}
 
 sub choose { 
 	my $call = shift;
