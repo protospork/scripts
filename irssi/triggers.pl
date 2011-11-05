@@ -12,7 +12,7 @@ use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @of
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
-$VERSION = "2.20.21";
+$VERSION = "2.3";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -70,7 +70,7 @@ sub event_privmsg {
 		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
 		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
-		default { $return = 'uhoh'; }
+		default { return; }
 	}
 	$server->command('msg '.$target.' '.$return);
 }
