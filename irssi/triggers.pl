@@ -55,43 +55,53 @@ sub event_privmsg {
 	return if $text !~ /^\s*\.(.+?)\s*$/;
 
 	my @terms = split /\s+/, $1;
-	
-	#a 'trigger' doesn't have any additional info after it (needless distinction? probably)
-	my %triggers = (
-#'toss me some random numbers'
-		flip		=>	\&dice('flip'),
-		rose		=>	\&dice('rose'),
-		sins		=>	\&choose('sins'),
-		'sin'		=>	\&choose('sins'),		
-#'grab things from a text file'
-		farnsworth	=>	\&farnsworth, #ideally move the case check into the sub
-		FARNSWORTH	=>	\&farnsworth(1),
-		anime		=>	\&animu($target), #needs channel check moved into the sub, currently does nothing with that $target
-		animu		=>	\&animu($target),
-		stats		=>	\&stats($target),
-		identify	=>	\&ident($server)		
-	);
-	my %calls = (
-		when		=>	\&countdown(@_), #can only handle a single word
-		roll		=>	\&dice(@_),
-		choose		=>	\&choose(@_),
-		gs			=>	sub { shift @_; uri_escape_utf8($_) for @_; return ('http://gog.is/'.(join '+', @_)); },
-		'hex'		=>	sub { return ($nick.': '.(sprintf "%x", $_[1])); },
-		help		=>	sub { return 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd'; }, #check out github pages
 		
-		c			=>	\&conversion(@_), #augh
-		calc		=>	\&conversion(@_),
-		'x'			=>	\&conversion(@_),
-		xe			=>	\&conversion(@_),
-		cvt			=>	\&conversion(@_)
-	);
-	
-	if (scalar @terms == 1){
-		$return = ($triggers{$terms[0]} || sub { return 'NO'; })->();
-	} else {
-		$return = ($calls{$terms[0]} || sub { return 'STILL NO'; })->(@terms);
+	if ($terms[0] =~ /^(flip|ro(se|ll))$/i){ #diceroll
+		$return = dice(@terms);
+	} elsif ($terms[0] =~ /^anim[eu]$/i){ #anime suggestions
+		grep lc $target eq lc $_, (@animuchans) 
+			? $return = animu() 
+			: return;
+	} elsif ($terms[0] =~ /^identify$/i){
+		ident($server);
+		return;
+	} elsif ($terms[0] =~ /^farnsworth$/i){
+		if ($terms[0] eq uc $terms[0]){ 
+			$return = farnsworth(1); 
+		} else { 
+			$return = farnsworth(); 
+		}
+	} elsif ($terms[0] =~ /^stats$/i){
+		$return = stats($target);
+	} elsif ($terms[0] =~ /^(choose|sins?)$/i){ #THINK SO THAT I MAY NOT HAVE TO
+		$return = choose(@terms);
+	} elsif ($terms[0] =~ /^when$/i){
+		$return = countdown($terms[-1]); #now it's single word only but it's better than that magical 'is' problem
+	} elsif (lc $terms[0] eq 'rehash'){
+		$return = 'uhoh';
+		$return = 'config '.$cfgver.' loaded' 
+			if loadconfig();
+	} elsif (lc $terms[0] eq 'gs'){ #google search results page
+		shift @terms; 
+		uri_escape_utf8($_) 
+			for @terms;
+		$return = ('http://gog.is/'.(join '+', @terms));
+	} elsif (lc $terms[0] eq 'hex'){
+		$return = $nick.': '.(sprintf "%x", $terms[1]);
+	} elsif (lc $terms[0] eq 'help'){
+		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd';
+	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
+		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
+			@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
+		}
+		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
+			@terms = ($terms[0], (join '', @terms[1..$#terms])); 
+		}
+		$return = conversion(@terms);
 	}
-	$server->command($msg.' '.$target.' '.$return);
+
+	return unless $return;
+	$server->command("msg $target $return");
 }
 
 sub choose { 
@@ -121,16 +131,16 @@ sub choose {
 }
 
 sub countdown {
-	print $_[-1] if $debug;
-	print $timers{uc $_[-1]}.' - '.time || 'AAAH';
-	if ($timers{uc $_[-1]}){
-		my $until = $timers{uc $_[-1]} - time;
+	print $_[0] if $debug;
+	print $timers{uc $_[0]}.' - '.time || 'AAAH';
+	if ($timers{uc $_[0]}){
+		my $until = $timers{uc $_[0]} - time;
 		my $string;
 		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
 		if ($until > 86400){ $string .= int($until / 86400).' days '; $until = $until % 86400; }
 		if ($until > 3600){ $string .= int($until / 3600).' hours '; $until = $until % 3600; }
 		if ($until > 60){ $string .= int($until / 60).' minutes '; $until = $until % 60; }
-		return ($string.'until '.$_[-1]);
+		return ($string.'until '.$_[0]);
 	} else {
 		return $dunno[(int rand $#dunno +1) -1];
 	}
@@ -139,21 +149,14 @@ sub countdown {
 sub conversion { #this doens't really work except for money
 	#only works with three inputs
 #	my ($trig, $in, $out) = @_;
-	my @terms = @_;
-	if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
-		@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
-	}
-	if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
-		@terms = ($terms[0], (join '', @terms[1..$#terms])); 
-	}
 
 	#works with two or three inputs
-	my $trig = uc $terms[0];
-	my $in = uc $terms[1];
+	my $trig = uc shift;
+	my $in = uc shift;
 	$in =~ s/to$//;
 	my $out;
 	print join ', ', ($trig,$in) if $debug;
-	if (defined $terms[0] && $debug == 1){ $out = uc $terms[0]; print '=> '.$out; }
+	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
 	
 	if ($in =~ /BTC$/ || $out eq 'BTC'){
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
