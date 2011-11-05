@@ -6,8 +6,9 @@ use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
+use feature 'switch';
 
-use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work.
+use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 
@@ -30,11 +31,11 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
-my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm'; #should I change this to github?
+my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
-		unless ($req->is_success){ print $req->status_line; return; }
+		unless ($req->is_success){ die $req->status_line; }
 
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
 		unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
@@ -55,53 +56,22 @@ sub event_privmsg {
 	return if $text !~ /^\s*\.(.+?)\s*$/;
 
 	my @terms = split /\s+/, $1;
-		
-	if ($terms[0] =~ /^(flip|ro(se|ll))$/i){ #diceroll
-		$return = dice(@terms);
-	} elsif ($terms[0] =~ /^anim[eu]$/i){ #anime suggestions
-		grep lc $target eq lc $_, (@animuchans) 
-			? $return = animu() 
-			: return;
-	} elsif ($terms[0] =~ /^identify$/i){
-		ident($server);
-		return;
-	} elsif ($terms[0] =~ /^farnsworth$/i){
-		if ($terms[0] eq uc $terms[0]){ 
-			$return = farnsworth(1); 
-		} else { 
-			$return = farnsworth(); 
-		}
-	} elsif ($terms[0] =~ /^stats$/i){
-		$return = stats($target);
-	} elsif ($terms[0] =~ /^(choose|sins?)$/i){ #THINK SO THAT I MAY NOT HAVE TO
-		$return = choose(@terms);
-	} elsif ($terms[0] =~ /^when$/i){
-		$return = countdown($terms[-1]); #now it's single word only but it's better than that magical 'is' problem
-	} elsif (lc $terms[0] eq 'rehash'){
-		$return = 'uhoh';
-		$return = 'config '.$cfgver.' loaded' 
-			if loadconfig();
-	} elsif (lc $terms[0] eq 'gs'){ #google search results page
-		shift @terms; 
-		uri_escape_utf8($_) 
-			for @terms;
-		$return = ('http://gog.is/'.(join '+', @terms));
-	} elsif (lc $terms[0] eq 'hex'){
-		$return = $nick.': '.(sprintf "%x", $terms[1]);
-	} elsif (lc $terms[0] eq 'help'){
-		$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd';
-	} elsif ($terms[0] =~ /^(c(alc|vt)?|xe?)$/i){
-		if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
-			@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
-		}
-		if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
-			@terms = ($terms[0], (join '', @terms[1..$#terms])); 
-		}
-		$return = conversion(@terms);
+	
+	given ($terms[0]){
+		when (/^flip|^ro(ll|se)/i){	$return = dice	(@terms); }
+		when (/^sins?$|^choose/i){	$return = choose(@terms); }
+		when (/^farnsworth$/i){		$return = ($_ eq uc $_ ? farnsworth(1) : farnsworth()); }
+		when (/^anim[eu]$/i){		$return = animu() if grep $target eq $_, @animuchans; }
+		when (/^stats$/i){			$return = status($target); }
+		when (/^identify$/){		$return = ident($server); }
+		when (/^when/i){			$return = countdown(@terms); }
+		when (/^gs/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
+		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
+		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
+		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
+		default { $return = 'uhoh'; }
 	}
-
-	return unless $return;
-	$server->command("msg $target $return");
+	$server->command('msg '.$target.' '.$return);
 }
 
 sub choose { 
@@ -112,7 +82,7 @@ sub choose {
 	} elsif ((join ' ', (@_)) =~ /,/){
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
-		@choices = @_;
+		scalar @_ >= 2 ? @choices = @_ : return 'it helps to have something to choose from';
 	}
 	
 	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] 
@@ -131,10 +101,14 @@ sub choose {
 }
 
 sub countdown {
-	print $_[0] if $debug;
-	print $timers{uc $_[0]}.' - '.time || 'AAAH';
-	if ($timers{uc $_[0]}){
-		my $until = $timers{uc $_[0]} - time;
+
+	if (! @_ || scalar @_ == 0){ #help message
+		return (join ', ', keys %timers);
+	}
+	print $_[-1] if $debug;
+	print $timers{uc $_[-1]}.' - '.time || 'AAAH';
+	if ($timers{uc $_[-1]}){
+		my $until = $timers{uc $_[-1]} - time;
 		my $string;
 		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
 		if ($until > 86400){ $string .= int($until / 86400).' days '; $until = $until % 86400; }
@@ -142,7 +116,7 @@ sub countdown {
 		if ($until > 60){ $string .= int($until / 60).' minutes '; $until = $until % 60; }
 		return ($string.'until '.$_[0]);
 	} else {
-		return $dunno[(int rand $#dunno +1) -1];
+		return lc(join ', ', keys %timers);
 	}
 }
 
