@@ -69,7 +69,7 @@ sub event_privmsg {
 		when (/^gs/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
 		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
-		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms);
+		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
 	}
 	my %triggers = (
 #'toss me some random numbers'
