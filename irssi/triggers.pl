@@ -123,6 +123,7 @@ sub choose {
 }
 
 sub countdown {
+
 	if (! @_ || scalar @_ == 0){ #help message
 		return (join ', ', keys %timers);
 	}
@@ -144,21 +145,14 @@ sub countdown {
 sub conversion { #this doens't really work except for money
 	#only works with three inputs
 #	my ($trig, $in, $out) = @_;
-	my @terms = @_;
-	if (scalar @terms >= 4 && lc $terms[0] =~ /^(xe?|cvt)$/i){ 
-		@terms = ($terms[0], (join '', @terms[1..($#terms-1)]), $terms[-1]); 
-	}
-	if (scalar @terms > 2 && lc $terms[0] =~ /^c(alc)?$/i){ 
-		@terms = ($terms[0], (join '', @terms[1..$#terms])); 
-	}
 
 	#works with two or three inputs
-	my $trig = uc $terms[0];
-	my $in = uc $terms[1];
+	my $trig = uc shift;
+	my $in = uc shift;
 	$in =~ s/to$//;
 	my $out;
 	print join ', ', ($trig,$in) if $debug;
-	if (defined $terms[0] && $debug == 1){ $out = uc $terms[0]; print '=> '.$out; }
+	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
 	
 	if ($in =~ /BTC$/ || $out eq 'BTC'){
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
