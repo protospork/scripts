@@ -60,8 +60,7 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip|^ro(ll|se)/i){	$return = dice	(@terms); }
 		when (/^sins?$|^choose/i){	$return = choose(@terms); }
-		when (/^farnsworth$/i){		$return = ($_ eq uc $_ ? farnsworth(1) : farnsworth()); }
-		when (/^anim[eu]$/i){		$return = animu() if grep $target eq $_, @animuchans; }
+		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); } #the dual regex thing may turn out annoying
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when/i){			$return = countdown(@terms); }
@@ -71,7 +70,30 @@ sub event_privmsg {
 		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
 		default { return; }
 	}
-	$server->command('msg '.$target.' '.$return);
+	$server->command('msg '.$target.' '.$return) if $return;
+}
+
+sub readtext {
+	my $tgt;
+	given ($_[0]){
+		when (/farnsworth/i){	$tgt = 'http://dl.dropbox.com/u/48390/misc/txt/farnsworth.txt'; } #todo: make one $listloc in config
+		when (/anim[eu]/i){		$tgt = 'http://dl.dropbox.com/u/48390/misc/txt/animu.txt'; }		#and keep all the textfiles there
+		default { return; }
+	}
+	my $req = $ua->get($tgt);
+	return 'error: '.$req->status_line 
+		unless $req->is_success;
+	
+	my @lines = split /[\r\n]+/, $req->content;
+	return 'error: protospork is retarded' 
+		if scalar @lines == 1;
+	my $line = $lines[(int rand ($#lines + 1) - 1)];
+	($line = uc $line) if ($_[0] eq uc $_[0]);
+	
+	#turns out URLs don't like to be uppercased
+	$line =~ s/(HTTP\S+)/lc $1/eg;
+	
+	return $line;
 }
 
 sub choose { 
@@ -243,33 +265,6 @@ sub ident {
 	$server->command("nick".$botnick);
 	sleep 4;
 	$server->command("msg nickserv identify ".$botpass);
-}
-sub animu { #I'm not sure this needs to bother holding back on the downloads
-	my @lines;
-	if (time - $animulastgrab > 172800){
-		print 'downloading animu.txt';
-		my $resp = $ua->get($animulistloc, ':content_file' => '/home/proto/.irssi/scripts/cfg/animu.txt');	#you need to create animu.txt yourself
-		return 'error: '.$resp->status_line unless $resp->is_success;
-		$animulastgrab = time;
-	}
-	
-	open my $word, '<', '/home/proto/.irssi/scripts/cfg/animu.txt' or die $!;	#die? does that... die?
-	@lines = <$word>;
-		
-	if (scalar @lines == 0){ return '@lines is empty'; }
-	
-	my $num = int rand scalar @lines;
-	return $lines[$num].' (#'.($num + 1).')';
-}
-sub farnsworth {
-	my $req = $ua->get('http://dl.dropbox.com/u/48390/misc/txt/farnsworth.txt');
-	return 'error: '.$req->status_line unless $req->is_success;
-	
-	my @lines = split /[\r\n]+/, $req->content;
-	return 'error: protospork is retarded' if scalar @lines == 1;
-	my $line = $lines[(int rand ($#lines + 1) - 1)];
-	$line = uc $line if $_[0];
-	return $line;
 }
 sub stats {
 	my ($chan) = @_;
