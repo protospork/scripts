@@ -58,16 +58,16 @@ sub event_privmsg {
 	my @terms = split /\s+/, $1;
 	
 	given ($terms[0]){
-		when (/^flip|^ro(ll|se)/i){	$return = dice	(@terms); }
-		when (/^sins?$|^choose/i){	$return = choose(@terms); }
+		when (/^flip$|^ro(ll|se)$/i){	$return = dice	(@terms); }
+		when (/^sins?$|^choose$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); } #the dual regex thing may turn out annoying
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
-		when (/^when/i){			$return = countdown(@terms); }
-		when (/^gs/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
-		when (/^hex/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
+		when (/^when$/i){			$return = countdown(@terms); }
+		when (/^gs$/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
+		when (/^hex$/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
-		when (/^c(alc|vt)?|^xe?/){	$return = conversion(@terms); }
+		when (/^c(alc|vt)?$|^xe?$/){	$return = conversion(@terms); }
 		default { return; }
 	}
 	$server->command('msg '.$target.' '.$return) if $return;

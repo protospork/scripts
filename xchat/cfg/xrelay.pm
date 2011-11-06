@@ -47,7 +47,8 @@
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
 	'majikoi'			=>	["Anime", ['horrible'],		undef,			[undef],		2276],
 	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			['hiryuu:^Hi10P'],	2276],
-	'shana final'		=>	["Anime", ['eclipse'],		'Shana',		[undef],		undef] #anidb is down so I have no idea about the TID
+	'shana final'		=>	["Anime", ['eclipse'],		'Shana',		[undef],		2262], 
+	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef]	#OVA
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
