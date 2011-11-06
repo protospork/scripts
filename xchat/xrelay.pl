@@ -8,7 +8,7 @@ use JSON;
 use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core
 
-my $ver = '3.13';
+my $ver = '3.14';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -229,6 +229,14 @@ sub newtopic {
 			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
 			$topic =~ s/$short \d+/$short $newep/i;
 			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr);
+			
+			#now unset that timer if necessary
+			for my $key (keys %timers){
+				if ($timers{$key} =~ $short && $timers{$key} =~ /0?$newep$/){
+					unhook($_);
+#					add_airtime($short, ++$newep); #doesn't exist yet, but this is where it should be called from
+				}
+			}
 		}
 	}
 }
@@ -285,8 +293,8 @@ sub set_airtimes {
 			
 			my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
 			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
-#			push @timers, $timer;
-			$timers{$short} = $timer;
+
+			$timers{$timer} = $short.' '.$epno;
 		} else {
 			next;
 		}		
@@ -296,20 +304,19 @@ sub set_airtimes {
 sub place_timer {
 	my ($info, $epno, $tid) = @_;
 	command('bs say '.$anime.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
-#	add_airtime($epno, $tid); #oh god the recursion oh god
 }
 sub dump_timers {
-	for (values %timers){
+	for (keys %timers){
 		prnt('Unhooking '.$_, $ctrlchan, $destsrvr);
 		unhook $_;
 	}
-#	@timers = ( );
+
 	%timers = ( );
 	$airtimes_set = 0;
 }
 sub list_timers {
 	for (keys %timers){
-		prnt $_.': '.$timers{$_};
+		prnt $_.' :: '.$timers{$_};
 	}
 }
 
