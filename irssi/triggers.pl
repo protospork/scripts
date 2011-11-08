@@ -11,6 +11,7 @@ use feature 'switch';
 use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::triggers->function(); or something
+#protip: if you're storing nicks in a hash, make sure to `lc` them
 
 $VERSION = "2.3";
 %IRSSI = (

@@ -235,6 +235,8 @@ sub newtopic {
 				if ($timers{$key} =~ $short && $timers{$key} =~ /0?$newep$/){
 					unhook($_);
 					add_notice(++$newep, $cfg, $short); #add next week's episode
+					#add_notice needs to be here (and it's confirmed to work 2011-11-07), but it also needs to be called
+					# immediately after any other 'just aired' notice. I'm not sure how to pull that off
 				}
 			}
 		}
