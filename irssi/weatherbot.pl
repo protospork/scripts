@@ -31,6 +31,8 @@ sub event_privmsg {
 	my ($server, $data, $nick) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
 	
+	$nick = lc $nick;
+	
 	for (split /,/, Irssi::settings_get_str('trig_offchans')){ return if $target =~ /$_/i; } #I need to stop embedding settings in irssi
 
 	if ( $text =~ /^\s*\.w(?:eather|z)?(?:\s+(.*))?$/i ){
