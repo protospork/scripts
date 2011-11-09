@@ -132,7 +132,7 @@ sub whoosh {
 			
 			if (defined($cfg_blacklist)){ 
 				for (@$cfg_blacklist){
-					last if $_ == undef;
+#					last if $_ == undef; #why was this here
 						
 					my ($grp, $term) = (split /:/, $_, 2)
 						|| prnt "There's an uhoh in the blacklisting section";
