@@ -132,7 +132,7 @@ sub whoosh {
 			
 			if (defined($cfg_blacklist)){ 
 				for (@$cfg_blacklist){
-#					last if $_ == undef; #why was this here
+					last if $_ == undef;
 						
 					my ($grp, $term) = (split /:/, $_, 2)
 						|| prnt "There's an uhoh in the blacklisting section";
@@ -189,7 +189,7 @@ sub whoosh {
 				command("notice ".$ctrlchan." \x0324".$name." (\x0Fhttp://tokyotosho.info/details.php?id=".$rlsid."\x0324)\x0F", $ctrlchan, $destsrvr);
 				
 				if ($name =~ /$cfg_title.+?(?:S\d)?.*?([\d\.]+)/i && defined($cfg_stitle) && $cfg_stitle ne ''){ 
-					newtopic($1, $cfg_stitle, \%config); 
+					newtopic($1, $cfg_stitle); 
 				}	
 				
 				return EAT_NONE;
@@ -210,7 +210,7 @@ sub whoosh {
 }
 
 sub newtopic {
-	my ($newep, $short, $cfg) = @_;
+	my ($newep, $short) = @_;
 	
 	$newep =~ s/^0(\d)/$1/; 
 	$newep =~ s/\.$//;
@@ -234,9 +234,7 @@ sub newtopic {
 			for my $key (keys %timers){
 				if ($timers{$key} =~ $short && $timers{$key} =~ /0?$newep$/){
 					unhook($_);
-					add_notice(++$newep, $cfg, $short); #add next week's episode
-					#add_notice needs to be here (and it's confirmed to work 2011-11-07), but it also needs to be called
-					# immediately after any other 'just aired' notice. I'm not sure how to pull that off
+#					add_airtime($short, ++$newep); #doesn't exist yet, but this is where it should be called from
 				}
 			}
 		}
@@ -276,52 +274,33 @@ sub set_airtimes {
 		my $short = $TIDs->{$_};
 		if ($topic =~ /$short +(\d+)/i){ # this method will only announce an airtime if the title is in the topic- I'm not too sure how I feel about that :\
 			my $epno = $1; $epno++;
-			add_notice($epno, $cfg, $_);
+			my $info = get_airtime($_, $epno);
+			if ($info =~ /^ERROR/){
+				prnt($info, $ctrlchan, $destsrvr);
+				next;
+			} elsif ($info =~ /^EXCEPTION/){
+				prnt($info, $ctrlchan, $destsrvr);
+				undef $info;
+				$info = get_airtime($_, ++$epno);
+				if ($info =~ /^ERROR|EXCEPTION/){ #I'm fucking retarded
+					prnt($info, $ctrlchan, $destsrvr);
+					next;
+				}
+			}
+			
+			my $neat_time = [localtime $info->[1]];
+			$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
+			
+			my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
+			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
+
+			$timers{$timer} = $short.' '.$epno;
 		} else {
 			next;
 		}		
 	}
 }
-sub add_notice {
-	my ($epno, $cfg, $tid) = @_;
-	my $short = $tid;
-	
-	if ($tid !~ /^\d+$/){ #the title routine has no access to TIDs
-		for (values %{$cfg}){
-			if (($_->[4] && $_->[2]) && $_->[2] eq $tid){
-				$tid = $_->[4];
-			}
-		}
-	} elsif ($short =~ /^\d+$/){ #and the other routine has no access to short titles
-		for (values %{$cfg}){
-			if (($_->[4] && $_->[2]) && $_->[4] eq $short){
-				$short = $_->[2];
-			}
-		}
-	}
-	
-	my $info = get_airtime($tid, $epno);
-	if ($info =~ /^ERROR/){
-		prnt($info, $ctrlchan, $destsrvr);
-		next;
-	} elsif ($info =~ /^EXCEPTION/){
-		prnt($info, $ctrlchan, $destsrvr);
-		undef $info;
-		$info = get_airtime($tid, ++$epno);
-		if ($info =~ /^ERROR|EXCEPTION/){ #I'm fucking retarded
-			prnt($info, $ctrlchan, $destsrvr);
-			next;
-		}
-	}
-	
-	my $neat_time = [localtime $info->[1]];
-	$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
-			
-	my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $tid); return REMOVE; });
-	prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$tid.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
 
-	$timers{$timer} = $short.' '.$epno;
-}
 sub place_timer {
 	my ($info, $epno, $tid) = @_;
 	command('bs say '.$anime.' '.$info->[3].' ('.$info->[2].') episode '.$epno.' just finished airing on '.$info->[4], $ctrlchan, $destsrvr);
