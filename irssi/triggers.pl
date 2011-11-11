@@ -133,6 +133,7 @@ sub countdown {
 	print $timers{uc $_[-1]}.' - '.time || 'AAAH';
 	if ($timers{uc $_[-1]}){
 		my $until = $timers{uc $_[-1]} - time;
+		return $_[-1].' already happened' if $until < 0;
 		my $string;
 		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
 		if ($until > 86400){ $string .= int($until / 86400).' days '; $until = $until % 86400; }
