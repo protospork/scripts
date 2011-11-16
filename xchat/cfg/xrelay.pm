@@ -41,7 +41,7 @@
 	"Cursed x Curious"	=>	["Anime", [qw|UTW|],		"C3",			[undef],		2274], #cube[d] x cursed x curious [C3]
 	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		2275],
 	"mouretsu pirates"	=>	["Anime", [undef],			undef,			[undef],		undef],
-	tamayura			=>	["Anime", [undef],			undef,			[undef],		2263],
+	tamayura			=>	["Anime", [qw'oyatsu'],		undef,			['oyatsu:avi'],	2263],
 	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		[undef],		2249],
 	'mirai nikki'		=>	["Anime", ['SS'],			"Nikki",		[undef],		2273],
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
@@ -55,7 +55,7 @@ remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p i
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon 
-kanjouteki (Hi10) iPhone [P] [ReinWeiss]
+kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
 					"one piece", "galactic heroes", "kamen rider", "hitman reborn", 
