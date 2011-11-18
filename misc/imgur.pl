@@ -63,7 +63,7 @@ sub downloadalbum {
 		if ($dupe == 1){ print("$_ :: Duplicate\n"); $dupe = 0; next; }
 		my $img = $ua->mirror("http://i.imgur.com/" . $_ . ".jpg", $newfilename); 
 		
-		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.$img->content_length.' bytes');
+		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.(sprintf "%.02d", ($img->content_length / 1024)).' kB');
 	}
 }
 print $albumname;
