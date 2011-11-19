@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.67;
+my $ver = 1.70;
 register('parentheses', $ver, "fixes parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -10,6 +10,7 @@ hook_print("Channel Action", \&acting, {priority => PRI_LOW});
 hook_print("Channel Action Hilight", \&actinghigh, {priority => PRI_LOW});
 
 my $sprinkles = 1; #make this 0 to turn every color effect into boring green
+my $boring = 0;    #make this 1 to disable all color effects, even the green
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
 
@@ -65,7 +66,7 @@ sub magic_happens {
 	#colored >quotes
 	$message =~ s/^>(?!_>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
-	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|none/i || $red || $nick =~ $mynick){ #don't code colors if colors were already coded
+	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
 		my @end;
 		for (split /\s+/, $message){ 
 			if (/\x{02}/){ push @end, $_; next; }
@@ -109,7 +110,7 @@ sub magic_happens {
 		}
 	}
 	
-	if ($nick =~ /($mynick)/){ #fixed events for 2+ clients on a bnc
+	if ($nick =~ /\Q($mynick)\E/){ #fixed events for 2+ clients on a bnc
 		if ($action == 1){ emit_print('Your Action', $1, $message, $_[2]); } 
 		else { emit_print('Your Message', $1, $message, $_[2], $_[3]); }
 		return EAT_ALL;
