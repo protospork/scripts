@@ -37,8 +37,10 @@ my $root_dir = cwd;
 
 my ($rename, $numtries, $thread, $numbering, $immortal, $timeout, $threadtitle, $md5filenames, $nevershorten, $takeyourtime, $imagelimit) =
   (0, 999999, 0, 1, 0, 86400, 0, 0, 0, 0, 0);
+#option switches
+#I started replacing this with given/when, then realized (almost) none of these are exclusive. So don't.
 for (@ARGV) {
-	if ($_ =~ s/^-//) {    #option switches
+	if ($_ =~ s/^-//) {    
 		if ($_ =~ /(.*?)r/) {
 			$rename = 1 unless $1 =~ /:/;
 		}                  #'r'enames files to their 'original' names	#this might as well just be the default
