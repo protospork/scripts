@@ -53,7 +53,7 @@ sub magic_happens {
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
 	$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
-	$message =~ s/[\x{201c}\x{201d}]/"/g;
+	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether  this actually works
 	
 	#ascii:
 	#[:alpha:] [:alnum:] [:digit:] [:punct:]
@@ -104,15 +104,15 @@ sub magic_happens {
 		
 		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ #this is halfassed as shit fix it later
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help
-				my ($one,$two) = ($1,$2); #so redundant colorcodes are stripped, although
+				my ($one,$two) = ($1,$2); #so redundant colorcodes need to be stripped, although
 				$message =~ s/$&/\x03$one$two /; #this method only grabs the first redundant one
 			}
 		}
 	}
 	
-	if ($nick =~ /\Q($mynick)\E/){ #fixed events for 2+ clients on a bnc
-		if ($action == 1){ emit_print('Your Action', $1, $message, $_[2]); } 
-		else { emit_print('Your Message', $1, $message, $_[2], $_[3]); }
+	if ($nick =~ /\Q$mynick\E$/){ #fixed events for 2+ clients on a bnc
+		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); } 
+		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
 	}
 	
