@@ -24,7 +24,7 @@ $VERSION = "3.3p";
 #I don't really know how to handle the GPL thing 'properly'.
 
 my (@memory, %savedloc);
-tie @memory, 'Tie::File', '/home/proto/.irssi/scripts/cfg/weathernicks.cfg' or die "Couldn't open weathernicks.cfg ($!)";
+tie @memory, 'Tie::File', '/home/proto/.irssi/scripts/cfg/weathernicks.cfg' or die "Couldn't open weathernicks.cfg ($!)"; #this fucking file is ...interesting. and broken. fix it.
 for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
 
 sub event_privmsg {
