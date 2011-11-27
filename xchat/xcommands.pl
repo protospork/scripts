@@ -87,7 +87,3 @@ sub tlit {
 	command('say '.$line); 
 	return EAT_XCHAT; 
 }
-sub trans { #jesus fucking christ seriously
-	my $line = $_[1][1];
-	command('eval use Text::Unidecode; $text = "'.$line.'"; Xchat::command("say ".unidecode($text));';
-}
