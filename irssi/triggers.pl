@@ -40,7 +40,7 @@ sub loadconfig {
 		unless ($req->is_success){ die $req->status_line; }
 
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
-		unless ($cfgver){ print "error loading variables from triggers cfg: $@" }
+		unless ($cfgver =~ /./){ print "error loading variables from triggers cfg: $@" }
 
 	print "triggers: config $cfgver successfully loaded";
 	$lastcfgcheck = time;
