@@ -81,9 +81,12 @@ hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/;
 hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
 
 #translits kana/kanji to romaji
-hook_command('translit', \&trans); #this is fine except in the sense that it doesn't fucking work
+hook_command('translit', \&tlit); 
+hook_command('tlit', \&tlit);
 sub tlit {
-	my $line = unidecode($_[1][1]);
-	command('say '.$line); 
+	my $raw = $_[1][1];
+	my $line = unidecode($raw);
+	$raw = "\x0321".$raw."\x0F";
+	length $raw < 13 ? prnt($raw."\t".$line) : prnt($raw.' :: '.$line); #13 length includes formatting chars
 	return EAT_XCHAT; 
 }
