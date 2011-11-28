@@ -64,7 +64,7 @@ sub magic_happens {
 	#[\p{Hiragana}\p{Katakana}\p{Han}] should match all japanese script
 	
 	#colored >quotes
-	$message =~ s/^>(?!_>)(.+)$/\x03$clr>$1\x0F/;
+	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
 	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
 		my @end;
