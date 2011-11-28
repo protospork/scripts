@@ -262,7 +262,7 @@ sub sendresponse {
 	my ($title,$target,$server,$url) = @_;
 	print "=> $title" if $debugmode == 1;
 	if (time - $lastsend < $spam_interval && $title eq $lasttitle){
-		Irssi::timeout_add_once(($spam_interval * 1000), sendresponse(@_), @_);
+#		Irssi::timeout_add_once(($spam_interval * 1000), sendresponse(@_), @_);
 		return;
 	}
 	$server->command("msg $target $title");
