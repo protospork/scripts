@@ -87,6 +87,6 @@ sub tlit {
 	my $raw = $_[1][1];
 	my $line = unidecode($raw);
 	$raw = "\x0321".$raw."\x0F";
-	length $raw < 13 ? prnt($raw."\t".$line) : prnt($raw.' :: '.$line); #13 length includes formatting chars
+	length $raw < 13 ? prnt($raw."\t".$line) : prnt($raw.' :: '.$line); #13 length includes four formatting chars
 	return EAT_XCHAT; 
 }
