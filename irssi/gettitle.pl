@@ -9,9 +9,9 @@ use warnings;
 use utf8;	#?
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
-@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan $ver $VERSION %IRSSI);
+@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
 
-$VERSION = "1.5";
+$VERSION = "1.6";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -118,7 +118,7 @@ sub pubmsg {
 	if ($title eq $lasttitle && $target eq $lastchan){ return; }
 	
 	return if grep $title =~ $_, (@defaulttitles);	#error fallback titles, index pages, etc
-	$title = moreshenanigans($title,$nick) unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
+	$title = moreshenanigans($title,$nick,$target) unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
 	sendresponse($title,$target,$server,$url) unless $title eq '1';	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
@@ -152,7 +152,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 }
 
 sub moreshenanigans {	#now, play around with the titles themselves
-	my ($title,$ass) = @_;
+	my ($title,$ass,$target) = @_;
 	
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
 	$title =~ s/High Impact Halo Forum and Fansite/HIH: /i;
@@ -160,6 +160,10 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	
 	for my $rx (@cutthesephrases){
 		$title =~ s/$rx\s*//i;
+	}
+	
+	for (keys %{$censorchans{$target}}){
+		$title =~ s/$_/$censorchans{$target}{$_}/g;
 	}
 	
 	$title =~ s/^(.+) - Niconico$/Niconico - $1/;
@@ -251,7 +255,7 @@ sub check_image_size {
 	return 0 unless $req->is_success;	#?
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
 	return 0 unless $req->content_type =~ /image/; 
-	if ($req->content_type =~ /gif$/i){
+	if ($req->content_type =~ /gif$/i && $url !~ /imgur/){
 		return 'WITCH';
 	} elsif ($req->content_length > $largeimage){
 		return $filesizecomment[(int rand scalar @filesizecomment)-1];
