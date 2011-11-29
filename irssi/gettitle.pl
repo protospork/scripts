@@ -200,6 +200,7 @@ sub get_title {
 	my ($url) = @_;	
 	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme/i){ 
 		unless (time - $titlecache{$url}{'time'} > 28800){ #is eight hours a sane expiry? I have no idea!
+			print '(cached)' if $debugmode == 1;
 			return $titlecache{$url}{'url'};
 		}
 	}
@@ -277,7 +278,7 @@ sub sendresponse {
 		return;
 	}
 	$server->command("msg $target $title");
-	if ($url){
+	if ($url && $title !~ /^Error/){
 		$titlecache{$url}{'url'} = $title;
 		$titlecache{$url}{'time'} = time;
 	}
