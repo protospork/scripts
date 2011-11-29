@@ -59,7 +59,7 @@ sub pubmsg {
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|http://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
 	
-	print $url if $debugmode == 1;
+	print $target.': '.$url if $debugmode == 1;
 	
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
@@ -118,7 +118,7 @@ sub pubmsg {
 	if ($title eq $lasttitle && $target eq $lastchan){ return; }
 	
 	return if grep $title =~ $_, (@defaulttitles);	#error fallback titles, index pages, etc
-	$title = moreshenanigans($title,$nick,$target) unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
+	$title = moreshenanigans($title,$nick,$target); #unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
 	sendresponse($title,$target,$server,$url) unless $title eq '1';	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
@@ -163,7 +163,14 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	}
 	
 	for (keys %{$censorchans{$target}}){
-		$title =~ s/$_/$censorchans{$target}{$_}/g;
+		my $repl = $censorchans{$target}->{$_};
+		if ($title =~ ucfirst $_){ #this block could be replaced by one big regex, but this has to run on 5.10. Also I'm scared.
+			$repl = join ' ', map { ucfirst $_ } split / /, $repl;
+		} elsif ($title =~ uc $_){
+			$repl = uc $repl;
+		}
+		
+		$title =~ s/$_/$repl/gi;
 	}
 	
 	$title =~ s/^(.+) - Niconico$/Niconico - $1/;
@@ -173,14 +180,14 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	$title =~ s/^LiveLeak\.com/\00300,04Live\00304,00Leak\017/i; 
 	
 	#this chunk shouldn't actually be in use <_<
-	$title =~ s/[(\x{2000}-\x{200F})]|[(\x{2028}-\x{202F})]//g if $title =~ /^youtube/i;
-	$title =~ s/^YouTube/\00301,00You\00300,04Tube\017/i;
+#	$title =~ s/[(\x{2000}-\x{200F})]|[(\x{2028}-\x{202F})]//g if $title =~ /^youtube/i;
+#	$title =~ s/^YouTube/\00301,00You\00300,04Tube\017/i;
 	
 	$title =~ s/^Newegg(\.com)?/\00302,08Newegg\017/i;
 	$title =~ s/^BBC( News)?/\00300BBC\017/i;
 	
 	#truncate
-	if(length($title) > $maxlength){
+	if(length($title) > $maxlength && $title !~ /^http/){
 		my $maxless = $maxlength - 10;
 		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
 		$title .= "..."; # \x{2026} makes a single-width ellipsis
