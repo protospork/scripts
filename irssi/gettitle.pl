@@ -187,7 +187,7 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	$title =~ s/^BBC( News)?/\00300BBC\017/i;
 	
 	#truncate
-	if(length($title) > $maxlength && $title !~ /^http/){
+	if(length($title) > $maxlength && $title !~ /^http/ && $url !~ /twitter\.com/){
 		my $maxless = $maxlength - 10;
 		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
 		$title .= "..."; # \x{2026} makes a single-width ellipsis
