@@ -11,7 +11,7 @@ use utf8;	#?
 use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
 @filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
 
-$VERSION = "1.6";
+$VERSION = "1.7";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -118,7 +118,7 @@ sub pubmsg {
 	if ($title eq $lasttitle && $target eq $lastchan){ return; }
 	
 	return if grep $title =~ $_, (@defaulttitles);	#error fallback titles, index pages, etc
-	$title = moreshenanigans($title,$nick,$target); #unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
+	$title = moreshenanigans($title,$nick,$target,$url); #unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
 	sendresponse($title,$target,$server,$url) unless $title eq '1';	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
@@ -152,7 +152,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 }
 
 sub moreshenanigans {	#now, play around with the titles themselves
-	my ($title,$ass,$target) = @_;
+	my ($title,$ass,$target,$url) = @_;
 	
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
 	$title =~ s/High Impact Halo Forum and Fansite/HIH: /i;
