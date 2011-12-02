@@ -90,3 +90,22 @@ sub tlit {
 	length $raw < 13 ? prnt($raw."\t".$line) : prnt($raw.' :: '.$line); #13 length includes four formatting chars
 	return EAT_XCHAT; 
 }
+
+hook_command('rot13', \&rot13);
+sub rot13 {
+	my $line = $_[1][1];
+	my $out;
+	
+	for (split //, $line){
+		my $ord = ord $_;
+		if (($ord >= 65 && $ord <= 77) || ($ord >= 97 && $ord <= 109)){
+			$ord += 13;
+		} elsif (($ord >= 78 && $ord <= 90) || ($ord >= 110 && $ord <= 122)){
+			$ord -= 13;
+		}
+		
+		$out .= chr $ord;
+	}
+	command ('say '.$out);
+	return EAT_XCHAT;
+}
