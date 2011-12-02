@@ -257,7 +257,6 @@ sub dumpcache {
 }
 
 sub set_airtimes {
-	$airtimes_set = 1;
 	set_context($anime, $destsrvr);
 	my ($cfg,$topic) = ($_[0], get_info('topic'));
 	
@@ -299,6 +298,7 @@ sub set_airtimes {
 			next;
 		}		
 	}
+	$airtimes_set = 1; #why is this first instead of last? I'm moving it
 }
 
 sub place_timer {
@@ -331,7 +331,7 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 	
 	my $json = JSON->new->pretty(1)->utf8(1)->decode($req->content)->{'Programs'} || return 'ERROR: Invalid JSON';	
 	my $timeout;
-	for (sort keys %{$json}){ #should only need the first item from this loop
+	for (sort keys %{$json}){ #should only need the first item from this loop ##incorrect, first is not always earliest
 		my $ttls = get_titles($json->{$_}{'TID'});
 		
 		if (! $ttls->[0]){
