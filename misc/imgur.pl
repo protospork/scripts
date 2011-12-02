@@ -7,6 +7,8 @@ use HTML::TreeBuilder;
 #		can't into named albums
 #		doesn't do anything about bad downloads
 
+#todo: use content_length to check whether you've grabbed the whole file and retry if not
+
 my $wingit = $#ARGV; #if you launch the script with -q (or -anythingelse <_<) it won't prompt for album names
 my $album = $ARGV[-1] || die "give it a URL";
 #hardcoding proxies baaaad
