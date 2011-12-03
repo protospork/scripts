@@ -3,10 +3,12 @@ use strict;
 use warnings;
 use LWP;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
+use HTML::Scrape 'put';
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
 use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
+use Tie::File;
 
 use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
@@ -14,7 +16,7 @@ use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @of
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 #todo: re-add the config rehash trigger
 
-$VERSION = "2.3";
+$VERSION = "2.4";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -60,19 +62,118 @@ sub event_privmsg {
 	my @terms = split /\s+/, $1;
 	
 	given ($terms[0]){
-		when (/^flip$|^ro(ll|se)$/i){	$return = dice	(@terms); }
+		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); } #the dual regex thing may turn out annoying
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
-		when (/^gs$/i){				$return = sub { shift @terms; uri_escape_utf8($_) for @terms; return ('http://gog.is/'.(join '+', @terms)); } }
-		when (/^hex$/i){				$return = sub { return ($nick.': '.(sprintf "%x", $terms[1])); } }
+		when (/^gs$/i){				shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://gog.is/'.(join '+', @terms)); }
+		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
-		when (/^c(alc|vt)?$|^xe?$/){	$return = conversion(@terms); }
+		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
+		when (/^airtimes$/){		$return = airtimes(); }
+		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
 		default { return; }
 	}
-	$server->command('msg '.$target.' '.$return) if $return;
+	if (! defined $return){
+		return;
+	}
+	elsif (ref $return){
+		for (@$return[0..3]){
+			$server->command('msg '.$target.' '.$_);
+		}
+	}
+	else {
+		$server->command('msg '.$target.' '.$return);
+	}
+}
+
+#these airtime bits are mostly code by tristan.willy@gmail.com
+sub airtimes {
+	my $scraper = new HTML::Scrape(
+	Machine =>
+		[
+			{ 'label'   => 'top',
+			'tag'     => 'table',
+			'require' => { 'summary' => qr/currently airing/i } },
+			{ 'tag'     => 'table' },
+			{ 'tag'     => 'th' },
+
+			[ { 'label'   => 'next_row',
+			'tag'     => 'tr' },
+			{ 'tag'     => 'table',
+			'goto'    => 'top' }
+			],
+			{ 'label'   => 'td_nr',
+			'tag'     => 'td' },
+			{ 'text'    => put('nr') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('series') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('season') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('station') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('company') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('airtime') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('ETA') },
+			{ 'tag'     => 'td' },
+			{ 'text'    => put('eps') },
+			[ 
+			{ 'tag'     => 'a',
+			'require' => { 'href' => qr/anidb.info/i },
+			'attr'    => { 'href' => put('anidb_url') },
+			'commit'  => 1,  # commit happens when leaving state
+			'goto'    => 'next_row' },
+			{ 'tag'     => 'tr',
+			'commit'  => 1,
+			'goto'    => 'td_nr' },
+			{ 'tag'     => 'table',
+			'goto'    => 'top' }
+			]
+		]
+	) or die;
+	my $page = $ua->get('http://www.mahou.org/Showtime/');
+	die $page->status_line unless $page->is_success;
+	return tsv($scraper->scrape($page->decoded_content, 1));
+}
+sub tsv {
+  my %header;
+  foreach my $item (@_){
+    $header{$_} = 1 foreach (keys %$item);
+  }
+  my @order = sort keys %header;
+
+  my %inorder;
+#  $inorder{sprintf "%020d", 1} = sprintf "%-12s%-18s%-25s%-18s%-4s%4s %-10s%-30s%s", @order[0..$#order]; #header, not sure if necessary
+  
+  foreach my $item (@_){
+	
+    my %ditem = fillkeys($item, @order);
+	
+	my @out;
+	for (@order[0..$#order]){
+		$ditem{$_} =~ s{^http://anidb\S+?(\d+)$}{http://anidb.net/a$1};
+		push @out, $ditem{$_};
+	}
+	my $time = $ditem{$order[0]};
+	$time =~ s/(?:(\d+)d\s*)?(?:(\d+)h\s*)?(\d+)m/(($1 ? $1 * 1440 : 0)+($2 ? $2 * 60 : 0)+($3))/e; #convert '1d 3h 33m' to '1653' (minutes)
+	$time = sprintf "%020d", $time; #crude, but it makes sort stop being retarded
+#	$inorder{$time} = sprintf "%-12s%-18s%-25s%-18s%-4s%4s %-10s%-30s%s", @out;
+	$inorder{$time} = $out[0].' until '.$out[-2];
+  }
+  my @output;
+  for ((sort keys %inorder)[0..3]){
+	push @output, $inorder{$_}."\n"
+  }
+  return \@output;
+}
+sub fillkeys {
+  my $href = shift;
+  return map { ($_, defined $href->{$_} ? $href->{$_} : '') } @_;
 }
 
 sub readtext {
@@ -276,44 +377,60 @@ sub stats {
 	$chan eq 'programming' ? return 'http://www.galador.org/irc/'.$chan.'.html' : return 'http://protospork.moap.net/'.$chan.'.html';
 }
 
-#note that this sub isn't attached to anything - I'm still using weatherbot.pl and can't remember what's broken here
-my %place;
-sub weather {	
-# timestamp | degrees F | windchill | ? | humidity | dewpoint | windchill | barometer | conditions | visibility | sunrise | sunset |
-# ? | ? | ? | ? | ? | ? | town | state | moonrise | moonset | closest airport | UV index
-#there isn't really a linebreak there
+#based on a script called weatherbot.pl by lyz@princessleia.com
+my %savedloc;
+tie my @memory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.cfg' or die $!; #this fucking file is ...interesting. and broken. fix it.
+for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
 
-#	my ($nick,$trigger,$place) = ($_[0],$_[1],$_[]);
-	my $nick = shift; my $trigger = pop;
-	my $place = join ' ', @_;
-	unless (defined $place && $place ne ' '){ exists $place{$nick} ? $place = $place{$nick} : return 'where?'; }
+sub weather {	
+#	my ($server, $nick, $text) = @_;
+#	$nick = lc $nick;
+	my ($server,$nick) = (shift, lc shift);
+	my $text = '';
+	$text = join ' ', @_[1..$#_] if $#_ > 0; #huh, typing that made me think twice
 	
-	$place =~ s/ /_/g; $place =~ s/,//g;
-	my $req = $ua->get('http://38.102.136.104/auto/raw/'.$place);
-	
-	unless ($req->is_success){ return 'uh oh'; }
-	return 'http://www.faacodes.com/' if $req->content =~ /[<>]/;
-	
-	my @w = split /\s*[|]\s*/, $req->content;
-	my $time = $w[0];
-	$time =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
-	my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill,$ctemp) = ($w[18],$w[19],$w[8],$w[1],$w[4],$w[7],$w[6],$w[2],'-');
-	unless ($w[1] == "") { $ctemp = sprintf( "%4.1f", ($w[1] - 32) * (5 / 9)); } $ctemp =~ s/ //g;
-	
-	if ($wind !~ / 0$/){
-		if ($ftemp < 40 && $windchill !~ /N.A/){
-			$place =~ /^\d{5}$/ 
-			? return "\002$town, $state\002 ($time): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | Windchill $windchill\x{00B0}F | Wind $wind MPH"
-			: return "\002$town, $state\002 ($time): $ctemp\x{00B0}C/$ftemp\x{00B0}F - $weather | Windchill $windchill\x{00B0}F | Wind $wind MPH";
+	my $location;
+	if ($text eq ''){ 
+		if (exists $savedloc{$nick}){
+			$location = $savedloc{$nick}
 		} else {
-			$place =~ /^\d{5}$/
-			? return "\002$town, $state\002 ($time): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | $hum Humidity | Wind $wind MPH"
-			: return "\002$town, $state\002 ($time): $ctemp\x{00B0}C/$ftemp\x{00B0}F - $weather | $hum Humidity | Wind $wind MPH";
-		}
+			$server->command("notice $nick Could you please repeat that?"); 
+			return; 
+		} 
+	} else { 
+		$location = $text; 
+	}
+	
+	$location =~ s/ /_/g; $location =~ s/,//g;
+
+	my $results = $ua->get("http://38.102.136.104/auto/raw/$location");
+	my @badarray = split(/\n/, $results->decoded_content);
+	if ( ! $results->is_success ) {
+		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
+		return;
+	} elsif ( $results->content =~ /[<>]/ ) {
+		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
+		return;
 	} else {
-		$place =~ /^\d{5}$/
-		? return "\002$town, $state\002 ($time): $ftemp\x{00B0}F/$ctemp\x{00B0}C - $weather | $hum Humidity | Barometer: $bar"
-		: return "\002$town, $state\002 ($time): $ctemp\x{00B0}C/$ftemp\x{00B0}F - $weather | $hum Humidity | Barometer: $bar";
+		push @memory, (join '::', $nick, $location);
+		$savedloc{$nick} = $location;
+		my @goodarray = split(/[|]\s*/, $results->decoded_content);
+		my ($timestamp,$ctemp) = ($goodarray[0],'');
+		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
+		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = 
+#		($goodarray[18], $goodarray[19], $goodarray[8], $goodarray[1], $goodarray[4], $goodarray[7], $goodarray[6], $goodarray[2]);	#augh
+		@goodarray[18,19,8,1,4,7,6,2];
+		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
+		$ctemp =~ s/ //;
+		if ($wind !~ / 0$/){
+			if ($ftemp < 40 && $windchill !~ /N.A/){
+				return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | Windchill $windchill\xB0F | Wind $wind MPH");
+			} else {
+				return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Wind $wind MPH");
+			}
+		} else {
+			return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Barometer: $bar");
+		}
 	}
 }
 Irssi::signal_add("event privmsg", "event_privmsg");
