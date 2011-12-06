@@ -25,8 +25,12 @@ if ($album =~ m{/a/}){
 	$album =~ s![/#](\d$|all)!!; 
 	$album .= '/noscript' unless $album =~ /noscript$/; #noscript (IE-compatible) page doesn't do the fancy JS next-page loading
 } else {
-	die;
-	#the named albums' `browse` buttons point to a conventional url
+#	die 'the named albums\' `browse` buttons point to a conventional url';
+	my $temp = $ua->get($album);
+	die unless $temp->is_success;
+	$album = HTML::TreeBuilder->new_from_content($temp->decoded_content)->look_down(_tag => 'a', class => 'browse')->attr('href');
+	$album =~ s!^//(.+?)/all$!http://$1/noscript!;
+#	<a href="//imgur.com/a/1u5Wg/all" class="browse">
 }
 
 say $album;
@@ -57,7 +61,7 @@ if ($albumname =~ /^(Photo Albums?|Album)$/){
 # this line is for the JS-enabled pages, put it back in if /noscript disappears
 #my @imagehashes = ($page->decoded_content =~ /<div id="([a-zA-Z0-9]{5})" class="post">/ig);
 my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5})">/ig);
-say ((1 + $#imagehashes).' images');
+print ((1 + $#imagehashes).' images ');
 length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
 
