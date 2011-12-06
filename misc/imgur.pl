@@ -2,6 +2,9 @@ use Modern::Perl;
 use LWP::Simple;
 use File::Path qw(make_path);
 use HTML::TreeBuilder;
+use Text::Unidecode;
+
+#protip: echo perl thisscript.pl %* > imgur.bat
 
 #todo:	can't trigger pages past 1
 #		can't into named albums
@@ -14,12 +17,13 @@ my $album = $ARGV[-1] || die "give it a URL";
 #hardcoding proxies baaaad
 my $ua = LWP::UserAgent->new();
 $ua->proxy('http', 'http://192.168.250.125:3128/');
-# $ua->show_progress(1); #dear god that's ugly
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
-	$album =~ s{/\d$|#\w*$}{};	#remove anchors to get down to the root of the album
-	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
+#	$album =~ s{/\d$|#\w*$}{};	#remove anchors to get down to the root of the album
+#	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
+	$album =~ s![/#](\d|all)!!; 
+	$album .= '/noscript' unless $album =~ /noscript$/; #noscript (IE-compatible) page doesn't do the fancy JS next-page loading
 } else {
 	die;
 	#the named albums' `browse` buttons point to a conventional url
@@ -33,17 +37,26 @@ die $page->status_line unless $page->is_success;
 my $albumname = HTML::TreeBuilder->new_from_content($page->decoded_content)->look_down(_tag => 'title')->as_text;
 $albumname =~ s/^\s*(.+?) - Imgur.*$/$1/;
 
-if ($albumname =~ /^(Photo Albums?|Album)$/){
-	if ($wingit){
+#if the album name blows, fix it
+if ($wingit){
+	if ($ARGV[0] =~ /^-/ && $albumname =~ /^(Photo Albums?|Album)$/){
 		$albumname = $album;
 		$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all)?}{$1}i;	
 	} else {
-		say "Please name this album.";
-		$albumname = <STDIN>;
-		$albumname =~ s/\n$//;
+		$albumname = $ARGV[0];
 	}
 }
-my @imagehashes = ($page->decoded_content =~ /<div id="([a-zA-Z0-9]{5})" class="post">/ig);
+$albumname =~ s!([\p{Hiragana}\p{Katakana}\p{Han}])!unidecode($1)!ge; #romanize moonrunes. may need to widen this in the future
+	
+#if it's still got a shit name, force user to notice
+if ($albumname =~ /^(Photo Albums?|Album)$/){
+	say "Please name this album.";
+	$albumname = <STDIN>;
+	$albumname =~ s/\n$//;
+}
+# this line is for the JS-enabled pages, put it back in if /noscript disappears
+#my @imagehashes = ($page->decoded_content =~ /<div id="([a-zA-Z0-9]{5})" class="post">/ig);
+my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5})">/ig);
 say ((1 + $#imagehashes).' images');
 length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
