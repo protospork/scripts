@@ -22,7 +22,7 @@ $ua->proxy('http', 'http://192.168.250.125:3128/');
 if ($album =~ m{/a/}){
 #	$album =~ s{/\d$|#\w*$}{};	#remove anchors to get down to the root of the album
 #	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
-	$album =~ s![/#](\d|all)!!; 
+	$album =~ s![/#](\d$|all)!!; 
 	$album .= '/noscript' unless $album =~ /noscript$/; #noscript (IE-compatible) page doesn't do the fancy JS next-page loading
 } else {
 	die;
