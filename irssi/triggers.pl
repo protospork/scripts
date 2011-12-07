@@ -10,7 +10,7 @@ use JSON;
 use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
 
-use vars qw($botnick $botpass $owner $animulistloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+use vars qw($botnick $botpass $owner $listloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::triggers->function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -179,8 +179,8 @@ sub fillkeys {
 sub readtext {
 	my $tgt;
 	given ($_[0]){
-		when (/farnsworth/i){	$tgt = 'http://dl.dropbox.com/u/48390/misc/txt/farnsworth.txt'; } #todo: make one $listloc in config
-		when (/anim[eu]/i){		$tgt = 'http://dl.dropbox.com/u/48390/misc/txt/animu.txt'; }		#and keep all the textfiles there
+		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; } #todo: make one $listloc in config
+		when (/anim[eu]/i){		$tgt = $listloc.'animu.txt'; }		#and keep all the textfiles there
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
