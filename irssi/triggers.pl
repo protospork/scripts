@@ -74,6 +74,7 @@ sub event_privmsg {
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
 		when (/^airtimes$/){		$return = airtimes(); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
+		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); }
 		default { return; }
 	}
 	if (! defined $return){
