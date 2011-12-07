@@ -48,7 +48,8 @@
 	'majikoi'			=>	["Anime", ['horrible'],		undef,			[undef],		2276],
 	'shinasai'			=>	["Anime", ['hiryuu'],		undef,			['hiryuu:^Hi10P'],	2276],
 	'shana final'		=>	["Anime", ['eclipse'],		'Shana',		[undef],		2262], 
-	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef]	#OVA
+	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef],	#OVA
+	'kyousogiga'		=>	["Anime", ['commie'],		undef,			[undef],		undef], #I dunno really
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
