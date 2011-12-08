@@ -25,5 +25,4 @@
 .isup - check a link against downforeveryoneelseorjustme
 
 ###other junk
-- http://isup.me/google.com - check whether google.com is down
 - link a tweet and it will be read to the channel
