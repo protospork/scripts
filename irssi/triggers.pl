@@ -12,7 +12,7 @@ use Tie::File;
 
 use vars qw($botnick $botpass $owner $listloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
-#you can call functions from this script as Irssi::triggers->function(); or something
+#you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 #todo: re-add the config rehash trigger
 
