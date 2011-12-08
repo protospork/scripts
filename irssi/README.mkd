@@ -11,7 +11,7 @@
 .w(eather)  
 
 ###misc triggers
-.x(e)/.calc/.cvt - google calculator and unit conversions (currently broken except for basic math and currency)  
+.x(e)/.calc/.cvt - google calculator and unit conversions (currently broken except for basic math)  
 .flip - flip a coin  
 .roll [#d#] - roll some dice  
 .rose - a dice game  
@@ -19,9 +19,10 @@
 .sin - choose one of the seven deadly sins  
 .farnsworth - a random quote from professor farnsworth  
 .anime/.animu - a random, decent anime (list chosen [largely] by consensus in #anime)  
+.airtimes - display the four soonest upcoming anime broadcasts
 .hex - given a number in base-ten, return it in hex  
 .help - link this page  
+.isup - check a link against downforeveryoneelseorjustme
 
 ###other junk
-- http://isup.me/google.com - check whether google.com is down
 - link a tweet and it will be read to the channel
