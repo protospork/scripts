@@ -5,7 +5,7 @@ use HTML::Entities;	#?
 use JSON;
 use URI;
 use strict;
-use warnings;
+#use warnings; #there are a lot of ininitialized value warnings I can't be bothered fixing
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
@@ -123,7 +123,7 @@ sub pubmsg {
 	return if grep $title =~ $_, (@defaulttitles);	
 	
 	$title = moreshenanigans($title,$nick,$target,$url);
-	sendresponse($title,$target,$server,$url) unless $title eq '1';	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
+	if (defined $title && $title ne '1'){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
