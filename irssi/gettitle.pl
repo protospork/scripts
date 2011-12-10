@@ -217,7 +217,7 @@ sub get_title {
 		return $title;
 	} elsif ($url =~ /api\.twitter\.com/){	#read entire tweets instead of just 'Twitter'
 		my $junk;
-		unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; }
+		unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; } #should I really be decoding decoded_content?
 
 		my $text = $junk->{'text'};	#expand t.co links.
 		for (@{$junk->{'entities'}{'urls'}}){
@@ -230,7 +230,7 @@ sub get_title {
 		
 		my $title = $person.' '.$text;
 		$title = '<protected account>' if $title eq '<> ';
-		return $title;
+		return decode_entities($title);
 	} elsif ($url =~ /gdata\.youtube\.com.+alt=jsonc/){
 		my $junk = JSON->new->utf8->decode($page->decoded_content) || return 'YouTube - uh-oh ('.$page->status_line.')';
 		my $title;
@@ -239,7 +239,7 @@ sub get_title {
 		} else {
 			$title = "\00301,00You\00300,04Tube\017 -".filler_title();
 		}
-		return $title;
+		return decode_entities($title);
 	} elsif ($url =~ m{deviantart\.com/art/}){
 		my $title;
 		$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
