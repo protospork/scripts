@@ -7,6 +7,7 @@ use URI;
 use strict;
 use warnings;
 use utf8;	#?
+use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
 @filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
@@ -223,7 +224,7 @@ sub get_title {
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		default {
-			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i) {
+			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				my $title = $1;		
 				decode_entities($title);
 				
