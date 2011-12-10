@@ -206,7 +206,7 @@ sub get_title {
 	}
 	
 	my $page = $ua->get($url);
-	return 'Error '.$page->status_line unless $page->is_success;
+	if ($debugmode && ! $page->is_success){ print 'Error '.$page->status_line; }
 	if ($url =~ m{yfrog\.com/(?:[zi]/)?\w+/?$}i && $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i){
 		#broken. not sure if it's even doable anymore. fuck you, imageshack
 		my $title = $1;
@@ -237,7 +237,7 @@ sub get_title {
 		if ($junk->{'data'}{'title'}){
 			$title = "\00301,00You\00300,04Tube\017 - ".$junk->{'data'}{'title'};
 		} else {
-			$title = "\00301,00You\00300,04Tube\017 -".filler_title();
+			$title = "\00301,00You\00300,04Tube\017 -".filler_title(); #does this actually work?
 		}
 		return decode_entities($title);
 	} elsif ($url =~ m{deviantart\.com/art/}){
@@ -263,8 +263,14 @@ sub check_image_size {
 	return 0 unless $req->is_success;	#?
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
 	return 0 unless $req->content_type =~ /image/; 
-	if ($req->content_type =~ /gif$/i && $url !~ /imgur/){
-		return 'WITCH';
+	if ($req->content_type =~ /gif$/i){
+		if ($url =~ /imgur/i){
+			$req->content_length == 669 
+			? return '404' 
+			: return 'WITCH';
+		} else {
+			return 'WITCH';
+		}
 	} elsif ($req->content_length > $largeimage){
 		return $filesizecomment[(int rand scalar @filesizecomment)-1];
 	}
@@ -290,7 +296,7 @@ sub sendmirror {
 	my ($nick,$server) = @_;
 	
 	#build the log from %mirrored
-	my $text; my $count = 1;	
+	my $text = "\n"; my $count = 1;	
 	for (keys %mirrored){
 		my %e;	#what why did I do this
 		($e{'nick'},$e{'chan'},$e{'time'},$e{'size'},$e{'delhash'},$e{'count'},$e{'link'}) = @{$mirrored{$_}};
@@ -303,8 +309,8 @@ sub sendmirror {
 	}
 	
 	#save it to disk
-	unlink $mirrorfile || $server->command("msg $controlchan can't delete mirrorfile: $!");
-	open my $thing, '>', $mirrorfile || $server->command("msg $controlchan unable to open logfile for write: $!");
+#	unlink $mirrorfile || $server->command("msg $controlchan can't delete old mirrorfile: $!");
+	open my $thing, '>>', $mirrorfile || $server->command("msg $controlchan unable to open logfile for write: $!");
 	print $thing $text; close $thing;
 	
 	#now try to send it
