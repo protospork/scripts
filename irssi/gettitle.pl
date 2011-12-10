@@ -207,53 +207,72 @@ sub get_title {
 	
 	my $page = $ua->get($url);
 	if ($debugmode && ! $page->is_success){ print 'Error '.$page->status_line; }
-	if ($url =~ m{yfrog\.com/(?:[zi]/)?\w+/?$}i && $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i){
-		#broken. not sure if it's even doable anymore. fuck you, imageshack
-		my $title = $1;
-		return $title;
-	} elsif ($url =~ m{tinypic.com/(?:r/|view\.php)} && $page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|){
-		my $title = $1;
-		$title =~ s/_th//;
-		return $title;
-	} elsif ($url =~ /api\.twitter\.com/){	#read entire tweets instead of just 'Twitter'
-		my $junk;
-		unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; } #should I really be decoding decoded_content?
+	
+	given ($url){
+		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
+			return $1 if $page->decoded_content =~ $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
+		}
+		when (m!tinypic.com/(?:r/|view\.php)!){
+			if  ($page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|i){
+				my $title = $1;
+				$title =~ s/_th//;
+				return $title;
+			}
+		}
+		when (/api\.twitter\.com/){ return twitter($page); }
+		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
+		when (m{deviantart\.com/art/}){ return deviantart($page); }
+		default {
+			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i) {
+				my $title = $1;		
+				decode_entities($title);
+				
+				$title =~ s/\s+/ /g;
+				$title =~ s/^\s|\s$//;
+				
+				return $title;
+			} else { 
+				return "shit\'s broke" unless $page !~ /<title>/; 
+			}
+		}
+	}
+}
+sub twitter {
+	my $page = shift;
+	my $junk;
+	unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; } #should I really be decoding decoded_content?
 
-		my $text = $junk->{'text'};	#expand t.co links.
-		for (@{$junk->{'entities'}{'urls'}}){
-			my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
-			$new = $old unless $new;
-			$text =~ s/$old/$new/gi;
-		}
-		
-		my $person = xcc($junk->{'user'}{'screen_name'});
-		
-		my $title = $person.' '.$text;
-		$title = '<protected account>' if $title eq '<> ';
-		return decode_entities($title);
-	} elsif ($url =~ /gdata\.youtube\.com.+alt=jsonc/){
-		my $junk = JSON->new->utf8->decode($page->decoded_content) || return 'YouTube - uh-oh ('.$page->status_line.')';
-		my $title;
-		if ($junk->{'data'}{'title'}){
-			$title = "\00301,00You\00300,04Tube\017 - ".$junk->{'data'}{'title'};
-		} else {
-			$title = "\00301,00You\00300,04Tube\017 -".filler_title(); #does this actually work?
-		}
-		return decode_entities($title);
-	} elsif ($url =~ m{deviantart\.com/art/}){
-		my $title;
-		$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
-		$title = $1 || $2 || 'http://www.deviantart.com/download/deviantart_is_broken';
-		return $title;
-	} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i) {
-		my $title = $1;		
-		decode_entities($title);
-		
-		$title =~ s/\s+/ /g;
-		$title =~ s/^\s|\s$//;
-		
-		return $title;
-	} else { return "shit\'s broke" unless $page !~ /<title>/; }
+	my $text = $junk->{'text'};	#expand t.co links.
+	for (@{$junk->{'entities'}{'urls'}}){
+		my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
+		$new = $old unless $new;
+		$text =~ s/$old/$new/gi;
+	}
+
+	my $person = xcc($junk->{'user'}{'screen_name'});
+
+	my $title = $person.' '.$text;
+	$title = '<protected account>' if $title eq '<> ';
+	return decode_entities($title);
+}
+sub youtube {
+	my $page = shift;
+	my $junk = JSON->new->utf8->decode($page->decoded_content) || return 'YouTube - uh-oh ('.$page->status_line.')';
+	
+	my $title;
+	if ($junk->{'data'}{'title'}){
+		$title = "\00301,00You\00300,04Tube\017 - ".$junk->{'data'}{'title'};
+	} else {
+		$title = "\00301,00You\00300,04Tube\017 -".filler_title(); #does this actually work?
+	}
+	return decode_entities($title);
+}
+sub deviantart {
+	my $page = shift;
+	my $title;
+	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
+	$title = $1 || $2 || 'Deviantart is broken.';
+	return $title;
 }
 
 sub check_image_size {
