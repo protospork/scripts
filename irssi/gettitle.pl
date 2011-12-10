@@ -75,7 +75,7 @@ sub pubmsg {
 	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		print $url if $debugmode == 1;
-	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\?(?:\S\&)*v=)([\w-]{11})]i){
+	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 	}
 	
