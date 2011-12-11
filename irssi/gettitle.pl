@@ -276,7 +276,7 @@ sub deviantart {
 	my $title;
 	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
 	$title = $1 || $2 || 'Deviantart is broken.';
-	return $title;
+	return $title unless $title =~ /\.swf$/; #hawk doesn't want videos spoiled or something
 }
 
 sub check_image_size {
