@@ -62,6 +62,7 @@ sub pubmsg {
 	
 	print $target.': '.$url if $debugmode == 1;
 	
+	#todo: given/when this shit up dawg
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
 		loadconfig() || return;
@@ -77,6 +78,8 @@ sub pubmsg {
 		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
+	} elsif ($url =~ m!newegg\.com/Product/Product\S+Item=([^&]+)(?:&|$)!){
+		$url = 'http://www.ows.newegg.com/Products.egg/'.$1.'/';
 	}
 	
 	if ($url =~ /pfordee.*jpe?g/i){
@@ -148,7 +151,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
 	} elsif ($url =~ s{(?:www\.)?(?:(?<!ca\.)(kotaku|lifehacker|gawker|io9|gizmodo|deadspin|jezebel|jalopnik))\.com/(?:#!)?(\d+)/(\S+)}{ca.$1.com/$2/$3-also-$nick-sucks}i){ int rand 5 >= 4 ? return 'gross' : return 0;
 	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; 
-	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; }
+#	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; 
+	}
 	
 	
 	
@@ -226,6 +230,7 @@ sub get_title {
 		when (/api\.twitter\.com/){ return twitter($page); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
+		when (m!newegg\S+Product!){ return newegg($page); }
 		default {
 			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				my $title = $1;		
@@ -277,6 +282,34 @@ sub deviantart {
 	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
 	$title = $1 || $2 || 'Deviantart is broken.';
 	return $title unless $title =~ /\.swf$/; #hawk doesn't want videos spoiled or something
+}
+sub newegg {
+	my $page = shift;
+	my $obj = JSON->new->utf8->decode($page->decoded_content) || return 'newegg: '.$page->status_line;
+	
+#	$page->decoded_content =~ m!<a class="itmRating" name="Community" .+<span class="print" style="display:none;">(\d/5)</span>!;
+#	my $rating = $1 || 'not rated';
+	my $rating = $obj->{"ReviewSummary"}{"Rating"} || 'no rating';
+	
+	#this substitution section is going to be long but I'm not sure about putting it in the config file
+	#how do you use a qr() as a hash key? how do you use a qr() with substitution?
+#	$page->decoded_content =~ m!<title>Newegg\.com - (.+)</title>!;
+#	my $info = $1 || 'no info';
+	my $info = $obj->{"Title"} || 'no info';
+
+	$info =~ s!HDCP Ready|(SLI|Crossfire) Support|Video Card|Hard Drive!!g;
+	$info =~ s!PCI Express 2.0 x16!PCIe 2.0!;
+	
+#	print 'getting http://content.newegg.com/LandingPage/ItemInfo4ProductDetail.aspx?Item='.$hash;
+#	my $newreq = $ua->get('http://content.newegg.com/LandingPage/ItemInfo4ProductDetail.aspx?Item='.$hash, 'referer' => 'http://www.newegg.com/Product/Product.aspx?Item='.$hash);
+#	return 'newegg - '.$info unless $newreq->is_success;
+#	return $newreq->status_line unless $newreq->is_success;
+	
+#	$newreq->decoded_content =~ m!"finalPrice":"(\d+\.\d\d)"!;
+#	my $price = $1 || 'no price';
+	my $price = $obj->{"FinalPrice"} || 'no price';
+	
+	return decode_entities($rating.'/5 Eggs || '.$price.' || '.$info);
 }
 
 sub check_image_size {
