@@ -86,8 +86,23 @@ hook_command('tlit', \&tlit);
 sub tlit {
 	my $raw = $_[1][1];
 	my $line = unidecode($raw);
+	
+	my %ranges;
+	for (split //, $raw){
+		if (/[\p{Hiragana}]/){	$ranges{'Hiragana'}++; }
+		elsif (/[\p{Katakana}]/){	$ranges{'Katakana'}++; }
+		elsif (/[\p{Han}]/){		$ranges{'Han'}++; }
+		elsif (/[\p{Ascii}]/){ $ranges{'Ascii'}++; }
+		else { $ranges{'other'}++ }
+	}
+	my @content;
+	push @content, ($_.': '.$ranges{$_}) for sort keys %ranges;
+	
 	$raw = "\x0321".$raw."\x0F";
-	length $raw < 13 ? prnt($raw."\t".$line) : prnt($raw.' :: '.$line); #13 length includes four formatting chars
+	length $raw < 13 	#13 length includes those four formatting chars
+		? prnt($raw."\t".$line.' ['.(join ', ', @content).']') 
+		: prnt($raw.' :: '.$line.' ['.(join ', ', @content).']'); 
+	
 	return EAT_XCHAT; 
 }
 
