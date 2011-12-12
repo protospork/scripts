@@ -39,7 +39,7 @@
 	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	[undef],		2270], #boku ha/wa tomodachi ga sukunai
 	"C\xB3"				=>	["Anime", [qw|commie|], 	"C3",			[undef],		2274],
 	"Cursed x Curious"	=>	["Anime", [qw|UTW|],		"C3",			[undef],		2274], #cube[d] x cursed x curious [C3]
-	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		2275],
+	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		undef],#2275], Ben-to airs first on TVA, which isn't listed on syoboi
 	tamayura			=>	["Anime", [qw'oyatsu'],		undef,			['oyatsu:avi'],	2263],
 	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		[undef],		2249],
 	'mirai nikki'		=>	["Anime", ['SS'],			"Nikki",		[undef],		2273],
