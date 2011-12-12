@@ -5,7 +5,7 @@ use HTML::Entities;	#?
 use JSON;
 use URI;
 use strict;
-use warnings;
+#use warnings; #there are a lot of ininitialized value warnings I can't be bothered fixing
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
@@ -107,20 +107,23 @@ sub pubmsg {
 		$title = get_title($url);
 	} else { 
 		sendresponse($title,$target,$server); 
-		unless ($title =~ /^Error/){
-			$titlecache{$url}{'url'} = $title;
-			$titlecache{$url}{'time'} = time;
-		}
 		return; 
 	}
 	
-	return if $title eq '0';	#if gettitle failed harder than should be possible
+	#if gettitle failed harder than should be possible
+	if (! defined($title) || ! $title){ return; }
+	
+	#if the URL has the title in it
 	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	#there is a better way to do this. there has to be :(
+	
+	#if someone's a spammer
 	if ($title eq $lasttitle && $target eq $lastchan){ return; }
 	
-	return if grep $title =~ $_, (@defaulttitles);	#error fallback titles, index pages, etc
-	$title = moreshenanigans($title,$nick,$target,$url); #unless $url =~ /api\.twitter|gdata\.youtube|deviantart\.com\/art/;	#again, not the best way to add twitter. again, fuck you.
-	sendresponse($title,$target,$server,$url) unless $title eq '1';	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
+	#error fallback titles, index pages, etc
+	return if grep $title =~ $_, (@defaulttitles);	
+	
+	$title = moreshenanigans($title,$nick,$target,$url);
+	if (defined $title && $title ne '1'){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
@@ -273,7 +276,7 @@ sub deviantart {
 	my $title;
 	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
 	$title = $1 || $2 || 'Deviantart is broken.';
-	return $title;
+	return $title unless $title =~ /\.swf$/; #hawk doesn't want videos spoiled or something
 }
 
 sub check_image_size {
