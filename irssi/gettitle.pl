@@ -72,14 +72,23 @@ sub pubmsg {
 		$server->command("msg $controlchan preparing log.");
 		sendmirror($nick,$server) || return;
 		$server->command("msg $controlchan done.");
-		
+	
+#todo: load the link as a URI entity and just request the key you need, if possible. 
+#	canonizing it should simplify the regexes either way
+	$url = URI->new($url)->canonical;
+
 	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
-	} elsif ($url =~ m!newegg\.com/Product/Product\S+Item=([^&]+)(?:&|$)!){
-		$url = 'http://www.ows.newegg.com/Products.egg/'.$1.'/';
+#	} elsif ($url =~ m!newegg\.com/Product/Product\S+Item=([^&]+)(?:&|$)!){
+#		$url = 'http://www.ows.newegg.com/Products.egg/'.$1.'/';
+	} elsif ($url->host eq 'www.newegg.com'){
+		my %que = $url->query_form;
+		$url->host('www.ows.newegg.com');
+		$url->path('/Products.egg/'.$que{'Item'}.'/');
+		$url->query_form(undef);
 	}
 	
 	if ($url =~ /pfordee.*jpe?g/i){
@@ -287,29 +296,19 @@ sub newegg {
 	my $page = shift;
 	my $obj = JSON->new->utf8->decode($page->decoded_content) || return 'newegg: '.$page->status_line;
 	
-#	$page->decoded_content =~ m!<a class="itmRating" name="Community" .+<span class="print" style="display:none;">(\d/5)</span>!;
-#	my $rating = $1 || 'not rated';
 	my $rating = $obj->{"ReviewSummary"}{"Rating"} || 'no rating';
 	
-	#this substitution section is going to be long but I'm not sure about putting it in the config file
-	#how do you use a qr() as a hash key? how do you use a qr() with substitution?
-#	$page->decoded_content =~ m!<title>Newegg\.com - (.+)</title>!;
-#	my $info = $1 || 'no info';
 	my $info = $obj->{"Title"} || 'no info';
 
+	#this substitution section is going to be long but I'm not sure about putting it in the config file
+	#how do you use a qr() as a hash key? how do you use a qr() with substitution?
 	$info =~ s!HDCP Ready|(SLI|Crossfire) Support|Video Card|Hard Drive!!g;
 	$info =~ s!PCI Express 2.0 x16!PCIe 2.0!;
+	$info =~ s!Desktop Processor!CPU!;
 	
-#	print 'getting http://content.newegg.com/LandingPage/ItemInfo4ProductDetail.aspx?Item='.$hash;
-#	my $newreq = $ua->get('http://content.newegg.com/LandingPage/ItemInfo4ProductDetail.aspx?Item='.$hash, 'referer' => 'http://www.newegg.com/Product/Product.aspx?Item='.$hash);
-#	return 'newegg - '.$info unless $newreq->is_success;
-#	return $newreq->status_line unless $newreq->is_success;
-	
-#	$newreq->decoded_content =~ m!"finalPrice":"(\d+\.\d\d)"!;
-#	my $price = $1 || 'no price';
 	my $price = $obj->{"FinalPrice"} || 'no price';
 	
-	return decode_entities($rating.'/5 Eggs || '.$price.' || '.$info);
+	return decode_entities('Newegg - '.$rating.'/5 Eggs || '.$price.' || '.$info);
 }
 
 sub check_image_size {
