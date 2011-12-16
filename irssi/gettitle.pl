@@ -9,7 +9,7 @@ use strict;
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
-use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases 
+use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
 @filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
 
 $VERSION = "1.7";
@@ -62,6 +62,11 @@ sub pubmsg {
 	
 	print $target.': '.$url if $debugmode == 1;
 	
+#load the link as a URI entity and just request the key you need, if possible. 
+#	canonizing it should simplify the regexes either way
+#	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
+	$url = URI->new($url)->canonical;
+	
 	#todo: given/when this shit up dawg
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
@@ -72,11 +77,6 @@ sub pubmsg {
 		$server->command("msg $controlchan preparing log.");
 		sendmirror($nick,$server) || return;
 		$server->command("msg $controlchan done.");
-	
-#todo: load the link as a URI entity and just request the key you need, if possible. 
-#	canonizing it should simplify the regexes either way
-	$url = URI->new($url)->canonical;
-
 	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		print $url if $debugmode == 1;
@@ -300,17 +300,7 @@ sub newegg {
 	
 	my $info = $obj->{"Title"} || 'no info';
 
-	#this substitution section is going to be long but I'm not sure about putting it in the config file
-	#how do you use a qr() as a hash key? how do you use a qr() with substitution?
-	$info =~ s!HDCP Ready|				#things to just remove
-			(SLI|Crossfire) Support|
-			Video Card|Hard Drive|
-			Backlight|Widescreen
-			!!gx; 
-			
-	$info =~ s!PCI Express 2.0 x16!PCIe 2.0!;
-	$info =~ s!Desktop Processor!CPU!;
-	$info =~ s!Power Supply!PSU!;
+	$info =~ s/$_->[0]/$_->[1]/g for @neweggreplace;
 	
 	my $price = $obj->{"FinalPrice"} || 'no price';
 	
