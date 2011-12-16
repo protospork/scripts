@@ -45,7 +45,7 @@ $albumname =~ s/^\s*(.+?) - Imgur.*$/$1/;
 if ($wingit){
 	if ($ARGV[0] =~ /^-/ && $albumname =~ /^(Photo Albums?|Album)$/){
 		$albumname = $album;
-		$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all)?}{$1}i;	
+		$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
 	} else {
 		$albumname = $ARGV[0];
 	}
