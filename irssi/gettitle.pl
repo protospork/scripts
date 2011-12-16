@@ -84,7 +84,7 @@ sub pubmsg {
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 #	} elsif ($url =~ m!newegg\.com/Product/Product\S+Item=([^&]+)(?:&|$)!){
 #		$url = 'http://www.ows.newegg.com/Products.egg/'.$1.'/';
-	} elsif ($url->host eq 'www.newegg.com'){
+	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #can is necessary b/c that url regex on line 60 sucks
 		my %que = $url->query_form;
 		$url->host('www.ows.newegg.com');
 		$url->path('/Products.egg/'.$que{'Item'}.'/');
