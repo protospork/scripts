@@ -302,9 +302,15 @@ sub newegg {
 
 	#this substitution section is going to be long but I'm not sure about putting it in the config file
 	#how do you use a qr() as a hash key? how do you use a qr() with substitution?
-	$info =~ s!HDCP Ready|(SLI|Crossfire) Support|Video Card|Hard Drive!!g;
+	$info =~ s!HDCP Ready|				#things to just remove
+			(SLI|Crossfire) Support|
+			Video Card|Hard Drive|
+			Backlight|Widescreen
+			!!gx; 
+			
 	$info =~ s!PCI Express 2.0 x16!PCIe 2.0!;
 	$info =~ s!Desktop Processor!CPU!;
+	$info =~ s!Power Supply!PSU!;
 	
 	my $price = $obj->{"FinalPrice"} || 'no price';
 	
