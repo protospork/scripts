@@ -82,8 +82,11 @@ sub pubmsg {
 		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
-#	} elsif ($url =~ m!newegg\.com/Product/Product\S+Item=([^&]+)(?:&|$)!){
-#		$url = 'http://www.ows.newegg.com/Products.egg/'.$1.'/';
+	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
+		my $sec = $url->path;
+		$sec =~ s!^/z!!; #/z/hash pages seem to crash the script
+		$url->path($sec);
+		undef $sec;
 	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #can is necessary b/c that url regex on line 60 sucks
 		my %que = $url->query_form;
 		$url->host('www.ows.newegg.com');
@@ -97,7 +100,7 @@ sub pubmsg {
 	}
 	return if grep $url =~ /\Q$_\E/i, (@ignoresites);	#leave somethingawful alone
 	
-	if($url !~ /^http/ && $url !~ m|/|) {	# try to avoid tracking site names simply used in conversation
+	if($url !~ /^http/ && $url !~ m|/|) {	# try to avoid tracking site names simply used in conversation #is this still working after the canonization?
 		return;
 	} elsif ($url !~ /^http/){
 		$url = 'http://' . $url;
@@ -227,7 +230,7 @@ sub get_title {
 	
 	given ($url){
 		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
-			return $1 if $page->decoded_content =~ $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
+			return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
 		}
 		when (m!tinypic.com/(?:r/|view\.php)!){
 			if  ($page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|i){
