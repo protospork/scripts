@@ -89,6 +89,7 @@ sub pubmsg {
 		undef $sec;
 	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #can is necessary b/c that url regex on line 60 sucks
 		my %que = $url->query_form;
+		return unless $que{'Item'};
 		$url->host('www.ows.newegg.com');
 		$url->path('/Products.egg/'.$que{'Item'}.'/');
 		$url->query_form(undef);
