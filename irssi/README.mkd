@@ -1,4 +1,4 @@
-##c8's functions as of 10/10/11
+##c8's functions as of 22/12/11
 
 ###searches
 .g - google (feeling lucky)  
@@ -7,7 +7,7 @@
 .wiki - wikipedia  
 .imdb - imdb.com  
 .amzn - amazon.com  
-.a(ni)db - search anidb (currently broken)  
+.a(ni)db - search anidb
 .w(eather)  
 
 ###misc triggers
@@ -16,6 +16,7 @@
 .roll [#d#] - roll some dice  
 .rose - a dice game  
 .choose - choose one item of a list (commas optional)  
+.8ball - ask a question
 .sin - choose one of the seven deadly sins  
 .farnsworth - a random quote from professor farnsworth  
 .anime/.animu - a random, decent anime (list chosen [largely] by consensus in #anime)  
