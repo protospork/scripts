@@ -2,6 +2,7 @@ use Irssi;
 use strict;
 use warnings;
 use LWP;
+use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use HTML::Scrape 'put';
 use utf8;
@@ -63,8 +64,8 @@ sub event_privmsg {
 	
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
-		when (/^sins?$|^choose$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); } #the dual regex thing may turn out annoying
+		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
+		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); }
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
@@ -75,6 +76,7 @@ sub event_privmsg {
 		when (/^airtimes$/){		$return = airtimes(); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
 		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); }
+		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -200,11 +202,50 @@ sub readtext {
 	return $line;
 }
 
+sub anagram {
+	my (@terms,@search);
+	shift;
+	for (@_){
+		/^\+/ ? push @search, $_ : push @terms, $_;
+	}
+	
+	my $url = URI->new('http://wordsmith.org/anagram/anagram.cgi?t=900&a=n&anagram='.(join '+', @terms))->canonical;
+	print 'triggers: '.$url;
+	my $req = $ua->get($url);
+	return unless $req->is_success;
+	
+	$req->decoded_content =~ m!Displaying first \d+00:\s+</b><br>(.+?)<br>\s+<bottomlinks>!s;
+	my @results = (split /\n?<br>\n?/, $1);
+	print $#results;
+	
+	my @spam;
+	if ($#search){
+		my $count = 1;
+		for (@results){
+			last if $count > 10;
+			if ($_ =~ /$search[0]/i){ #yeah, so I'm ignoring any other searches
+				$count++;
+				push @spam, $_;
+			}
+		}
+	} else {
+		@spam = @results[0..10];
+	}
+	$#spam ? return join ', ', @spam : return;
+}
+
 sub choose { 
 	my $call = shift;
 	my @choices;
 	if ($call =~ /sins?/){
 		@choices = qw'greed gluttony wrath sloth lust envy pride';
+	} elsif ($call =~ /8ball/i && $#choices){
+		@choices = (
+			"It is certain", "It is decidedly so", "Without a doubt", "Yes – definitely",
+			"You may rely on it", "As I see it, yes", "Most likely", "Outlook good", "Signs point to yes", "Very doubtful",
+			"Yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
+			"Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good"
+		);
 	} elsif ((join ' ', (@_)) =~ /,/){
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
