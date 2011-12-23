@@ -49,7 +49,22 @@
 	'shana final'		=>	["Anime", ['eclipse'],		'Shana',		[undef],		2262], 
 	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef],	#OVA
 	'kyousogiga'		=>	["Anime", ['commie'],		undef,			[undef],		undef], #I dunno really
+#winter 2011/2012
 	"mouretsu pirates"	=>	["Anime", [undef],			undef,			[undef],		undef],
+	basketarmy			=>  ["Anime", [undef],			undef,			[undef],		undef], #busou chuugakusei basketarmy
+	randoseru			=>  ["Anime", [undef],			undef,			[undef],		undef], #recorder to randoseru
+	"high school dxd"	=>  ["Anime", [undef],			undef,			[undef],		undef],
+	another				=>  ["Anime", [undef],			undef,			[undef],		undef],
+	"rinne no lagrange"	=>  ["Anime", [undef],			undef,			[undef],		undef],
+	"rock shooter"		=>  ["Anime", [undef],			undef,			[undef],		undef], #black{star}rock shooter
+	"kill me baby"		=>  ["Anime", [undef],			undef,			[undef],		undef],
+	"inu x boku"		=>	["Anime", [undef],			undef,			[undef],		undef],
+	"kikinasai"			=>	["Anime", [undef],			undef,			[undef],		undef], #papa no iu no kikinasai!
+	"brave10"			=>  ["Anime", [undef],			undef,			[undef],		undef],
+	symphogear			=>	["Anime", [undef],			undef,			[undef],		undef], #senhime zesshou symphogear
+	nisemonogatari		=>	["Anime", [undef],			undef,			[undef],		undef],
+	matteru				=>	["Anime", [undef],			undef,			[undef],		undef], #ano natsu de matteru
+	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef],
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
