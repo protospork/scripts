@@ -33,13 +33,13 @@ while ($num){
 	$in =~ s/fu/hu/g;
 	
 	if ($in ~~ lc(unidecode($string))){
-		say 'yep';
 		$right++;
+		say 'yep ('.$right.' right|'.$wrong.' wrong)';
 	} else {
-		say 'no, it\'s '.(unidecode $string);
 		$wrong++;
+		say 'no, it\'s '.(unidecode $string).' ('.$right.' right|'.$wrong.' wrong)';
 	}
 	$num--;
 }
 
-say $right.' correct, '.$wrong.' messed up.';
+say 'RESULTS: '.$right.' correct, '.$wrong.' messed up.';
