@@ -4,7 +4,6 @@ use Term::ANSIColor;
 
 #a hiragana trainer... sort of flash card thingy
 #might add katakana later
-#todo: add the ability to slurp a list of runed words and shuffle output them
 
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
@@ -53,12 +52,24 @@ sub nonsense {
 sub take {
 	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
 	my %entries;
+	
+	print colored ("Adage/expression mode? ", 'cyan');
+	chomp(my $adage = <STDIN>);
+	if ($adage =~ /^no$/i){ $adage = 0; }
+	
 	while (<$file>){
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 #		say $term if defined $term; #slows down the load and is obviously spammy
 		next unless defined $term;
-		if ($term =~ /[^\p{Hiragana}]/ || $def =~ /\(obsc\)/){ next; }
-		else { $entries{$term} = $def; }
+		if ($term =~ /[^\p{Hiragana}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+			next; 
+		} elsif ($adage && $def =~ /\(exp\)/){
+			$entries{$term} = $def
+		} elsif ($adage){
+			next;
+		} elsif (! $adage){ #vanilla mode
+			$entries{$term} = $def; 
+		}
 	}
 	say ((scalar keys %entries).' words in dictionary.');
 	
