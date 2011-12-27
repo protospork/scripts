@@ -9,10 +9,10 @@ use strict;
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
-use vars qw( @ignoresites @offchans @mirrorchans @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
+use vars qw( @ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
 @filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
 
-$VERSION = "1.7";
+$VERSION = "1.8";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -54,8 +54,9 @@ sub pubmsg {
 	my ($server, $data, $nick, $mask, $target) = @_;
 	unless (defined($target)){ $target = $nick; }
 	
-	if (grep $target eq $_, (@offchans)){ return; }	#check channel blacklist
-	if ($nick =~ m{(?:Bot|Serv)$|c8h10n4o2}i || $mask =~ /bots\.adelais/i || $target =~ /tokyotosho|lurk/){ return; }	#quit talking to strange bots
+	my $notitle = 0;
+	if (grep $target eq $_, (@offchans)){ $notitle++; }	#check channel blacklist
+	if ($nick =~ m{(?:Bot|Serv)$|c8h10n4o2}i || $mask =~ /bots\.adelais/i || $target =~ /tokyotosho|lurk/){ $notitle++; }	#quit talking to strange bots
 	
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|http://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
@@ -79,6 +80,7 @@ sub pubmsg {
 		$server->command("msg $controlchan done.");
 	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
+		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
@@ -123,7 +125,7 @@ sub pubmsg {
 	if (! $title || ($title && $title eq '0')){ 
 		$title = get_title($url);
 	} else { 
-		sendresponse($title,$target,$server); 
+		sendresponse($title,$target,$server) unless $notitle; 
 		return; 
 	}
 	
@@ -140,7 +142,7 @@ sub pubmsg {
 	return if grep $title =~ $_, (@defaulttitles);	
 	
 	$title = moreshenanigans($title,$nick,$target,$url);
-	if (defined $title && $title ne '1'){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
+	if (defined $title && $title ne '1' && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
