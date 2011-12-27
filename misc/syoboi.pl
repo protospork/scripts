@@ -10,6 +10,8 @@ my $syoboi = URI->new('http://cal.syoboi.jp/json.php');
 my %query;
 my %titles;
 
+binmode STDOUT, ":utf8";
+
 my $dbg;
 $dbg = 1 if $ARGV{'d'};
 
