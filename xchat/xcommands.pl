@@ -124,3 +124,10 @@ sub rot13 {
 	command ('say '.$out);
 	return EAT_XCHAT;
 }
+hook_command('curs', \&squiggles); 
+sub squiggles {
+	my $str = $_[1][1]; 
+	$str =~ tr/A-Za-z0-9/\x{1D4D0}-\x{1D503}\x{1D7EC}-\x{1D7F5}/; 
+	command("say $str");
+	return EAT_XCHAT;
+}
