@@ -50,21 +50,22 @@
 	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef],	#OVA
 	'kyousogiga'		=>	["Anime", ['commie'],		undef,			[undef],		undef], #I dunno really
 #winter 2011/2012
-	"mouretsu pirates"	=>	["Anime", [undef],			undef,			[undef],		undef],
+	"mouretsu pirates"	=>	["Anime", [undef],			undef,			[undef],		2370], #26 eps [randomc]
 	basketarmy			=>  ["Anime", [undef],			undef,			[undef],		undef], #busou chuugakusei basketarmy
-	randoseru			=>  ["Anime", [undef],			undef,			[undef],		undef], #recorder to randoseru
-	"high school dxd"	=>  ["Anime", [undef],			undef,			[undef],		undef],
-	another				=>  ["Anime", [undef],			undef,			[undef],		undef],
-	"rinne no lagrange"	=>  ["Anime", [undef],			undef,			[undef],		undef],
-	"rock shooter"		=>  ["Anime", [undef],			undef,			[undef],		undef], #black{star}rock shooter
-	"kill me baby"		=>  ["Anime", [undef],			undef,			[undef],		undef],
-	"inu x boku"		=>	["Anime", [undef],			undef,			[undef],		undef],
-	"kikinasai"			=>	["Anime", [undef],			undef,			[undef],		undef], #papa no iu no kikinasai!
-	"brave10"			=>  ["Anime", [undef],			undef,			[undef],		undef],
-	symphogear			=>	["Anime", [undef],			undef,			[undef],		undef], #senhime zesshou symphogear
-	nisemonogatari		=>	["Anime", [undef],			undef,			[undef],		undef],
-	matteru				=>	["Anime", [undef],			undef,			[undef],		undef], #ano natsu de matteru
+	randoseru			=>  ["Anime", [undef],			undef,			[undef],		2363], #recorder to randoseru
+	"high school dxd"	=>  ["Anime", [undef],			undef,			[undef],		2366],	#12 eps [randomc]
+	another				=>  ["Anime", [undef],			undef,			[undef],		2373], #12eps [randomc]
+	"rinne no lagrange"	=>  ["Anime", [undef],			undef,			[undef],		2390],	#12 eps [randomc]
+	"rock shooter"		=>  ["Anime", [undef],			undef,			[undef],		2187], #black{star}rock shooter #8 eps [randomc]
+	"kill me baby"		=>  ["Anime", [undef],			undef,			[undef],		2372],
+	"inu x boku"		=>	["Anime", [undef],			undef,			[undef],		2377],
+	"kikinasai"			=>	["Anime", [undef],			undef,			[undef],		2383], #papa no iu no kikinasai!
+	"brave10"			=>  ["Anime", [undef],			undef,			[undef],		2382],	#12 eps [randomc]
+	symphogear			=>	["Anime", [undef],			undef,			[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
+	nisemonogatari		=>	["Anime", [undef],			undef,			[undef],		2396],	#13 eps [randomc]
+	matteru				=>	["Anime", [undef],			undef,			[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef],
+	'high school boys'	=>  ["Anime", [undef],			undef,			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
