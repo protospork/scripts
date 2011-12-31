@@ -91,6 +91,7 @@ sub take {
 		$in =~ s/tsu/tu/g;
 		$in =~ s/chi/ti/g;
 		$in =~ s/fu/hu/g;
+		$in =~ s/ji/zi/g;
 		
 		if ($in ~~ lc(unidecode($string))){
 			$right++;
