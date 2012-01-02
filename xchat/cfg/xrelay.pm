@@ -55,7 +55,7 @@
 	randoseru			=>  ["Anime", [undef],			undef,			[undef],		2363], #recorder to randoseru
 	"high school dxd"	=>  ["Anime", [undef],			undef,			[undef],		2366],	#12 eps [randomc]
 	another				=>  ["Anime", [undef],			undef,			[undef],		2373], #12eps [randomc]
-	"rinne no lagrange"	=>  ["Anime", [undef],			undef,			[undef],		2390],	#12 eps [randomc]
+	"rinne no lagrange"	=>  ["Anime", [undef],			Lagrange,		[undef],		2390],	#12 eps [randomc]
 	"rock shooter"		=>  ["Anime", [undef],			undef,			[undef],		2187], #black{star}rock shooter #8 eps [randomc]
 	"kill me baby"		=>  ["Anime", [undef],			undef,			[undef],		2372],
 	"inu x boku"		=>	["Anime", [undef],			undef,			[undef],		2377],
