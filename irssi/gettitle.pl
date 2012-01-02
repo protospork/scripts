@@ -311,7 +311,9 @@ sub newegg {
 	
 	my $price = $obj->{"FinalPrice"} || 'no price';
 	
-	return decode_entities('Newegg - '.$rating.'/5 Eggs || '.$price.' || '.$info);
+	$rating eq 'no rating' 
+	? return decode_entities('Newegg - '.$price.' || '.$info) 
+	: return decode_entities('Newegg - '.$rating.'/5 Eggs || '.$price.' || '.$info);
 }
 
 sub check_image_size {
