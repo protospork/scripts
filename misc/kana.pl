@@ -4,6 +4,7 @@ use Term::ANSIColor;
 
 #a hiragana trainer... sort of flash card thingy
 #might add katakana later
+#todo: kyo/rya/etc
 
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
