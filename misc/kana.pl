@@ -1,6 +1,7 @@
-use Modern::Perl;
+﻿use Modern::Perl;
 use Text::Unidecode;
 use Term::ANSIColor;
+use utf8;
 
 #a hiragana trainer... sort of flash card thingy
 #todo: kyo/rya/etc
@@ -26,7 +27,7 @@ binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
 $ARGV[0] ? take($ARGV[0]) : nonsense();
 
-sub nonsense {
+sub nonsense { #this thing doesn't handle digraphs right, whoops
 	my @gana = (12353..12431, 12434, 12435);
 	#these are the vowels and N, I think it makes sense to weight them a bit more
 	push @gana, (12353, 12356, 12357, 12360, 12362, 12435); 
@@ -100,9 +101,18 @@ sub take {
 		my ($string) = ($gana[int rand $#gana]);
 		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
 		chomp(my $in = <STDIN>);
+		$in = lc $in;
 		
 		#extra space for single-char sounds helps keeping track of where you are
 		$in =~ s/ //g; 
+		
+		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
+		if ($string =~ /[ゃゅょ]/){
+			$in =~ s/(?:([knhmrg])y|([sc]h|j))(?=[aou])/$1$2iy/g;
+		#	$in =~ s/([knhmrg])y(?=[aou])/$1iy/g; 
+		#	$in =~ s/([sc]h|j)(?=[aou])/$1iy/g; print $in;
+		}
+		
 		#unidecode disagrees with my books on these
 		$in =~ s/shi/si/g;
 		$in =~ s/tsu/tu/g;
@@ -110,7 +120,9 @@ sub take {
 		$in =~ s/fu/hu/g;
 		$in =~ s/ji/zi/g;
 		
-		if ($in ~~ lc(unidecode($string))){
+		
+		my $sol = lc(unidecode($string));
+		if ($in ~~ $sol){
 			$right++;
 			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
 		} else {
