@@ -3,8 +3,23 @@ use Text::Unidecode;
 use Term::ANSIColor;
 
 #a hiragana trainer... sort of flash card thingy
-#might add katakana later
 #todo: kyo/rya/etc
+#todo: separate dictionary handlers from quiz section
+#todo: katakana
+
+#INSTRUCTIONS:
+#	1: WINDOWS-ONLY:
+#		install cygwin and puttycyg (normal cygterm will show you garbage instead of runes)
+#	2:
+#		download edict_sub.gz or edict.gz from http://ftp.monash.edu.au/pub/nihongo/00INDEX.html#dic_fil
+#		and extract it (ideally, in the same place you put kana.pl)
+#	3:
+#		type `cpan -i Modern::Perl Text::Unidecode Term::ANSIColor` into your terminal/puttycyg
+#		and follow those instructions
+#	4:
+#		navigate to the folder with kana.pl in it and type `perl kana.pl edict_sub` 
+#		(replace edict_sub with edict if necessary)
+
 
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
@@ -46,14 +61,15 @@ sub nonsense {
 		}
 		$num--;
 	}
-
-#	say 'RESULTS: '.$right.' correct, '.$wrong.' messed up.'; #redundant
 }
 
 sub take {
-	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
+	open my $file, '<:encoding(euc-jp)', $_[0] || die $!; #the jedict files are euc-jp
 	my %entries;
 	
+#MENU
+#todo:	in addition to adage mode, how about noun/verb/adjective modes
+#		and a 'hardcore mode' where you're only shown the definition
 	print colored ("Adage/expression mode? ", 'cyan');
 	chomp(my $adage = <STDIN>);
 	if ($adage =~ /^no$/i){ $adage = 0; }
