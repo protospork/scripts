@@ -454,7 +454,7 @@ sub weather {
 		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
 		return;
 	} else {
-		push @memory, (join '::', $nick, $location);
+		push @memory, (join '::', $nick, $location); #todo: don't push if it's already in there
 		$savedloc{$nick} = $location;
 		my @goodarray = split(/[|]\s*/, $results->decoded_content);
 		my ($timestamp,$ctemp) = ($goodarray[0],'');
