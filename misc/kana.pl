@@ -4,19 +4,44 @@ use Term::ANSIColor;
 use utf8;
 
 #a hiragana trainer... sort of flash card thingy
-#todo: separate dictionary handlers from quiz section
 #todo: katakana
+#todo:	'hardcore mode' where you're only shown the definition
 
 my $debugmode = 0;
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
-$ARGV[0] ? menu($ARGV[0]) : nonsense();
+$ARGV[0] ? menu($ARGV[0]) : find_dict();
+
+sub find_dict {
+	my @dir = <*>;
+	if (grep "edict_sub", @dir){
+		print colored	(
+						'Using edict_sub. If you\'d prefer edict, call the script with'."\n".
+						'`perl kana.pl edict`',
+						'green'
+						);
+		print "\n";
+		return menu('edict_sub');
+	} elsif (grep "edict", @dir){
+		print colored ('Found edict, will use as dictionary.', 'green');
+		print "\n";
+		return menu('edict');
+	} elsif (grep "jmdict", @dir){
+		print colored ('JMDict is currently unsupported. Download edict instead, it\'s the same content', 'red');
+		print "\n";
+		exit;
+	} else {
+		print colored ('No dictionary file found. Defaulting to nonsense mode', 'red');
+		print "\n";
+		return nonsense();
+	}
+}
 
 sub menu {
 	my $dict = $_[0];
 	
-	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA/STD\n", 'red');
+	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA\n", 'red');
 	
 	##define menu
 	my (@menuL, @menuR);
@@ -114,18 +139,14 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 }
 
 sub hiragana {
-	open my $file, '<:encoding(euc-jp)', $_[0] || die $!; #the jedict files are euc-jp
+	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
 	my %entries;
-	
-#MENU
-#todo:	in addition to adage mode, how about noun/verb/adjective modes
-#		and a 'hardcore mode' where you're only shown the definition
-#		or grab some of those garbage types from line 141 and turn them into dedicated modes
+
 
 	print colored ('Hiragana', 'cyan on_blue');
 	print "\n";
 	
-	say $_[1] if $debugmode;
+	say 'menu choice '.$_[1] if $debugmode;
 	
 	my $adage;
 	if ($_[1] == 22){
@@ -169,29 +190,32 @@ sub hiragana {
 		#geminate (sokuon)
 		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
 		if ($string =~ /っ/){
-			$string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e;
+			if ($string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
 		}
 		
 		my $sol = lc(unidecode($string));
 		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
 		if ($string =~ /[ゃゅょ]/){
-			$sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
-			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
-			$sol =~ s/siy(?=[aou])/sh/g;
-			$sol =~ s/tiy(?=[aou])/ch/g; #okay that should fix ^
-			$sol =~ s/ziy(?=[aou])/j/g;
+			if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
+#			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
+			
+			if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
+			if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
+			if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
 		
 		#make sure that sokuon was actually dealt with
 		} elsif ($string =~ /っ/){
 			die "sokuon wasn't removed";
 		}
 		
-		#unidecode disagrees with my books on these ##then I should be editing the unidecode string, not the input :|
-		$sol =~ s/si/shi/g;
-		$sol =~ s/tu/tsu/g;
-		$sol =~ s/ti/chi/g;
-		$sol =~ s/hu/fu/g;
-		$sol =~ s/zi/ji/g;
+		#unidecode disagrees with my books on these
+		if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
+		if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
+		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
+		if ($sol =~ s/(?<=[aeiou])hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
+		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+		
+		say 'you said '.$in if $debugmode;
 		
 		
 		if ($in ~~ $sol){
@@ -237,11 +261,11 @@ __END__
 
 =head2 UHOHs
 
-2012-01-04 06:09
+2012-01-05 08:14
 C<<
-ぜっきょう {(n,vs) exclamation/scream/shout/(P)}
-zekkyou
-no, it's zetukiyou 
+たんしゅ {(n) cinnabar/vermilion}
+tanshu
+no, it's tansiyu
 >>
 ^fixed^
 
