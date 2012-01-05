@@ -4,8 +4,6 @@ use Term::ANSIColor;
 use utf8;
 
 #a hiragana trainer... sort of flash card thingy
-#todo: geminate (sokuon)
-#	little tsu before a consonant just lengthens it IE こっこう is kokkou, not kotsukou
 #todo: separate dictionary handlers from quiz section
 #todo: katakana
 
@@ -108,6 +106,8 @@ sub take {
 		#extra space for single-char sounds helps keeping track of where you are
 		$in =~ s/ //g; 
 		
+		#geminate (sokuon)
+		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
 		if ($string =~ /っ/){
 			$string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e;
 		}
@@ -115,26 +115,18 @@ sub take {
 		my $sol = lc(unidecode($string));
 		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
 		if ($string =~ /[ゃゅょ]/){
-#			no warnings 'uninitialized'; #perl throws warnings about $1 or $2 being uninitialized
-#			$in =~ s/(?:([knhmrgbp])y|([sc]h|j))(?=[aou])/$1$2iy/g;
 			$sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
-			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g;
+			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
+			$sol =~ s/siy(?=[aou])/sh/g;
+			$sol =~ s/tiy(?=[aou])/ch/g; #okay that should fix ^
 			$sol =~ s/ziy(?=[aou])/j/g;
 		
-		#geminate (sokuon)
-		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
+		#make sure that sokuon was actually dealt with
 		} elsif ($string =~ /っ/){
-#			$in =~ s/([kstc])\1/tsu$1/g;
-#			$sol =~ s/tsu([kstc])/\1\1/g; #THIS IS NOT A SOLUTION. FIX THIS IMMEDIATELY.
 			die "sokuon wasn't removed";
 		}
 		
 		#unidecode disagrees with my books on these ##then I should be editing the unidecode string, not the input :|
-#		$in =~ s/shi/si/g;
-#		$in =~ s/tsu/tu/g;
-#		$in =~ s/chi/ti/g;
-#		$in =~ s/fu/hu/g;
-#		$in =~ s/ji/zi/g;
 		$sol =~ s/si/shi/g;
 		$sol =~ s/tu/tsu/g;
 		$sol =~ s/ti/chi/g;
@@ -163,7 +155,7 @@ C<<
 zekkyou
 no, it's zetukiyou 
 >>
-tofix: not a fix, but editting the unidecode string instead of the input will be clearer
+^fixed^
 
 /eval use Text::Unidecode; use Modern::Perl; print '---'; my $st = 'ぜっきょう'; print $st; $st =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e; print $st; $st = unidecode $st; $st =~ s/(?<=[knhmrgbp])i(?=y[aou])//g; print $st;
 haha wow (I just wanted that for posterity)
