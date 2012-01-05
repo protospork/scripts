@@ -7,7 +7,7 @@ use utf8;
 #todo: separate dictionary handlers from quiz section
 #todo: katakana
 
-
+my $debugmode = 0;
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
@@ -46,9 +46,32 @@ sub menu {
 	##take choice
 	print colored ("Choose a Number ", 'cyan');
 	chomp (my $choice = <STDIN>);
-	##
+	if ($choice !~ /^[0-9]+$/){ 
+		print colored ('I asked for a number between 1 and 5. This isn\'t hard.', 'red'); 
+		print "\n";
+		return menu(@_); 
+	}
+	##submenu?
+	if ($choice == 2 || $choice == 3){
+		$choice *= 10;
+		print colored ((sprintf "%02d", ($choice + 1)), 'blue on_cyan');
+		print colored ((sprintf " | %35s  ", 'standard mode: no tech jargon'), 'cyan on_blue');
+		print "\n"; #sticking newlines in the colored strings colors the next line
+		print colored ((sprintf "%02d", ($choice + 2)), 'blue on_cyan');
+		print colored ((sprintf " | %35s  ", 'adages (colloquial metaphors) ONLY'), 'cyan on_blue');
+		print "\n";
+	##take choice again
+		print colored ("Choose a Number ", 'cyan');
+		chomp ($choice = <STDIN>);
+	}
+	##out of bounds?
+	if (($choice > 5 && $choice < 21) || $choice > 32){ #FLAWED - FIX THIS
+		print colored ("Invalid choice, returning to root menu.\nTrying to leave? CTRL-C", 'red');
+		print "\n";
+		return menu(@_);
+	}
 	
-	take($dict, $choice);
+	hiragana($dict, $choice);
 }
 
 sub nonsense { #this thing doesn't handle digraphs right, whoops
@@ -59,7 +82,7 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 	map { $_ = chr $_ } @gana;
 
 	print colored (	"WARNING: This input mode is seriously outdated and only outputs gibberish. \n".
-					"You should really go download jedict.\n", 'red');
+					"Download jedict and the real options will be unlocked.\n", 'red');
 	print colored ("Round Length? ", 'white');
 	my $num = 0 + <STDIN>;
 	say colored ($num.' "words" then.', 'green');
@@ -90,21 +113,31 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 	}
 }
 
-sub take {
+sub hiragana {
 	open my $file, '<:encoding(euc-jp)', $_[0] || die $!; #the jedict files are euc-jp
 	my %entries;
 	
 #MENU
 #todo:	in addition to adage mode, how about noun/verb/adjective modes
 #		and a 'hardcore mode' where you're only shown the definition
-#		or grab some of those garbage types from line 83 and turn them into dedicated modes
-	print colored ("Adage/expression mode? ", 'cyan');
-	chomp(my $adage = <STDIN>);
-	if ($adage =~ /^no$/i){ $adage = 0; }
+#		or grab some of those garbage types from line 141 and turn them into dedicated modes
+
+	print colored ('Hiragana', 'cyan on_blue');
+	print "\n";
 	
+	say $_[1] if $debugmode;
+	
+	my $adage;
+	if ($_[1] == 22){
+		$adage++;
+		print colored ('Adage mode enabled.', 'cyan on_blue');
+		print "\n";
+	}
+	
+	#build the dictionary
 	while (<$file>){
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
-#		say $term if defined $term; #slows down the load and is obviously spammy
+#		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
 		next unless defined $term;
 		if ($term =~ /[^\p{Hiragana}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
 			next; 
@@ -116,11 +149,11 @@ sub take {
 			$entries{$term} = $def; 
 		}
 	}
-	say ((scalar keys %entries).' words in dictionary.');
+	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
 	
-	print colored ("Round Length? ", 'white');
+	print colored ("Round Length? ", 'green');
 	my $num = 0 + <STDIN>;
-	say colored ($num.' words then.', 'green');
+	if ($debugmode){ say colored ($num.' words then.', 'green'); }
 	
 	
 	my ($right, $wrong, @gana) = (0, 0, keys %entries);
