@@ -7,24 +7,49 @@ use utf8;
 #todo: separate dictionary handlers from quiz section
 #todo: katakana
 
-#INSTRUCTIONS:
-#	1: WINDOWS-ONLY:
-#		install cygwin and puttycyg (normal cygterm will show you garbage instead of runes)
-#	2:
-#		download edict_sub.gz or edict.gz from http://ftp.monash.edu.au/pub/nihongo/00INDEX.html#dic_fil
-#		and extract it (ideally, in the same place you put kana.pl)
-#	3:
-#		type `cpan -i Modern::Perl Text::Unidecode Term::ANSIColor` into your terminal/puttycyg
-#		and follow those instructions
-#	4:
-#		navigate to the folder with kana.pl in it and type `perl kana.pl edict_sub` 
-#		(replace edict_sub with edict if necessary)
-
 
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
-$ARGV[0] ? take($ARGV[0]) : nonsense();
+$ARGV[0] ? menu($ARGV[0]) : nonsense();
+
+sub menu {
+	my $dict = $_[0];
+	
+	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA/STD\n", 'red');
+	
+	##define menu
+	my (@menuL, @menuR);
+	#left column
+	push @menuL, (sprintf "%02d", 1);
+	push @menuL, (sprintf " | %35s  ", 'normal mode - hiragana & katakana');
+	push @menuL, (sprintf "%02d", 2);
+	push @menuL, (sprintf " | %35s  ", 'hiragana only'); #submenu TODO: give all submenu items choice numbers you can type immediately (shortcuts)
+	push @menuL, (sprintf "%02d", 3);
+	push @menuL, (sprintf " | %35s  ", 'katakana only'); #submenu
+	#right column
+	push @menuR, (sprintf "%02d", 4);
+	push @menuR, (sprintf " | %35s  ", 'search dictionary');
+	push @menuR, (sprintf "%02d", 5);
+	push @menuR, (sprintf " | %35s  ", 'validate dictionary');
+	##build menu
+	while (@menuL){
+		my ($num, $txt) = (shift @menuL, shift @menuL);
+		print colored ($num, 'blue on_cyan');
+		print colored ($txt, 'cyan on_blue');
+		if (@menuR){
+			print colored (shift @menuR, 'blue on_cyan');
+			print colored (shift @menuR, 'cyan on_blue');
+		}
+		print "\n";
+	}
+	##take choice
+	print colored ("Choose a Number ", 'cyan');
+	chomp (my $choice = <STDIN>);
+	##
+	
+	take($dict, $choice);
+}
 
 sub nonsense { #this thing doesn't handle digraphs right, whoops
 	my @gana = (12353..12431, 12434, 12435);
@@ -33,6 +58,8 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 	#push @gana, (12432, 12433, 12436); #wi, we, and vu - but they're useless IRL
 	map { $_ = chr $_ } @gana;
 
+	print colored (	"WARNING: This input mode is seriously outdated and only outputs gibberish. \n".
+					"You should really go download jedict.\n", 'red');
 	print colored ("Round Length? ", 'white');
 	my $num = 0 + <STDIN>;
 	say colored ($num.' "words" then.', 'green');
@@ -147,7 +174,35 @@ sub take {
 
 __END__
 
-=head1 UHOHs
+=head1 INSTRUCTIONS:
+
+=encoding utf8
+
+=over 1
+
+=item 1:
+
+		WINDOWS-ONLY:
+		install cygwin and puttycyg (normal cygterm will show you garbage instead of runes)
+
+=item 2:
+
+		download edict_sub.gz or edict.gz from http://ftp.monash.edu.au/pub/nihongo/00INDEX.html#dic_fil
+		and extract it (ideally, in the same place you put kana.pl)
+
+=item 3:
+
+		type C<cpan -i Modern::Perl Text::Unidecode Term::ANSIColor> into your terminal/puttycyg
+		and follow those instructions
+
+=item 4:
+
+		navigate to the folder with kana.pl in it and type C<perl kana.pl edict_sub>
+		(replace edict_sub with edict if necessary)
+
+=back
+
+=head2 UHOHs
 
 2012-01-04 06:09
 C<<
