@@ -7,7 +7,7 @@ use utf8;
 #todo: katakana
 #todo:	'hardcore mode' where you're only shown the definition
 
-my $debugmode = 0;
+my $debugmode = 1;
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
@@ -216,6 +216,7 @@ sub hiragana {
 		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
 		
 		say 'you said '.$in if $debugmode;
+		say 'I think  '.$sol if $debugmode;
 		
 		
 		if ($in ~~ $sol){
@@ -223,7 +224,7 @@ sub hiragana {
 			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
 		} else {
 			$wrong++;
-			say colored ('no, it\'s '.(unidecode $string).' ('.$right.' right|'.$wrong.' wrong)', 'red');
+			say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
 		}
 		$num--;
 	}
@@ -263,11 +264,10 @@ __END__
 
 2012-01-05 08:14
 C<<
-たんしゅ {(n) cinnabar/vermilion}
-tanshu
-no, it's tansiyu
+えんはいなものあじなもの {(exp) inscrutable and interesting are the ways people are brought together}
+enhainamonoojinamono
+no, it's enhainamonoazinamono
 >>
-^fixed^
 
 /eval use Text::Unidecode; use Modern::Perl; print '---'; my $st = 'ぜっきょう'; print $st; $st =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e; print $st; $st = unidecode $st; $st =~ s/(?<=[knhmrgbp])i(?=y[aou])//g; print $st;
 haha wow (I just wanted that for posterity)
