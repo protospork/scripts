@@ -263,10 +263,24 @@ __END__
 =head2 UHOHs
 
 2012-01-05 08:14
+
 C<<
+
 えんはいなものあじなもの {(exp) inscrutable and interesting are the ways people are brought together}
 enhainamonoojinamono
 no, it's enhainamonoazinamono
+
+>>
+
+C<<
+
+こうふくをもとめて {(exp) in search (pursuit) of happiness}
+koufukuwomutomete
+regex ln215
+you said koufukuwomutomete
+I think  koufukuwomotomete
+no, it's koufukuwomotomete
+
 >>
 
 /eval use Text::Unidecode; use Modern::Perl; print '---'; my $st = 'ぜっきょう'; print $st; $st =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e; print $st; $st = unidecode $st; $st =~ s/(?<=[knhmrgbp])i(?=y[aou])//g; print $st;
