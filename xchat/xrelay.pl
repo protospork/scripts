@@ -271,32 +271,34 @@ sub set_airtimes {
 	#I could probably combine these two loops but :effort:
 	for (keys %{$TIDs}){
 		my $short = $TIDs->{$_};
-		if ($topic =~ /$short +(\d+)/i){ # this method will only announce an airtime if the title is in the topic- I'm not too sure how I feel about that :\
-			my $epno = $1; $epno++;
-			my $info = get_airtime($_, $epno);
-			if ($info =~ /^ERROR/){
+		my $epno;
+		if ($topic =~ /$short +(\d+)/i){ # this method will probably announce anything in the config file even if it's old as shit
+			$epno = $1; $epno++;
+		} else {
+			$epno = 1;
+		}		
+		
+		my $info = get_airtime($_, $epno);
+		if ($info =~ /^ERROR/){
+			prnt($info, $ctrlchan, $destsrvr);
+			next;
+		} elsif ($info =~ /^EXCEPTION/){
+			prnt($info, $ctrlchan, $destsrvr);
+			undef $info;
+			$info = get_airtime($_, ++$epno);
+			if ($info =~ /^ERROR|EXCEPTION/){ #I'm fucking retarded
 				prnt($info, $ctrlchan, $destsrvr);
 				next;
-			} elsif ($info =~ /^EXCEPTION/){
-				prnt($info, $ctrlchan, $destsrvr);
-				undef $info;
-				$info = get_airtime($_, ++$epno);
-				if ($info =~ /^ERROR|EXCEPTION/){ #I'm fucking retarded
-					prnt($info, $ctrlchan, $destsrvr);
-					next;
-				}
 			}
-			
-			my $neat_time = [localtime $info->[1]];
-			$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
-			
-			my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
-			prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
+		}
+		
+		my $neat_time = [localtime $info->[1]];
+		$neat_time = ((sprintf "%02d", $neat_time->[2]).':'.(sprintf "%02d", $neat_time->[1]).' '.(1900 + $neat_time->[5]).'-'.(sprintf "%02d", 1 + $neat_time->[4]).'-'.(sprintf "%02d", $neat_time->[3]));
+		
+		my $timer = hook_timer($info->[0], sub{ place_timer($info, $epno, $_); return REMOVE; });
+		prnt('Timer '.$timer.' added for '.$info->[2].'/'.$info->[3].'/'.$_.' episode '.$info->[5].' at '.$neat_time, $ctrlchan, $destsrvr);
 
-			$timers{$timer} = $short.' '.$epno;
-		} else {
-			next;
-		}		
+		$timers{$timer} = $short.' '.$epno;
 	}
 	$airtimes_set = 1; #why is this first instead of last? I'm moving it
 }
