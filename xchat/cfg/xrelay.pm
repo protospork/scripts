@@ -50,7 +50,7 @@
 	'carnival phantasm'	=>	["Anime", ['UTW'],			'Phantasm',		[undef],		undef],	#OVA
 	'kyousogiga'		=>	["Anime", ['commie'],		undef,			[undef],		undef], #I dunno really
 #winter 2011/2012
-	"mouretsu pirates"	=>	["Anime", [undef],			'Pirates',		[undef],		2370], #26 eps [randomc]
+	pirates				=>	["Anime", [qw!horrible commie!],'Pirates',	[undef],		2370], #26 eps [randomc]
 	basketarmy			=>  ["Anime", [undef],			'Basketarmy',	[undef],		undef], #busou chuugakusei basketarmy
 	randoseru			=>  ["Anime", ['Horrible'],		'Randoseru',	[undef],		2363], #recorder to randoseru ##five minute show and hadena still wrecked it
 	"high school dxd"	=>  ["Anime", [undef],			'DxD',			[undef],		2366],	#12 eps [randomc]
@@ -61,7 +61,7 @@
 	"inu x boku"		=>	["Anime", [undef],			'Inu x Boku',	[undef],		2377],
 	"kikinasai"			=>	["Anime", [undef],			'PapaKiki',		[undef],		2383], #papa no iu no kikinasai!
 	"brave10"			=>  ["Anime", [undef],			'Brave10',		[undef],		2382],	#12 eps [randomc]
-	symphogear			=>	["Anime", [undef],			'Symphogear',	[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
+	symphogear			=>	["Anime", ['commie'],		'Symphogear',	[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
 	nisemonogatari		=>	["Anime", [undef],			'Nisemono',		[undef],		2396],	#13 eps [randomc]
 	matteru				=>	["Anime", [undef],			'ANdM',			[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
