@@ -5,7 +5,9 @@ use utf8;
 
 #a hiragana trainer... sort of flash card thingy
 #todo: katakana
-#todo:	'hardcore mode' where you're only shown the definition
+#todo: 'hardcore mode' where you're only shown the definition
+#todo: /.o u/ may be written as (ex) 'booshi', not 'boushi'
+#todo: repetition symbol && voiced repetition symbol aren't in the hiragana range \x{309d} \x{309e}
 
 my $debugmode = 1;
 
@@ -28,7 +30,7 @@ sub find_dict {
 		print "\n";
 		return menu('edict');
 	} elsif (grep "jmdict", @dir){
-		print colored ('JMDict is currently unsupported. Download edict instead, it\'s the same content', 'red');
+		print colored ('JMDict is unsupported. Download edict instead, it\'s the same content', 'red');
 		print "\n";
 		exit;
 	} else {
@@ -95,8 +97,11 @@ sub menu {
 		print "\n";
 		return menu(@_);
 	}
-	
-	hiragana($dict, $choice);
+	if ($choice == 31 or $choice == 32){
+		katakana($dict, $choice);
+	} else {
+		hiragana($dict, $choice);
+	}
 }
 
 sub nonsense { #this thing doesn't handle digraphs right, whoops
@@ -106,7 +111,7 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 	#push @gana, (12432, 12433, 12436); #wi, we, and vu - but they're useless IRL
 	map { $_ = chr $_ } @gana;
 
-	print colored (	"WARNING: This input mode is seriously outdated and only outputs gibberish. \n".
+	print colored (	"WARNING: This mode is seriously outdated and only outputs gibberish. \n".
 					"Download jedict and the real options will be unlocked.\n", 'red');
 	print colored ("Round Length? ", 'white');
 	my $num = 0 + <STDIN>;
@@ -212,7 +217,7 @@ sub hiragana {
 		if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
 		if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
 		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
-		if ($sol =~ s/(?<=[aeiou])hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
+		if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
 		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
 		
 		say 'you said '.$in if $debugmode;
@@ -229,7 +234,98 @@ sub hiragana {
 		$num--;
 	}
 }
+sub katakana {
+	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
+	my %entries;
 
+
+	print colored ('Katakana', 'cyan on_blue');
+	print colored (' WORK IN PROGRESS. I don\'t even fucking know katakana.', 'red on_black');
+	print "\n";
+	
+	say 'menu choice '.$_[1] if $debugmode;
+	
+	my $adage;
+	if ($_[1] == 32){
+		$adage++;
+		print colored ('Adage mode enabled.', 'cyan on_blue');
+		print "\n";
+	}
+	
+	#build the dictionary
+	while (<$file>){
+		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
+#		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
+		next unless defined $term;
+		if ($term =~ /[^\p{Katakana}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+			next; 
+		} elsif ($adage && $def =~ /\(exp\)/){
+			$entries{$term} = $def
+		} elsif ($adage){
+			next;
+		} elsif (! $adage){ #vanilla mode
+			$entries{$term} = $def; 
+		}
+	}
+	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
+	
+	print colored ("Round Length? ", 'green');
+	my $num = 0 + <STDIN>;
+	if ($debugmode){ say colored ($num.' words then.', 'green'); }
+	
+	
+	my ($right, $wrong, @gana) = (0, 0, keys %entries);
+	while ($num){
+		my ($string) = ($gana[int rand $#gana]);
+		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
+		chomp(my $in = <STDIN>);
+		$in = lc $in;
+		
+		#extra space for single-char sounds helps keeping track of where you are
+		$in =~ s/ //g; 
+		
+		#geminate (sokuon)
+		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
+		if ($string =~ /ッ/){
+			if ($string =~ s!ッ(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
+		}
+		
+		my $sol = lc(unidecode($string));
+		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
+		if ($string =~ /[ャュョ]/){
+			if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
+#			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
+			
+			if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
+			if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
+			if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
+		
+		#make sure that sokuon was actually dealt with
+		} elsif ($string =~ /ッ/){
+			die "sokuon wasn't removed";
+		}
+		
+		#unidecode disagrees with my books on these
+		if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
+		if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
+		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
+		if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
+		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+		
+		say 'you said '.$in if $debugmode;
+		say 'I think  '.$sol if $debugmode;
+		
+		
+		if ($in ~~ $sol){
+			$right++;
+			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
+		} else {
+			$wrong++;
+			say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
+		}
+		$num--;
+	}
+}
 __END__
 
 =head1 INSTRUCTIONS:
@@ -280,6 +376,22 @@ regex ln215
 you said koufukuwomutomete
 I think  koufukuwomotomete
 no, it's koufukuwomotomete
+
+>>
+
+2011-01-06 09:32
+
+C<<
+
+りっしんしゅっせ {(n,vs) success in life}
+risshinshusse
+regex ln193
+regex ln202
+regex ln212
+regex ln213
+you said risshinshusse
+I think  risshinshutsuse
+no, it's risshinshutsuse 
 
 >>
 
