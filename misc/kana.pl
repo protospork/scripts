@@ -195,7 +195,7 @@ sub hiragana {
 		#geminate (sokuon)
 		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
 		if ($string =~ /っ/){
-			if ($string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
+			if ($string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; } #should p be in here?
 		}
 		
 		my $sol = lc(unidecode($string));
@@ -219,6 +219,7 @@ sub hiragana {
 		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
 		if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
 		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+		if ($sol =~ s/du/zu/g){ say 'regex ln222' if $debugmode; } #tsu with dakuten. rare
 		
 		say 'you said '.$in if $debugmode;
 		say 'I think  '.$sol if $debugmode;
@@ -287,7 +288,7 @@ sub katakana {
 		#geminate (sokuon)
 		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
 		if ($string =~ /ッ/){
-			if ($string =~ s!ッ(.)!my $ch = $1; if(unidecode($ch) =~ /([kstc])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
+			if ($string =~ s!ッ(.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
 		}
 		
 		my $sol = lc(unidecode($string));
