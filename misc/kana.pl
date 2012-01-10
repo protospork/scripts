@@ -4,9 +4,8 @@ use Term::ANSIColor;
 use utf8;
 
 #a hiragana trainer... sort of flash card thingy
-#todo: katakana
 #todo: 'hardcore mode' where you're only shown the definition
-#todo: /.o u/ may be written as (ex) 'booshi', not 'boushi'
+#todo: /.o u/ may be written as (ex) 'booshi', not 'boushi' but I've seen it both ways :\
 #todo: repetition symbol && voiced repetition symbol aren't in the hiragana range \x{309d} \x{309e}
 
 my $debugmode = 1;
@@ -43,7 +42,7 @@ sub find_dict {
 sub menu {
 	my $dict = $_[0];
 	
-	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA\n", 'red');
+#	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA\n", 'red'); #no longer true \o/
 	
 	##define menu
 	my (@menuL, @menuR);
@@ -192,34 +191,7 @@ sub hiragana {
 		#extra space for single-char sounds helps keeping track of where you are
 		$in =~ s/ //g; 
 		
-		#geminate (sokuon)
-		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
-		if ($string =~ /っ/){
-			if ($string =~ s!\x{3063}(.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; } #should p be in here?
-		}
-		
-		my $sol = lc(unidecode($string));
-		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
-		if ($string =~ /[ゃゅょ]/){
-			if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
-#			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
-			
-			if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
-			if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
-			if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
-		
-		#make sure that sokuon was actually dealt with
-		} elsif ($string =~ /っ/){
-			die "sokuon wasn't removed";
-		}
-		
-		#unidecode disagrees with my books on these
-		if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
-		if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
-		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
-		if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
-		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
-		if ($sol =~ s/du/zu/g){ say 'regex ln222' if $debugmode; } #tsu with dakuten. rare
+		my $sol = kanafix($string);
 		
 		say 'you said '.$in if $debugmode;
 		say 'I think  '.$sol if $debugmode;
@@ -275,9 +247,9 @@ sub katakana {
 	if ($debugmode){ say colored ($num.' words then.', 'green'); }
 	
 	
-	my ($right, $wrong, @gana) = (0, 0, keys %entries);
+	my ($right, $wrong, @kana) = (0, 0, keys %entries);
 	while ($num){
-		my ($string) = ($gana[int rand $#gana]);
+		my ($string) = ($kana[int rand $#kana]);
 		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
 		chomp(my $in = <STDIN>);
 		$in = lc $in;
@@ -285,33 +257,7 @@ sub katakana {
 		#extra space for single-char sounds helps keeping track of where you are
 		$in =~ s/ //g; 
 		
-		#geminate (sokuon)
-		#little tsu before a consonant sound just lengthens it IE こっこう is kokkou, not kotsukou
-		if ($string =~ /ッ/){
-			if ($string =~ s!ッ(.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
-		}
-		
-		my $sol = lc(unidecode($string));
-		#DIGRAPHS (even if this works, it won't flag wrong answers correctly)
-		if ($string =~ /[ャュョ]/){
-			if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
-#			$sol =~ s/(?<=[sc]h)iy(?=[aou])//g; #shi / chi don't actually exist yet it's si / ti
-			
-			if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
-			if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
-			if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
-		
-		#make sure that sokuon was actually dealt with
-		} elsif ($string =~ /ッ/){
-			die "sokuon wasn't removed";
-		}
-		
-		#unidecode disagrees with my books on these
-		if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
-		if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
-		if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
-		if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
-		if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+		my $sol = kanafix($string);
 		
 		say 'you said '.$in if $debugmode;
 		say 'I think  '.$sol if $debugmode;
@@ -327,6 +273,36 @@ sub katakana {
 		$num--;
 	}
 }
+sub kanafix {
+	my $string = $_[0];
+	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
+		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
+	}
+	
+	my $sol = lc(unidecode($string));
+	
+	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
+	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
+		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
+		if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
+		if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
+		if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
+	
+	#make sure that sokuon was actually dealt with
+	} elsif ($string =~ /[\x{3063}\x{30c3}]/){
+		die "sokuon wasn't removed: ".$string;
+	}
+	
+	#unidecode disagrees with my books on these
+	if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
+	if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
+	if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
+	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
+	if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+	if ($sol =~ s/du/zu/g){ say 'regex ln222' if $debugmode; } #tsu with dakuten. rare
+	
+	return $sol;
+}
 __END__
 
 =head1 INSTRUCTIONS:
@@ -338,7 +314,9 @@ __END__
 =item 1:
 
 		WINDOWS-ONLY:
-		install cygwin and puttycyg (normal cygterm will show you garbage instead of runes)
+		install cygwin and puttycyg (normal cygterm will show you garbage instead of runes).
+		you'll also want to make puttycyg use a font with japanese glyphs - MS Gothic (without the @)
+		is the only sure bet I know of
 
 =item 2:
 
