@@ -24,7 +24,7 @@
 	'shippuuden'		=>	["Anime", [qw|taka|],		"Ship",			[undef],		1106],
 #fall 2011 starts here
 #	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", [undef],2288],
-	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihayafuru",	[undef],		2271],
+	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihayafuru",	[undef],		2271], #25 [ntv]
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
 	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	[undef],		2259],
 	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		[undef],		2254], #kyoukai senjou no horizon
@@ -55,17 +55,18 @@
 	randoseru			=>  ["Anime", ['Horrible'],		'Randoseru',	[undef],		2363], #recorder to randoseru ##five minute show and hadena still wrecked it
 	"high school dxd"	=>  ["Anime", [undef],			'DxD',			[undef],		2366],	#12 eps [randomc]
 	another				=>  ["Anime", [undef],			'Another',		[undef],		2373], #12eps [randomc]
-	"rinne no lagrange"	=>  ["Anime", [undef],			'Lagrange',		[undef],		2390],	#12 eps [randomc]
+	"rinne no lagrange"	=>  ["Anime", [qw!commie underwater!],'Lagrange',[undef],		2390],	#12 eps [randomc]
 	"rock shooter"		=>  ["Anime", [undef],			'BRS',			[undef],		2187], #black{star}rock shooter #8 eps [randomc]
 	"kill me baby"		=>  ["Anime", [qw!UTW Mazui!],	'Kill me Baby',	[undef],		2372],
 	"inu x boku"		=>	["Anime", [undef],			'Inu x Boku',	[undef],		2377],
 	"kikinasai"			=>	["Anime", [undef],			'PapaKiki',		[undef],		2383], #papa no iu no kikinasai!
-	"brave10"			=>  ["Anime", [undef],			'Brave10',		[undef],		2382],	#12 eps [randomc]
+	'brave 10'			=>	["Anime", ['doki'],			'Brave10',		[undef],		2382], #12eps [randomc]
 	symphogear			=>	["Anime", ['commie'],		'Symphogear',	[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
 	nisemonogatari		=>	["Anime", [undef],			'Nisemono',		[undef],		2396],	#13 eps [randomc]
-	matteru				=>	["Anime", [undef],			'ANdM',			[undef],		2368], #ano natsu de matteru #12eps [randomc]
+	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
 	'high school boys'	=>  ["Anime", [undef],			'Danshi',		[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
+	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
@@ -79,7 +80,7 @@ kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi
 					"shin koihime musou", "shugo chara", "heartcatch precure", "pretty cure",
 					"hidamari sketch", "character song", "character album", "dragon ball",
 					"tinkle", "shuffle", "rainbow gate", "cardfight", "doraemon",
-					"pocket monsters"
+					"pocket monsters", "tennis"
 				);
 push @blacklist, @moreblacklist;
 

@@ -8,7 +8,7 @@ use JSON;
 use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core
 
-my $ver = '3.14';
+my $ver = '3.15';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -336,8 +336,21 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 	for (sort keys %{$json}){ #should only need the first item from this loop ##incorrect, first is not always earliest
 		my $ttls = get_titles($json->{$_}{'TID'});
 		
-		if (! $ttls->[0]){
-			$ttls->[0] = unidecode($ttls->[1]);
+		if (! $ttls->[0]){ #section should be valid for both hiragana and katakana. still stumped for kanji
+			$ttls->[0] = unidecode($ttls->[1]); 
+			$ttls->[0] =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { 'UHOH'; }!e; #sokuon
+			if ($ttls->[1] =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
+				$ttls->[0] =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
+				$ttls->[0] =~ s/siy(?=[aou])/sh/g;
+				$ttls->[0] =~ s/tiy(?=[aou])/ch/g;
+				$ttls->[0] =~ s/ziy(?=[aou])/j/g;
+			}
+			$ttls->[0] =~ s/si/shi/g;
+			$ttls->[0] =~ s/tu/tsu/g;
+			$ttls->[0] =~ s/ti/chi/g;
+			$ttls->[0] =~ s/(?<=[aeiou])hu|^hu/fu/g;
+			$ttls->[0] =~ s/zi/ji/g;
+			$ttls->[0] =~ s/du/zu/g; #tsu with dakuten. rare
 		}
 		
 		if (time > $json->{$_}{'EdTime'}){
