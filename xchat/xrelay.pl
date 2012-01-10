@@ -337,29 +337,48 @@ sub get_airtime { #there needs to be a pretty-print return option for the inevit
 		my $ttls = get_titles($json->{$_}{'TID'});
 		
 		if (! $ttls->[0]){ #section should be valid for both hiragana and katakana. still stumped for kanji
-			$ttls->[0] = unidecode($ttls->[1]); 
-			$ttls->[0] =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { 'UHOH'; }!e; #sokuon
-			if ($ttls->[1] =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
-				$ttls->[0] =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
-				$ttls->[0] =~ s/siy(?=[aou])/sh/g;
-				$ttls->[0] =~ s/tiy(?=[aou])/ch/g;
-				$ttls->[0] =~ s/ziy(?=[aou])/j/g;
-			}
-			$ttls->[0] =~ s/si/shi/g;
-			$ttls->[0] =~ s/tu/tsu/g;
-			$ttls->[0] =~ s/ti/chi/g;
-			$ttls->[0] =~ s/(?<=[aeiou])hu|^hu/fu/g;
-			$ttls->[0] =~ s/zi/ji/g;
-			$ttls->[0] =~ s/du/zu/g; #tsu with dakuten. rare
+			$ttls->[0] = kanafix($ttls->[1]); 
 		}
+		my $station = kanafix($json->{$_}{'ChName'}).'/'.$json->{$_}{'ChName'};
 		
 		if (time > $json->{$_}{'EdTime'}){
 			return 'EXCEPTION: '.$ttls->[0].'/'.$ttls->[1].' '.$json->{$_}{'Count'}.' already aired.';			
 		}
 		$timeout = $json->{$_}{'EdTime'} - time;
 		$timeout *= 1000; #we need milliseconds for hook_timer
-		return [$timeout, $json->{$_}{'EdTime'}, $ttls->[0], $ttls->[1], $json->{$_}{'ChName'}, $json->{$_}{'Count'}];
+		return [$timeout, $json->{$_}{'EdTime'}, $ttls->[0], $ttls->[1], $station, $json->{$_}{'Count'}];
 	}	
+}
+
+sub kanafix {
+	my $string = $_[0];
+	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
+		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcp])/){ $1.$ch; } else { die 'wat'; }!e){ say 'regex ln193' if $debugmode; }
+	}
+	
+	my $sol = unidecode($string);
+	
+	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
+	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
+		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln199' if $debugmode; }
+		if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln202' if $debugmode; }
+		if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln203' if $debugmode; }
+		if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln204' if $debugmode; }
+	
+	#make sure that sokuon was actually dealt with
+	} elsif ($string =~ /[\x{3063}\x{30c3}]/){
+		die "sokuon wasn't removed: ".$string;
+	}
+	
+	#unidecode disagrees with my books on these
+	if ($sol =~ s/si/shi/g){ say 'regex ln212' if $debugmode; }
+	if ($sol =~ s/tu/tsu/g){ say 'regex ln213' if $debugmode; }
+	if ($sol =~ s/ti/chi/g){ say 'regex ln214' if $debugmode; }
+	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln215' if $debugmode; } #was probably breaking chu/shu
+	if ($sol =~ s/zi/ji/g){ say 'regex ln216' if $debugmode; }
+	if ($sol =~ s/du/zu/g){ say 'regex ln222' if $debugmode; } #tsu with dakuten. rare
+	
+	return $sol;
 }
 
 sub get_titles {
