@@ -298,10 +298,10 @@ sub kanafix {
 	#make sure that sokuon was actually dealt with
 	} 
 	if ($string =~ /[\x{3063}\x{30c3}]/){
-		die "sokuon wasn't removed: ".$string;
+		warn "sokuon wasn't removed: ".$string;
 	}
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){
-		die "katakana digraphs are still broken: ".$string;
+		warn "katakana digraphs are still broken: ".$string;
 	}
 	
 	#unidecode disagrees with my books on these
