@@ -22,7 +22,7 @@
 #fall 2011 starts here
 	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihaya",	[undef],		2271], #25 [ntv]
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
-	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	[undef],		2259],
+	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"GC",	[undef],		2259],
 	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		[undef],		2254], #kyoukai senjou no horizon
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			[undef],		2260],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],2277],
@@ -55,7 +55,7 @@
 	nisemonogatari		=>	["Anime", [undef],			'Nisemono',		[undef],		2396],	#13 eps [randomc]
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
-	'high school boys'	=>  ["Anime", [undef],			'Danshi',		[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
+	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
 	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
 );
 @blacklist = qw( 
