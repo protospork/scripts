@@ -16,22 +16,32 @@
 	"[BSS]"				=>	["Anime", [qw|BSS|],		undef,			["bss:.avi"],	undef],
 	"THORA"				=>	["Anime", ["thora"],		undef,			[undef],		undef],
 	'mayo chiki'		=>	["Anime", [qw|ayako doki|], "Chiki",		[undef],		2198],
+	mukuchi				=>	["Anime", [qw|AFFTW horrible|], "Morita-san", [undef],		2306],
+	penguindrum			=>	["Anime", [qw|gg|],			"Penguins",		["gg:reinweiss"],	2225],
 	"mardock scramble"	=>	["Anime", [undef],			undef,			[undef],		undef],
+	'idolm@ster'		=>	["Anime", [qw|doki chibiki UTW|], "Idols",	["doki:x480"],	2194], #been over for a while
 	'gintama'			=>	["Anime", [qw|horrible rumbel|],"Gintama",	[undef],		2172],
 	'shippuuden'		=>	["Anime", [qw|taka|],		"Ship",			[undef],		1106],
 #fall 2011 starts here
-	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihaya",	[undef],		2271], #25 [ntv]
+#	"hunter x hunter"	=>	["Anime", [qw|tsuki horrible kanjouteki|], "HxH", [undef],2288],
+	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihayafuru",	[undef],		2271], #25 [ntv]
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
-	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"GC",	[undef],		2259],
+	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"Crown",	[undef],		2259],
 	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		[undef],		2254], #kyoukai senjou no horizon
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			[undef],		2260],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		2277],
+	"maken-ki"			=>	["Anime", [qw'hiryuu fffpeeps'],"Maken-Ki",	['fffpeeps:^10bit', 'hiryuu:^Hi10P'],	2269],
+	symphony			=>	["Anime", [qw|zenyaku doki|],"Mashiro",		['doki:^hi10p'],2256], #mashiro-iro symphony
 	'last exile'		=>	["Anime", [qw[commie sfw]],	'Last Exile',	['sfw:^hi10p'],	2253],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		2257],
 	bakuman				=>	["Anime", [qw|TMD sage|],	"Bakuman",		['sage:^hi10p'],2295], #bakuman 2
 	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	[undef],		2270], #boku ha/wa tomodachi ga sukunai
+	"C\xB3"				=>	["Anime", [qw|commie|], 	"C3",			[undef],		2274],
+	"Cursed x Curious"	=>	["Anime", [qw|UTW|],		"C3",			[undef],		2274], #cube[d] x cursed x curious [C3]
 	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		undef],#2275], Ben-to airs first on TVA, which isn't listed on syoboi
+	tamayura			=>	["Anime", [qw'oyatsu'],		undef,			['oyatsu:avi'],	2263],
+	"Working'!!"		=>	["Anime", [qw'gg'],			"Working",		[undef],		2249],
 	'mirai nikki'		=>	["Anime", ['SS'],			"Nikki",		[undef],		2273],
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
 	'majikoi'			=>	["Anime", ['horrible'],		undef,			[undef],		2276],
@@ -55,7 +65,7 @@
 	nisemonogatari		=>	["Anime", [undef],			'Nisemono',		[undef],		2396],	#13 eps [randomc]
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
-	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
+	'high school boys'	=>  ["Anime", [undef],			'Danshi',		[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
 	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
 );
 @blacklist = qw( 
