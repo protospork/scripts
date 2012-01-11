@@ -275,23 +275,25 @@ sub katakana {
 }
 sub kanafix {
 	my $string = $_[0];
+	my $katakana;
+	if ($string =~ /[\p{Katakana}]/){ $katakana++; } #not sure if there are mixed phrases
 	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
-		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ say 'regex ln 279' if $debugmode; }
+		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
 	}
 	my $ti;
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
-		if ($string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ say 'regex ln 282' if $debugmode; }
+		if ($string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
 	}
 	
 	my $sol = lc(unidecode($string));
 	
 	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
 	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
-		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ say 'regex ln 289' if $debugmode; }
-		if ($sol =~ s/siy(?=[aou])/sh/g){ say 'regex ln 290' if $debugmode; }
-		if ($sol =~ s/tiy(?=[aou])/ch/g){ say 'regex ln 291' if $debugmode; }
-		if ($sol =~ s/ziy(?=[aou])/j/g){ say 'regex ln 292' if $debugmode; }
+		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ warn 'regex' if $debugmode; }
+		if ($sol =~ s/siy(?=[aou])/sh/g){ warn 'regex' if $debugmode; }
+		if ($sol =~ s/tiy(?=[aou])/ch/g){ warn 'regex' if $debugmode; }
+		if ($sol =~ s/ziy(?=[aou])/j/g){ warn 'regex' if $debugmode; }
 	
 	#make sure that sokuon was actually dealt with
 	} 
@@ -303,14 +305,15 @@ sub kanafix {
 	}
 	
 	#unidecode disagrees with my books on these
-	if ($sol =~ s/si/shi/g){ say 'regex ln 300' if $debugmode; }
-	if ($sol =~ s/tu/tsu/g){ say 'regex ln 301' if $debugmode; }
-	if (! $ti){ if ($sol =~ s/ti/chi/g){ say 'regex ln 302' if $debugmode; } } #otherwise makes ティ end up wrong
-	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ say 'regex ln 303' if $debugmode; } #was probably breaking chu/shu
-	if ($sol =~ s/zi/ji/g){ say 'regex ln 304' if $debugmode; }
-	if ($sol =~ s/du/zu/g){ say 'regex ln 305' if $debugmode; } #tsu with dakuten. rare
-	if ($sol =~ s/ze/je/g){ say 'regex ln 310' if $debugmode; } #katakana extension for foreign words
+	if ($sol =~ s/si/shi/g){ warn 'regex' if $debugmode; }
+	if ($sol =~ s/tu/tsu/g){ warn 'regex' if $debugmode; }
+	if (! $ti){ if ($sol =~ s/ti/chi/g){ warn 'regex' if $debugmode; } } #otherwise makes ティ end up wrong
+	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu
+	if ($sol =~ s/zi/ji/g){ warn 'regex' if $debugmode; }
+	if ($sol =~ s/du/zu/g){ warn 'regex' if $debugmode; } #tsu with dakuten. rare
+	if ($katakana){ if ($sol =~ s/ze/je/g){ warn 'regex' if $debugmode; } } #katakana extension for foreign words
 	
+	if ($sol =~ s/tch/cch/g){ warn 'regex' if $debugmode; } #remnant of the sokuon thing - chi didn't exist yet so it doubled ti
 	
 	return $sol;
 }
