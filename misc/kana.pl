@@ -164,7 +164,7 @@ sub hiragana {
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
 		next unless defined $term;
-		if ($term =~ /[^\p{Hiragana}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+		if ($term =~ /[^\p{Hiragana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
 			next; 
 		} elsif ($adage && $def =~ /\(exp\)/){
 			$entries{$term} = $def
@@ -230,7 +230,7 @@ sub katakana {
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
 		next unless defined $term;
-		if ($term =~ /[^\p{Katakana}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+		if ($term =~ /[^\p{Katakana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
 			next; 
 		} elsif ($adage && $def =~ /\(exp\)/){
 			$entries{$term} = $def
@@ -280,6 +280,9 @@ sub kanafix {
 	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
 		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
 	}
+	
+	if ($string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg){ warn 'regex' if $debugmode; } #(mainly) katakana vowel extender
+	
 	my $ti;
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
