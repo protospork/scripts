@@ -77,6 +77,7 @@ sub event_privmsg {
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
 		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); }
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
+		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -90,6 +91,14 @@ sub event_privmsg {
 	else {
 		$server->command('msg '.$target.' '.$return);
 	}
+}
+
+sub codepoint {
+	my $char = $_[0];
+	$char =~ s/^(.).*$/$1/;
+	
+	my $out = sprintf "HEX %x / DEC ", ord $char;
+	$out .= ord $char;
 }
 
 #these airtime bits are mostly code by tristan.willy@gmail.com
