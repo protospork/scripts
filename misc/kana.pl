@@ -9,6 +9,11 @@ use utf8;
 #todo: repetition symbol && voiced repetition symbol aren't in the hiragana range \x{309d} \x{309e}
 
 my $debugmode = 1;
+my $mode = {
+	'Hiragana'	=> qr/[^\p{Hiragana}\x{30FC}]/,
+	'Katakana'	=> qr/[^\p{Katakana}\x{30FC}]/,
+	'Both'		=> qr/[^\p{Hiragana}\p{Katakana}\x{30FC}]/,
+};
 
 binmode STDOUT, ":utf8"; #turn off that ridiculous widechar warning
 
@@ -91,15 +96,19 @@ sub menu {
 		chomp ($choice = <STDIN>);
 	}
 	##out of bounds?
-	if (($choice > 5 && $choice < 21) || $choice > 32){ #FLAWED - FIX THIS
+	if (($choice > 5 && $choice != 12 && $choice < 21) || $choice > 32){ #FLAWED - FIX THIS
 		print colored ("Invalid choice, returning to root menu.\nTrying to leave? CTRL-C", 'red');
 		print "\n";
 		return menu(@_);
 	}
 	if ($choice == 31 or $choice == 32){
-		katakana($dict, $choice);
+#		katakana($dict, $choice);
+		readdict($dict, $choice, 'Katakana');
+	} elsif ($choice == 21 or $choice == 22){
+		readdict($dict, $choice, 'Hiragana');
 	} else {
-		hiragana($dict, $choice);
+#		hiragana($dict, $choice);
+		readdict($dict, $choice, 'Both');
 	}
 }
 
@@ -125,13 +134,11 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 		
 		#extra space for single-char sounds helps keeping track of where you are
 		$in =~ s/ //g; 
-		#unidecode disagrees with my books on these
-		$in =~ s/shi/si/g;
-		$in =~ s/tsu/tu/g;
-		$in =~ s/chi/ti/g;
-		$in =~ s/fu/hu/g;
+		$in = lc $in;
 		
-		if ($in ~~ lc(unidecode($string))){
+		$string = kanafix $string;
+		
+		if ($in ~~ $string){
 			$right++;
 			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
 		} else {
@@ -142,6 +149,72 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 	}
 }
 
+sub readdict {
+	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
+	my $script = $_[-1];
+	my %entries;
+
+
+	print colored ($script, 'cyan on_blue');
+	print "\n";
+	my $re = $mode->{$script};
+	
+	say 'menu choice '.$_[1] if $debugmode;
+	
+	my $adage;
+	if ($_[1] =~ /[123]2/){
+		$adage++;
+		print colored ('Adage mode enabled.', 'cyan on_blue');
+		print "\n";
+	}
+	
+	#build the dictionary
+	while (<$file>){
+		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
+		next unless defined $term;
+		if ($term =~ $re || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+			next; 
+		} elsif ($adage && $def =~ /\(exp\)/){
+			$entries{$term} = $def
+		} elsif ($adage){
+			next;
+		} elsif (! $adage){ #vanilla mode
+			$entries{$term} = $def; 
+		}
+	}
+	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
+	
+	print colored ("Round Length? ", 'green');
+	my $num = 0 + <STDIN>;
+	if ($debugmode){ say colored ($num.' words then.', 'green'); }
+	
+	
+	my ($right, $wrong, @gana) = (0, 0, keys %entries);
+	while ($num){
+		my ($string) = ($gana[int rand $#gana]);
+		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
+		chomp(my $in = <STDIN>);
+		$in = lc $in;
+		
+		#extra space for single-char sounds helps keeping track of where you are
+		$in =~ s/ //g; 
+		
+		my $sol = kanafix($string);
+		
+		say 'you said '.$in if $debugmode;
+		say 'I think  '.$sol if $debugmode;
+		
+		
+		if ($in ~~ $sol){
+			$right++;
+			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
+		} else {
+			$wrong++;
+			say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
+		}
+		$num--;
+	}
+}
 sub hiragana {
 	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
 	my %entries;
@@ -311,7 +384,7 @@ sub kanafix {
 	if ($sol =~ s/si/shi/g){ warn 'regex' if $debugmode; }
 	if ($sol =~ s/tu/tsu/g){ warn 'regex' if $debugmode; }
 	if (! $ti){ if ($sol =~ s/ti/chi/g){ warn 'regex' if $debugmode; } } #otherwise makes ティ end up wrong
-	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu
+	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu ##isn't actually being called wtf
 	if ($sol =~ s/zi/ji/g){ warn 'regex' if $debugmode; }
 	if ($sol =~ s/du/zu/g){ warn 'regex' if $debugmode; } #tsu with dakuten. rare
 	if ($katakana){ if ($sol =~ s/ze/je/g){ warn 'regex' if $debugmode; } } #katakana extension for foreign words
