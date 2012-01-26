@@ -2,6 +2,7 @@ use Irssi;
 use Irssi::Irc;
 use LWP::UserAgent;
 use HTML::Entities;	#?
+use URI::Escape;
 use JSON;
 use URI;
 use strict;
@@ -10,9 +11,9 @@ use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw( @ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
-@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans $ver $VERSION %IRSSI);
+@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI);
 
-$VERSION = "1.8";
+$VERSION = "1.9";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -78,7 +79,14 @@ sub pubmsg {
 		$server->command("msg $controlchan preparing log.");
 		sendmirror($nick,$server) || return;
 		$server->command("msg $controlchan done.");
-	} elsif ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
+	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
+		$url = unwrap_shortener($url);
+		if (! grep lc $target eq lc $_, @dont_unshorten){
+			$server->command("msg $target $url");
+		}
+	}
+	
+	if ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
@@ -218,6 +226,17 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	}
 	
 	$title;
+}
+sub unwrap_shortener { # http://expandurl.appspot.com/#api
+	my ($url) = @_;
+	my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
+	if ($debugmode && ! $head->is_success){ print 'Error '.$head->status_line; }
+
+	my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]);
+	
+	print $url.' => '.$return if $debugmode;
+	
+	return $return;	
 }
 
 sub get_title {
