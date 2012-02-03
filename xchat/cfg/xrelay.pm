@@ -46,7 +46,7 @@
 	"high school dxd"	=>  ["Anime", [qw!subdesu afftw!],'DxD',		[undef],		2366],	#12 eps [randomc]
 	another				=>  ["Anime", [qw!commie underwater!],'Another',[undef],		2373], #12eps [randomc]
 	"rinne no lagrange"	=>  ["Anime", [qw!commie underwater!],'Lagrange',[undef],		2390],	#12 eps [randomc]
-	"rock shooter"		=>  ["Anime", [undef],			'BRS',			[undef],		2187], #black{star}rock shooter #8 eps [randomc]
+	"rock shooter"		=>  ["Anime", [undef],			'BRS',			[undef],		2187], #black\x{2605}rock shooter #8 eps [randomc]
 	"kill me baby"		=>  ["Anime", [qw!UTW Mazui!],	'KmB',			[undef],		2372],
 	"inu x boku"		=>	["Anime", [qw!commie horrible!],'InuBoku',	[undef],		2377],
 	"kikinasai"			=>	["Anime", [qw!horrible rori!],'PapaKiki',	[undef],		2383], #papa no iu no kikinasai!
@@ -64,7 +64,7 @@ remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p i
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon 
-kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena]
+kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers]
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
 					"one piece", "galactic heroes", "kamen rider", "hitman reborn", 
@@ -75,7 +75,7 @@ kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena]
 				);
 push @blacklist, @moreblacklist;
 
-$do_hentai = 1;
+$do_hentai = 0;
 $do_airtime = 1;
 
 ####colorscheme
