@@ -46,16 +46,16 @@
 	"high school dxd"	=>  ["Anime", [qw!subdesu afftw!],'DxD',		[undef],		2366],	#12 eps [randomc]
 	another				=>  ["Anime", [qw!commie underwater!],'Another',[undef],		2373], #12eps [randomc]
 	"rinne no lagrange"	=>  ["Anime", [qw!commie underwater!],'Lagrange',[undef],		2390],	#12 eps [randomc]
-	"rock shooter"		=>  ["Anime", [undef],			'BRS',			[undef],		2187], #black\x{2605}rock shooter #8 eps [randomc]
+	"rock shooter"		=>  ["Anime", [qw!commie nishishi!],'BRS',		[undef],		2187], #black\x{2605}rock shooter #8 eps [randomc]
 	"kill me baby"		=>  ["Anime", [qw!UTW Mazui!],	'KmB',			[undef],		2372],
 	"inu x boku"		=>	["Anime", [qw!commie horrible!],'InuBoku',	[undef],		2377],
 	"kikinasai"			=>	["Anime", [qw!horrible rori!],'PapaKiki',	[undef],		2383], #papa no iu no kikinasai!
 	'brave 10'			=>	["Anime", ['doki'],			'Brave10',		[undef],		2382], #12eps [randomc]
 	symphogear			=>	["Anime", [qw'gg commie'],	'Symphogear',	[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
-	nisemonogatari		=>	["Anime", [qw!commie horrible!],'Nisemono',	[undef],		2396],	#13 eps [randomc]
+	nisemonogatari		=>	["Anime", [qw!commie horrible!],'Nisemono',	[undef],		undef],#2396], #13 eps [randomc] ##horriblesubs rips and releases the simulcasts before they're done airing. TV may be a dinosaur
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		2368], #ano natsu de matteru #12eps [randomc]
 	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
-	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou #sage is confirmed dunno who else leave it blank for now
+	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou \x{7537}\x{5b50}\x{9ad8}\x{6821}\x{751f}\x{306e}\x{65e5}\x{5e38}
 	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
 	'milky holmes II'	=>	["Anime", ['kiteseekers'],	'Holmes',		[undef],		2359],
 );
