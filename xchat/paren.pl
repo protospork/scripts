@@ -98,7 +98,6 @@ sub magic_happens {
 			
 			push @end, $_; 
 		} 
-#		$message = join ' ', @end;
 		$" = ' '; #p sure this is the default, dunno if other scripts share the builtin vars
 		$message = "@end";
 		
