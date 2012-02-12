@@ -459,7 +459,7 @@ sub weather {
 	if ( ! $results->is_success ) {
 		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
 		return;
-	} elsif ( $results->content =~ /[<>]/ ) {
+	} elsif ( $results->content =~ /[<>]|^\s*$/ ) {
 		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
 		return;
 	} else {
