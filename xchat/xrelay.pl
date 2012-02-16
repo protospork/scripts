@@ -132,7 +132,7 @@ sub whoosh {
 			
 			if (defined($cfg_blacklist)){ 
 				for (@$cfg_blacklist){
-					last if $_ == undef;
+					last if !defined $_;
 						
 					my ($grp, $term) = (split /:/, $_, 2)
 						|| prnt "There's an uhoh in the blacklisting section";
@@ -274,8 +274,8 @@ sub set_airtimes {
 		my $epno;
 		if ($topic =~ /$short +(\d+)/i){ # this method will probably announce anything in the config file even if it's old as shit
 			$epno = $1; $epno++;
-		} else {
-			$epno = 1;
+		# } else { #what the hell was I thinking? this just spams a whole bunch of destined-to-fail requests and locks xchat for a year
+			# $epno = 1;
 		}		
 		
 		my $info = get_airtime($_, $epno);
