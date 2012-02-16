@@ -39,7 +39,7 @@ sub magic_happens {
 	my $net = get_info('network') || 'none';
 	my ($nick,$message) = ($_[0],$_[1]);
 	return EAT_NONE unless $message;
-	return EAT_NONE if $channel =~ /tosho-api/;
+	return EAT_NONE if $channel =~ /tosho-api|newsflash/;
 	
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
