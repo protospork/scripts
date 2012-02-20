@@ -351,7 +351,7 @@ sub check_image_size {
 			return 'WITCH';
 		}
 	} elsif ($req->content_length > $largeimage){
-		return $filesizecomment[(int rand scalar @filesizecomment)-1];
+		return $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$content->length.')';
 	}
 }
 

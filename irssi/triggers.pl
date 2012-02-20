@@ -255,6 +255,8 @@ sub choose {
 			"Yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
 			"Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good"
 		);
+	} elsif ((join ' ', @_) =~ /\|/){
+		@choices = (split /\|\s*/, (join ' ', @_));
 	} elsif ((join ' ', (@_)) =~ /,/){
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
@@ -304,7 +306,7 @@ sub conversion { #this doens't really work except for money
 	#works with two or three inputs
 	my $trig = uc shift;
 	my $in = uc shift;
-	$in =~ s/to$//;
+	$in =~ s/to$//; #wha
 	my $out;
 	print join ', ', ($trig,$in) if $debug;
 	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
