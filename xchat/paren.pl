@@ -77,7 +77,7 @@ sub magic_happens {
 				next; 
 			}
 
-			
+			#todo: avoid applying this regex to anyone in /names. can that even be done?
 			s/(
 				^[<(](?=http)|
 				^[^[:alnum:]#@]+(?=[[:alnum:]])|
@@ -104,7 +104,7 @@ sub magic_happens {
 		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ #this is halfassed as shit fix it later
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help
 				my ($one,$two) = ($1,$2); #so redundant colorcodes need to be stripped, although
-				$message =~ s/$&/\x03$one$two /; #this method only grabs the first redundant one
+				$message =~ s/$&/\x03$one$two /g; #this method only grabs the first redundant one
 			}
 		}
 	}
