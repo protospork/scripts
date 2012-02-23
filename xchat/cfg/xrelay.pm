@@ -58,6 +58,7 @@
 	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou \x{7537}\x{5b50}\x{9ad8}\x{6821}\x{751f}\x{306e}\x{65e5}\x{5e38}
 	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
 	'milky holmes II'	=>	["Anime", ['kiteseekers'],	'Holmes',		[undef],		2359],
+	gokujo				=>	["Anime", ['CMS'],			undef,			[undef],		undef],
 );
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
@@ -76,7 +77,7 @@ kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers]
 push @blacklist, @moreblacklist;
 
 $do_hentai = 0;
-$do_airtime = 1;
+$do_airtime = 0;
 
 ####colorscheme
 $Cname	= "09";

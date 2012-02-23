@@ -10,6 +10,7 @@ Xchat::print "eval $ver loaded";
 sub something {
 	my $code = $_[1][1];
 	$code =~ s/\bprint\b/Xchat::print/ig;
+#	$code =~ s/\bsend\(([^;]+);/Xchat::command("say ".$1);/ig; #didn't bother testing just thought it was a decent idea
 	my $out = eval $code;
 	if ($@) { Xchat::print $@; }
 #	else { prnt $out; }
