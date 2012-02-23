@@ -11,7 +11,7 @@ use JSON;
 use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
 
-use vars qw($botnick $botpass $owner $listloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+use vars qw($botnick $botpass $owner $listloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -261,6 +261,11 @@ sub choose {
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
 		scalar @_ >= 2 ? @choices = @_ : return 'it helps to have something to choose from';
+	}
+	#halve the likelihood of choosing something awful
+	my @choices2 = @choices; #infinite loop otherwise (OOPS LMAO)
+	for my $choice (@choices2){
+		push @choices, $choice unless grep $choice =~ /$_/i, @donotwant;
 	}
 	
 	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] 
