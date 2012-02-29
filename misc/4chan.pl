@@ -96,7 +96,7 @@ sub body {
 	chdir $root_dir;
 	$offline = 0;
 	my $browser = LWP::UserAgent->new;
-	$browser->proxy('http', 'http://192.168.250.125:3128/');
+#	$browser->proxy('http', 'http://192.168.250.125:3128/');
 	my $page = $browser->get($thread);
 	unless ($page->is_success) {
 		my $uhoh = $browser->get('http://www.4chan.com'); #I wonder how squid will affect this. hm.
