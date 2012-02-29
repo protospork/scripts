@@ -245,18 +245,19 @@ sub anagram {
 
 sub choose { 
 	my $call = shift;
-	my @choices;
+	my (@choices, $pipes);
 	if ($call =~ /sins?/){
 		@choices = qw'greed gluttony wrath sloth lust envy pride';
 	} elsif ($call =~ /8ball/i && $#choices){
 		@choices = (
-			"It is certain", "It is decidedly so", "Without a doubt", "Yes – definitely",
+			"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely",
 			"You may rely on it", "As I see it, yes", "Most likely", "Outlook good", "Signs point to yes", "Very doubtful",
 			"Yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
 			"Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good"
 		);
 	} elsif ((join ' ', @_) =~ /\|/){
 		@choices = (split /\|\s*/, (join ' ', @_));
+		$pipes++;
 	} elsif ((join ' ', (@_)) =~ /,/){
 		@choices = (split /,\s*/, (join ' ', (@_)));
 	} else {
@@ -280,7 +281,9 @@ sub choose {
 	#hehe
 	return 'Nah' if int rand 100 <= 4;
 	
-	return $choices[(int rand ($#choices + 1))-1];
+	my $return = $choices[(int rand ($#choices + 1))-1];
+	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
+	else { return $return; }
 }
 
 sub countdown {
