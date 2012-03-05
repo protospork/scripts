@@ -351,7 +351,9 @@ sub check_image_size {
 			return 'WITCH';
 		}
 	} elsif ($req->content_length > $largeimage){
-		return $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$req->content_length.')';
+		my $size = $req->content_length;
+		$size = sprintf "%.2fMB", ($size / 1048576);
+		return $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
 	}
 }
 
