@@ -337,7 +337,7 @@ sub newegg {
 
 sub check_image_size {
 	my ($url) = @_;
-	return '0' if $url =~ /gif(?:\?.+)?$/i;	#maybe this should be configurable, but it's a fair bet a gif is going to be large
+#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#maybe this should be configurable, but it's a fair bet a gif is going to be large
 	my $req = $ua->head($url); 
 	return 0 unless $req->is_success;	#?
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
