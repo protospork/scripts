@@ -10,8 +10,9 @@ use vars qw($VERSION %IRSSI);
 use JSON;
 use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
+use TMDB;
 
-use vars qw($botnick $botpass $owner $listloc $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -78,6 +79,7 @@ sub event_privmsg {
 		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; }
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
+		when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		default { return; }
 	}
 	if (! defined $return){
@@ -91,6 +93,105 @@ sub event_privmsg {
 	else {
 		$server->command('msg '.$target.' '.$return);
 	}
+}
+
+sub moviedb {
+	my ($server, $target) = (shift, shift);
+	my $call = shift;
+	my $query = join ' ', @_;
+	print $query if $debug;
+	my ($person, $full, $id);
+	given ($call){
+		when (/:person/){ $person++; $full++; }
+		when (/:full/){ $full++; }
+	}
+	if ($query =~ /^\d+$/){ $id = $query; $full++; }
+	
+	my $tmdb = TMDB->new({api_key => $tmdb_key});
+	if (! $person){
+		my @out;
+		if (! $id){
+			my @res = $tmdb->search->movie($query);
+			if (scalar @res == 1){ $full++; }
+			for my $res (@res) {
+				push @out, $res->{name}.' ['.$res->{year}.']('.$res->{url}.')';
+			}
+			$id = $res[0]->{id};
+		}
+		if (! $full){
+			my $out = shift @out;
+			while (length $out < 300 && @out){
+				$out .= ', '.(shift @out);
+			}
+			$server->command('msg '.$target.' '.$out);
+			return;
+		} else {
+			my $det = $tmdb->movie($id);
+			$det = $det->info();
+			# print keys %$det if $debug;
+			
+			my $out = '<'.$det->{name}.'>';
+			if ($det->{released}){
+				$out .= ' Released:[ '.$det->{released}.' ]';
+			}
+			if ($det->{certification}){
+				$out .= ' Rating:[ '.$det->{certification}.' ]';
+			}
+			if ($det->{genres}){
+				$out .= ' Genre:[ ';
+				
+				my $i = 0;
+				while ($i < 5 && $i <= $#{$det->{genres}}){
+					$out .= ', ' unless $i == 0;
+					$out .= $det->{genres}[$i]{name};
+					$i++;
+				}
+				
+				$out .= ' ]';
+			}
+			if ($det->{trailer}){
+				my $trl = $det->{trailer};
+				$trl =~ s!http://www.youtube.com/watch?v=!http://youtu.be/!;
+				$out .= ' Trailer:[ '.$trl.' ]';
+			}
+			if ($det->{url}){
+				$out .= ' Link:[ '.$det->{url}.' ]'
+			}
+			$server->command('msg '.$target.' '.$out);
+			return;
+		}
+	} else {
+		return; #only works for madonna and cher for some stupid reason
+		my @rep = $tmdb->search->person($query);
+		my $them = $rep[0]->{id};
+		print $query.': '.$rep[0]->{id} if $debug;
+		$them = $tmdb->person($them);
+		$them = $them->info();
+		
+		my $out = '<'.$them->{name}.'>';
+		if ($them->{known_movies}){
+			$out .= ' Total Movies:[ '.$them->{known_movies}.' ]';
+		}
+		if ($them->{filmography}){
+			$out .= ' Movies:[ ';
+			my $i = 0;
+			while ($i < 5 && $i <= $#{$them->{filmography}}){
+				$out .= ', ' unless $i == 0;
+				if ($them->{filmography}[$i]{job} eq 'Actor'){
+					$out .= $them->{filmography}[$i]{name}.' ('.$them->{filmography}[$i]{character}.')';
+				} else {
+					$out .= $them->{filmography}[$i]{name};
+				}
+				$i++;
+			}
+		}
+		if ($them->{url}){
+			$out .= ' Link:[ '.$them->{url}.' ]';
+		}
+		$server->command('msg '.$target.' '.$out);
+		return;
+	}
+	
 }
 
 sub codepoint {
