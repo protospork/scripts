@@ -144,7 +144,7 @@ sub pubmsg {
 	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	#there is a better way to do this. there has to be :(
 	
 	#if someone's a spammer
-	if ($title eq $lasttitle && $target eq $lastchan){ return; }
+	if ($title eq $lasttitle && $target eq $lastchan && time - $lastsend < 120){ return; }
 	
 	#error fallback titles, index pages, etc
 	return if grep $title =~ $_, (@defaulttitles);	
