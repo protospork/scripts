@@ -123,7 +123,7 @@ sub moviedb {
 			while (length $out < 300 && @out){
 				$out .= ', '.(shift @out);
 			}
-			$server->command('msg '.$target.' '.$out);
+			$server->command('msg '.$target.' '.$out) if $out;
 			return;
 		} else {
 			my $det = $tmdb->movie($id);
