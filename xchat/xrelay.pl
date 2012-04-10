@@ -228,7 +228,8 @@ sub newtopic {
 		} else {
 			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
 			$topic =~ s/$short \d+/$short $newep/i;
-			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr);
+#			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #anope is broken
+			command('topic '.$topic, $anime, $destsrvr);
 			
 			#now unset that timer if necessary
 			for my $key (keys %timers){
