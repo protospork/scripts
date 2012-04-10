@@ -12,7 +12,8 @@ use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
 use TMDB;
 
-use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
+				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -59,8 +60,19 @@ sub event_privmsg {
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
 	
-	return if $text !~ /^\s*\.(.+?)\s*$/;
+	return if $text !~ /^\s*\.(.+?)\s*$/; #make sure it's a trigger
 
+#derp nevermind irssi is a piece of shit
+	#make sure someone else isn't doing this job
+	#todo: make this per-trigger, somehow (ie disable only weather or all but weather)
+	# for my $bot (@yield_to){
+		# my $bot_found = Irssi::active_win()->{active}->nick_find($bot);
+		# if (defined $bot_found && $bot_found){
+			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
+			# return;
+		# }
+	# }
+	
 	my @terms = split /\s+/, $1;
 	
 	given ($terms[0]){
@@ -72,7 +84,7 @@ sub event_privmsg {
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^gs$/i){				shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://gog.is/'.(join '+', @terms)); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
-		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
+		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
 		when (/^airtimes$/){		$return = airtimes(); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }

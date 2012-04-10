@@ -10,8 +10,12 @@ use strict;
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
-use vars qw( @ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
-@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI);
+use vars qw(	
+	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
+	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan
+	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey 
+	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
+);
 
 $VERSION = "1.9";
 %IRSSI = (
@@ -26,6 +30,7 @@ my %titlecache; my %lastlink; my %mirrored;
 my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend) = (' ', ' ', ' ', (time-5));
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
+#what are these for, again? <_<
 Irssi::signal_add_last('message public', 'pubmsg');
 Irssi::signal_add_last('message irc action', 'pubmsg');
 Irssi::signal_add_last('message private', 'pubmsg');
@@ -62,6 +67,20 @@ sub pubmsg {
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|http://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
 	
+	#IRSSI WHY ARE YOU SO FUCKING BROKEN
+	# exit if another bot already does our job:
+	# my $pointlesstemporaryvariable = Irssi::active_win()->{active};
+	# my @names = $pointlesstemporaryvariable->nicks();
+	# print 'searching '.($#names+1).' nicks' if $debugmode;
+	# for (@yield_to){
+		# my $bot_found = grep $_, @names;
+		# if (defined $bot_found && $bot_found){
+			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
+			# $notitle++;
+		# }
+	# }
+	
+	
 	print $target.': '.$url if $debugmode == 1;
 	
 #load the link as a URI entity and just request the key you need, if possible. 
@@ -69,7 +88,7 @@ sub pubmsg {
 #	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
 	$url = URI->new($url)->canonical;
 	
-	#todo: given/when this shit up dawg
+	#todo: given/when this shit up dawg ##wait no that won't work will it
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
 		loadconfig() || return;
@@ -159,7 +178,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)/i){
 		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){ $return = imgur($url,$chan,$data,$server,$nick); return $return; }
-		my $this = check_image_size($url);
+		my $this = check_image_size($url,$nick,$chan,$server);
 		if ($this && $this ne '0'){ return $this; }
 	}
 		
@@ -336,25 +355,32 @@ sub newegg {
 }
 
 sub check_image_size {
-	my ($url) = @_;
-#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#maybe this should be configurable, but it's a fair bet a gif is going to be large
+	my ($url,$nick,$chan,$server) = @_;
+	my $return;
+#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#fair bet a gif is going to be large
 	my $req = $ua->head($url); 
-	return 0 unless $req->is_success;	#?
+	$return = 0 unless $req->is_success;	#?
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
-	return 0 unless $req->content_type =~ /image/; 
+	$return = 0 unless $req->content_type =~ /image/; 
 	if ($req->content_type =~ /gif$/i){
-		if ($url =~ /imgur/i){
+		if ($url =~ /imgur(?!.+gif$)/i){
 			$req->content_length == 669 
-			? return '404' 
-			: return 'WITCH';
+			? $return = '404' 
+			: $return = 'WITCH';
 		} else {
-			return 'WITCH';
+			$url !~ /gif$/i 
+			? $return = 'WITCH'
+			: undef $return;
 		}
 	} elsif ($req->content_length > $largeimage){
 		my $size = $req->content_length;
 		$size = sprintf "%.2fMB", ($size / 1048576);
-		return $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
+		$return = $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
 	}
+	if ($image_chan && $req->content_length){ #I guess facebook 404s are successes? so, we look for >0 length instead
+		$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url).' ('.(sprintf "%.0f", ($req->content_length/1024)).'KB)');
+	}
+	$return ? return $return : return; #sure why not
 }
 
 sub sendresponse {
@@ -416,7 +442,7 @@ sub imgur {
 	}
 	if ($stop == 1 || $go == 0){
 		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
-		return check_image_size($url);	
+		return check_image_size($url,$nick,$chan,$server);	
 	}
 	
 	my $urlqueries = $url->clone( );
@@ -456,6 +482,7 @@ sub imgur {
 	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
+	$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$mirrored{$url}[-1]).' ('.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB)') if $image_chan;
 	return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB'; 	
 }
 sub filler_title {
@@ -466,10 +493,13 @@ sub filler_title {
 	return ' '.$line;
 }
 sub xcc { #xchat-alike nick coloring
-		my ($person,$clr) = ($_[0],0); 
-		$clr += ord $_ for (split //, $person); 
+		my ($source,$clr,$string,$brk) = (shift,0);
+		if (@_){ $string = shift; }
+		else { $string = $source; $brk++; }
+		$clr += ord $_ for (split //, $source); 
 		$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];
-		$person = "\x03$clr<$person>\x0F";
-		return $person;
+		if ($brk){ $string = "\x03$clr<$string>\x0F"; }
+		else { $string = "\x03$clr$string\x0F"; }
+		return $string;
 }
 loadconfig();
