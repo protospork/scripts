@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.70;
+my $ver = 1.71;
 register('parentheses', $ver, "fixes parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -13,6 +13,7 @@ my $sprinkles = 1; #make this 0 to turn every color effect into boring green
 my $boring = 0;    #make this 1 to disable all color effects, even the green
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
+my $dickhead = 0;  #make this 0 to disable autoghosts
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -44,6 +45,14 @@ sub magic_happens {
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
+	#todo: return if $pass =~ /l[o0]l|nigger|password123/
+	if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
+		my ($act,$pass) = ($1,$2);
+		$nick =~ s/^\x03\d\d?//;
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
+		command("msg nickserv ghost ".$nick.' '.$pass);
+		return EAT_NONE;
+	}
 	if ($nico == 1){
 		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
 	} elsif ($ytshorten == 1){
@@ -66,7 +75,7 @@ sub magic_happens {
 	#colored >quotes
 	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
-	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
+	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|criten|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
 		my @end;
 		for (split /\s+/, $message){ 
 			if (/\x{02}/){ push @end, $_; next; }
