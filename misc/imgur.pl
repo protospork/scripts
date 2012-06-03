@@ -43,9 +43,11 @@ $albumname =~ s/^\s*(.+?) - Imgur.*$/$1/;
 
 #if the album name blows, fix it
 if ($wingit){
-	if ($ARGV[0] =~ /^-/ && $albumname =~ /^(Photo Albums?|Album)$/){
-		$albumname = $album;
-		$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
+	if ($ARGV[0] =~ /^-/){
+		if ($albumname =~ /^((?:Photo )?Albums?)$/){
+			$albumname = $album;
+			$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
+		}
 	} else {
 		$albumname = $ARGV[0];
 	}
@@ -67,9 +69,9 @@ downloadalbum();
 
 sub downloadalbum {
 	#for some reason mkdir doesn't work.
-	make_path("imgur/".$albumname);	
+	make_path($albumname);	
 	
-	chdir("imgur/".$albumname);
+	chdir($albumname);
 	my @files = glob "*";	#dupe detection database
 	my ($counter, $dupe) = (0, 0);
 	for (@imagehashes){ 
@@ -85,4 +87,4 @@ sub downloadalbum {
 		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.(sprintf "%.02d", ($img->content_length / 1024)).' kB');
 	}
 }
-print $albumname;
+say $albumname;

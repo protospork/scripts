@@ -131,3 +131,19 @@ sub squiggles {
 	command("say $str");
 	return EAT_XCHAT;
 }
+hook_command('zg', \&zalgo);
+sub zalgo {
+	my ($text, $action) = ($_[1][1], '0');
+	if ($text =~ m|^/me|){ $text =~ s|/me ||; $action = 1;}
+	my @chars = split //, $text;
+	my $zalgo = shift @chars;
+	$zalgo .= "\x{489}";
+	my $colorstring = '';
+	for (@chars){
+		if ($_ =~ /\x{3}/){ $colorstring = $_; next; } elsif ($_ =~ /[\d,]/ && length($colorstring) >= 1 && length($colorstring) < 6){ $colorstring .= $_; next; } 
+		elsif ($_ !~ /[\d,]/ && length($colorstring) >= 2){ $zalgo .= $colorstring; $colorstring = ''; }
+		$zalgo .= "$_";
+		unless ($_ =~ /^ $/){ $zalgo .= "\x{489}"; }
+	}
+	if ($action eq '1'){ command("action $zalgo"); } else { command("say $zalgo"); }
+}

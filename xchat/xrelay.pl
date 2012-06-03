@@ -98,7 +98,7 @@ sub whoosh {
 		my $spam = 'bs say '.$spamchan.' '.$output;
 		
 		for (@blacklist){
-			if ($name =~ /\Q$_\E/i){ 
+			if ($name =~ /\Q$_\E|HorribleSubs.+\[1080p/i){ #hardcoding is bad but so is my blacklist engine
 				return EAT_NONE; 
 			} 			
 			if (defined($comment) && $comment =~ /\Q$_\E/i){ 

@@ -16,9 +16,8 @@
 	"[BSS]"				=>	["Anime", [qw|BSS|],		undef,			["bss:.avi"],	undef],
 	"THORA"				=>	["Anime", ["thora"],		undef,			[undef],		undef],
 	'mayo chiki'		=>	["Anime", [qw|ayako doki|], "Chiki",		[undef],		2198],
-	"mardock scramble"	=>	["Anime", [undef],			undef,			[undef],		undef],
-	'gintama'			=>	["Anime", [qw|horriblesubs rumbel|],"Gintama",	[undef],		2172],
-	'shippuuden'		=>	["Anime", [qw|taka|],		"Ship",			[undef],		1106],
+	'gintama'			=>	["Anime", [qw|horriblesubs rumbel|],"Gintama",	[undef],	2172],
+	'shippuuden'		=>	["Anime", [qw|taka|],		"N2",			[undef],		1106],
 #fall 2011 starts here
 	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihaya",	[undef],		2271], #25 [ntv]
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
@@ -42,38 +41,66 @@
 #winter 2011/2012
 	pirates				=>	["Anime", [qw!horriblesubs commie!],'Pirates',	[undef],		2370], #26 eps [randomc]
 	'basket army'		=>  ["Anime", [undef],			'Basketarmy',	[undef],		undef], #busou chuugakusei basketarmy
-	randsell			=>  ["Anime", ['horriblesubs'],		'Randoseru',	[undef],		2363], #recorder to randoseru ##five minute show and hadena still wrecked it
 	"high school dxd"	=>  ["Anime", [qw!subdesu afftw!],'DxD',		[undef],		2366],	#12 eps [randomc]
-	another				=>  ["Anime", [qw!commie underwater!],'Another',[undef],		2373], #12eps [randomc]
 	"rinne no lagrange"	=>  ["Anime", [qw!commie underwater!],'Lagrange',[undef],		2390],	#12 eps [randomc]
-	"rock shooter"		=>  ["Anime", [qw!commie nishishi!],'BRS',		[undef],		2187], #black\x{2605}rock shooter #8 eps [randomc]
 	"kill me baby"		=>  ["Anime", [qw!UTW Mazui!],	'KmB',			[undef],		2372],
 	"inu x boku"		=>	["Anime", [qw!commie horriblesubs!],'InuBoku',	[undef],		2377],
 	"kikinasai"			=>	["Anime", [qw!horriblesubs rori!],'PapaKiki',	[undef],		2383], #papa no iu no kikinasai!
-	'brave 10'			=>	["Anime", ['doki'],			'Brave10',		[undef],		2382], #12eps [randomc]
 	symphogear			=>	["Anime", [qw'gg commie'],	'Symphogear',	[undef],		2375], #senhime zesshou symphogear #13 eps [randomc]
 	nisemonogatari		=>	["Anime", [qw!commie horriblesubs!],'Nisemono',	[undef],		undef],#2396], #13 eps [randomc] ##horriblesubs rips and releases the simulcasts before they're done airing. TV may be a dinosaur
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		2368], #ano natsu de matteru #12eps [randomc]
-	gokujyou			=>	["Anime", [undef],			undef,			[undef],		undef], #?
 	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou \x{7537}\x{5b50}\x{9ad8}\x{6821}\x{751f}\x{306e}\x{65e5}\x{5e38}
 	'aquarion EVOL'		=>	["Anime", ['gg'],			'Aquarion',		[undef],		2378],
-	'milky holmes II'	=>	["Anime", ['kiteseekers'],	'Holmes',		[undef],		2359],
+	'milky holmes'	=>	["Anime", ['kiteseekers', 'nicorip'],'Holmes',	[undef],		2359], #[Nicorip] Tantei Opera Milky Holmes Dai 2 Maku – 11 [1280x720][4B94F808].mp4
 	gokujo				=>	["Anime", ['CMS'],			undef,			[undef],		undef],
+	ozma				=>	["Anime", [qw'horriblesubs underwater'],	'Ozma',	[undef],		2455],
+	ozuma				=>	["Anime", [qw'SFW'],		'Ozma',			[undef],		2455],
+#spring 2012
+	upotte				=>	["Anime", ['commie'],		'Upotte',		[undef],		undef], #Upotte!! ##commie
+	"tasogare otome"	=>	["Anime", ['utw', 'underwater', 'commie'],'Amnesia',[undef],undef], #Tasogare OtomexAmnesia
+	"dusk maiden"		=>	["Anime", ['horriblesubs'],	'Amnesia',		[undef],		undef],
+	Hyouka				=>	["Anime", [qw'commie mazui gg'],'Hyouka',	[undef],		undef],
+	Jormungand			=>	["Anime", ['gg'],			'Jormungand',	[undef],		undef],
+	"Shining Hearts"	=>	["Anime", [undef],			'Bread',		[undef],		undef], #hiryuu
+	Sankarea			=>	["Anime", [qw'commie sfw doki'],'Sankarea',	[undef],		undef],
+	"Natsuiro Kiseki"	=>	["Anime", [qw'warui rori'],	'NatsuKise',	[undef],		undef],		
+	"Medaka Box"		=>	["Anime", [qw'whynot horriblesubs'],'Medaka',[undef],		undef], #whynot, HS, darksoul
+	Zetman				=>	["Anime", [qw'doki whynot warui'],'Zetman',	[undef],		undef], #doki, whynot, warui
+	Tsuritama			=>	["Anime", [undef],			'Tsuritama',	[undef],		undef],
+	Yurumates			=>	["Anime", [undef],			'Yurumates',	[undef],		undef],
+	"Accel World"		=>	["Anime", [qw'commie utw'],	'Accel',		[undef],		undef],
+	"Girlfriend X"		=>	["Anime", [undef],			'Girlfriend',	[undef],		undef], #Nazo no Kanojo X / Mysterious Girlfriend X ##HS
+	"Achiga-hen"		=>	["Anime", ['underwater'],	'Saki',			[undef],		undef], #Saki: Achiga-hen episode of side-A ##underwater
+	"Episode of Side A" =>	["Anime", ['horriblesubs'],	'Saki',			[undef],		undef],
+	"Koi-Ken"			=>	["Anime", [undef],			'Koi-Ken',		[undef],		undef], #Koi-Ken!
+	"Eureka Seven: AO"	=>	["Anime", [undef],			'E7',			[undef],		undef], #ugh
+	"furusato saisei"	=>	["Anime", [undef],			undef,			[undef],		undef], #dunno. shokotan op/ed though ##it's folktales from japan
+	'folktales from japan'=>["Anime", ['horrible'],		undef,			[undef],		undef],
+	"Lupin III"			=>	["Anime", [qw'sage gg'],	'Lupin',		[undef],		undef], #Lupin III - Mine Fujiko to Iu Onna ##sage
+	"Lupin the Third"	=>	["Anime", [qw'sage'],		'Lupin',		[undef],		undef],
+	"to Iu Onna"		=>	["Anime", [qw'sage commie gg'],'Lupin',		[undef],		undef],
+	"Acchi Kocchi"		=>	["Anime", ['commie'],		'Kocchi',		[undef],		undef],
+	"Nyarlko"			=>	["Anime", [qw'rori commie'],'Nyarlko',		[undef],		undef],
+	"polar bear cafe"	=>	["Anime", ['horriblesubs'],	'Shirokuma',	[undef],		undef],
+	'inuko-san'			=>	["Anime", ['migoto'],		'inuko',		[undef],		undef],
+	'space brothers'	=>	["Anime", [qw'horriblesubs commie'],'Bros',	[undef],		undef],
 );
+#???: shirokuma/polar bear cafe [HS], gakkatsu [CLBC], shiba inuko-san [migoto]
+
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon 
-kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers]
+kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
-					"one piece", "galactic heroes", "kamen rider", "hitman reborn", 
-					"shin koihime musou", "shugo chara", "heartcatch precure", "pretty cure",
-					"hidamari sketch", "character song", "character album", "dragon ball",
-					"tinkle", "shuffle", "rainbow gate", "cardfight", "doraemon",
-					"pocket monsters", "tennis"
-				);
+	"one piece", "galactic heroes", "kamen rider", "hitman reborn", 
+	"shin koihime musou", "shugo chara", "heartcatch precure", "pretty cure",
+	"hidamari sketch", "character song", "character album", "dragon ball",
+	"tinkle", "shuffle", "rainbow gate", "cardfight", "doraemon",
+	"pocket monsters", "tennis"
+);
 push @blacklist, @moreblacklist;
 
 $do_hentai = 0;

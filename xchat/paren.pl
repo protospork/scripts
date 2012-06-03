@@ -11,9 +11,11 @@ hook_print("Channel Action Hilight", \&actinghigh, {priority => PRI_LOW});
 
 my $sprinkles = 1; #make this 0 to turn every color effect into boring green
 my $boring = 0;    #make this 1 to disable all color effects, even the green
+#re: those past two options - greentext is enabled no matter what, but it turns to nick-color if $sprinkles = 1
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
-my $dickhead = 0;  #make this 0 to disable autoghosts
+my $dickhead = 0;  #make this 0 to disable autoghosts ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS. other people are dicks too
+my $wikimobile = 1;#en.m.wikipdia is nicer <_<
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -58,6 +60,9 @@ sub magic_happens {
 	} elsif ($ytshorten == 1){
 		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
 	}
+	if ($wikimobile){
+		$message =~ s{(?:https?://)?en\.wikipedia\.org/wiki/(\S+)}{http://en.m.wikipedia.org/wiki/$1}gi;
+	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
@@ -95,13 +100,13 @@ sub magic_happens {
 				(?<=[[:alnum:]])[^[:alnum:]]+$|
 				[^[:alnum:]#@_]+|
 				(?<=[:;<=])[PpDoOVv3](?!\d))
-			/\x{03}$clr$1\017/gx unless /^[<@]\S+[>:,]$/; #why is the second-to-last match block there?
+			/\x{03}$clr$1\017/gx unless /^(?:[."]?[<@])\S+[>:,]$/; #why is the second-to-last match block there?
 			
 			s/(?<=\d)\x03$clr:\x0F(?=\d)/:/g; #don't like the colored : in timestamps
 			
 			
 			#I'm trying to avoid checking every word against /names, which wouldn't work in #twitter anyway
-			if (/^(?:"?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/){ #quotes are already color quoted so that first bit doesn't work
+			if (/^(?:[."]?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/){ #quotes are already color quoted so that first bit doesn't work
 				$_ = "\x03".($sprinkles ? xccolor($1) : 23).$_."\x0F";
 			}
 			

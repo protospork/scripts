@@ -19,6 +19,8 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 #todo: re-add the config rehash trigger
 
+#<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
+
 $VERSION = "2.4";
 %IRSSI = (
     authors => 'protospork',
@@ -82,13 +84,13 @@ sub event_privmsg {
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
-		when (/^gs$/i){				shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://gog.is/'.(join '+', @terms)); }
+		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
 		when (/^airtimes$/){		$return = airtimes(); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
-		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; }
+	#	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } #too crashy
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
