@@ -122,7 +122,7 @@ sub magic_happens {
 				(?<=[:;<=])[PpDoOVv3](?!\d))
 			/\x{03}$clr$1\017/gx unless /^(?:[."]?[<@])\S+[>:,]$/; #why is the second-to-last match block there?
 			
-			s/(?<=\d)\x03$clr:\x0F(?=\d)/:/g; #don't like the colored : in timestamps
+			s/(?<=\d\d)\x03$clr:\x0F(?=\d\d)/:/g; #don't like the colored : in timestamps
 			
 			
 			#I'm trying to avoid checking every word against /names, which wouldn't work in #twitter anyway
