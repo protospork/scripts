@@ -88,11 +88,11 @@
 #???: shirokuma/polar bear cafe [HS], gakkatsu [CLBC], shiba inuko-san [migoto]
 
 @blacklist = qw( 
-remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred
+remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon 
-kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse
+kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn", 

@@ -2,20 +2,29 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.71;
-register('parentheses', $ver, "fixes parentheses in URLs", \&unload);
+my $ver = 1.80;
+register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
 hook_print("Channel Action", \&acting, {priority => PRI_LOW});
 hook_print("Channel Action Hilight", \&actinghigh, {priority => PRI_LOW});
 
+#COLORS
 my $sprinkles = 1; #make this 0 to turn every color effect into boring green
 my $boring = 0;    #make this 1 to disable all color effects, even the green
 #re: those past two options - greentext is enabled no matter what, but it turns to nick-color if $sprinkles = 1
+my $colornicks = 1;#will find <quotes> and @mentions and color the nicks as xchat would
+
+#LINKS
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
+my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed/ version. overrules ytshorten
+my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
+my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
+
+#ELSE
+my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $dickhead = 0;  #make this 0 to disable autoghosts ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS. other people are dicks too
-my $wikimobile = 1;#en.m.wikipdia is nicer <_<
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -47,7 +56,7 @@ sub magic_happens {
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	#todo: return if $pass =~ /l[o0]l|nigger|password123/
+	#kill me I'm a bad idea
 	if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
 		my ($act,$pass) = ($1,$2);
 		$nick =~ s/^\x03\d\d?//;
@@ -55,19 +64,30 @@ sub magic_happens {
 		command("msg nickserv ghost ".$nick.' '.$pass);
 		return EAT_NONE;
 	}
-	if ($nico == 1){
-		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
-	} elsif ($ytshorten == 1){
-		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
+	
+	if ($nico){
+		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
 	}
+	if ($ytembed){
+		$message =~ s{(?:https?://)?(?:(?:www\.)?youtube.com/watch\?v=|youtu.be/)([^\s&#]{11})[^\s>#]*}{http://youtube.com/embed/$1}g;
+	} elsif ($ytshorten){
+		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
+	}
+	
 	if ($wikimobile){
 		$message =~ s{(?:https?://)?en\.wikipedia\.org/wiki/(\S+)}{http://en.m.wikipedia.org/wiki/$1}gi;
+	}
+	if ($deHTTPS){
+		$message =~ s{https://}{http://}g; #sometimes opera won't default itself for https urls
+	}
+	if ($hideDCC){
+		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
-	$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
-	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether  this actually works
+	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether this actually works
+	
 	
 	#ascii:
 	#[:alpha:] [:alnum:] [:digit:] [:punct:]
@@ -106,7 +126,7 @@ sub magic_happens {
 			
 			
 			#I'm trying to avoid checking every word against /names, which wouldn't work in #twitter anyway
-			if (/^(?:[."]?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/){ #quotes are already color quoted so that first bit doesn't work
+			if (/^(?:[."]?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/ && $colornicks){ #quotes are already color quoted so that first bit doesn't work
 				$_ = "\x03".($sprinkles ? xccolor($1) : 23).$_."\x0F";
 			}
 			
@@ -115,7 +135,8 @@ sub magic_happens {
 		$" = ' '; #p sure this is the default, dunno if other scripts share the builtin vars
 		$message = "@end";
 		
-		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ #this is halfassed as shit fix it later
+		#this is halfassed as shit fix it later
+		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ 
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help
 				my ($one,$two) = ($1,$2); #so redundant colorcodes need to be stripped, although
 				$message =~ s/$&/\x03$one$two /g; #this method only grabs the first redundant one
@@ -137,9 +158,8 @@ sub magic_happens {
 	}
 	return EAT_ALL;
 }
-sub xccolor {
+sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	my $string = shift;
-	#this is a translation of xchat's nick coloring algorithm
 	my $clr = 0;
 	$string =~ s/\x03\d{1,2}|\x0F//g;	
 	$clr += ord $_ for (split //, $string); 
