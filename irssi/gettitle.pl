@@ -113,7 +113,7 @@ sub pubmsg {
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
-	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
+	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
 		my $sec = $url->path;
@@ -266,7 +266,8 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	
 	print $url.' => '.$return if $debugmode;
 	
-	return $return;	
+	$return = URI->new($return)->canonical;
+	length $return < 200 ? return $return : return $return->host;	
 }
 
 sub get_title {
