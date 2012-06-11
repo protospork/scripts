@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.80;
+my $ver = 1.82;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -25,6 +25,7 @@ my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $dickhead = 0;  #make this 0 to disable autoghosts ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS. other people are dicks too
+my $badcracks = 1;
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -62,6 +63,12 @@ sub magic_happens {
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
 		command("msg nickserv ghost ".$nick.' '.$pass);
+		return EAT_NONE;
+	}
+	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû)$/){
+		$nick =~ s/^\x03\d\d?//;
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
+		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
 		return EAT_NONE;
 	}
 	
