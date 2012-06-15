@@ -68,7 +68,7 @@ sub magic_happens {
 	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû)$/){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
-		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
 		return EAT_NONE;
 	}
 	

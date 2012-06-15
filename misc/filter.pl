@@ -30,7 +30,7 @@ my $awfulregex = qr!.*meme.*|kym-cdn|qkme\.me|ch(ee)?z(comixed|memebase|derp)|po
 
 if ($ARGV[0] && $ARGV[0] eq '-f'){ $sched--; }
 
-# perl -e "sleep 3000; system 'copylogs2.bat'; exec 'perl filter.pl'; exit;"
+# perl -e "sleep 3600*12; system 'copylogs2.bat'; do 'filter.pl';"
 # is better than this line:
 # sleep 23400; #rudimentary scheduler
 

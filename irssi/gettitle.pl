@@ -17,8 +17,9 @@ use vars qw(
 	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
 );
 
-#todo: drop imgur albums into $image_chan too
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
+
+#<@cephalopods> looks like it tried to parse an HTTP 500 as JSON and was so surprised when it didn't work, it died
 
 $VERSION = "1.9";
 %IRSSI = (
