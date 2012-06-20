@@ -65,10 +65,11 @@ sub magic_happens {
 		command("msg nickserv ghost ".$nick.' '.$pass);
 		return EAT_NONE;
 	}
-	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû)$/){
+	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
 		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
 		return EAT_NONE;
 	}
 	
