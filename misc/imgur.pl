@@ -17,6 +17,11 @@ my $album = $ARGV[-1] || die "give it a URL";
 #hardcoding proxies baaaad
 my $ua = LWP::UserAgent->new();
 $ua->proxy('http', 'http://192.168.250.125:3128/');
+# $ua->agent('Mozilla/5.0 (X11; U; Linux; i686; en-US; '.
+	# 'rv:1.9.0.13; does anyone ever read this string?) '.
+	# 'Gecko/2009073022 Firefox/3.0.13'
+# );
+$ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)');
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
@@ -35,7 +40,7 @@ if ($album =~ m{/a/}){
 
 say $album;
 my $page = $ua->get($album) or die "$!";
-die $page->status_line unless $page->is_success;
+die $page->status_line unless $page->is_success; ##todo: dump headers and see wtf is making imgur 403 LWP
 
 #why did I use treebuilder for so little?
 my $albumname = HTML::TreeBuilder->new_from_content($page->decoded_content)->look_down(_tag => 'title')->as_text;
