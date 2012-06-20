@@ -76,6 +76,7 @@ for (@lines){
 		}
 	}
 	my ($chan,$link,$size) = ($1,$2,$3);
+	$link .= '.png' if $link =~ /puu\.sh/; #turns out puush ignores any extension on requests
 	
 	# if ($link =~ /$awfulregex/ && !$awful){ next; }
 	
@@ -104,13 +105,13 @@ for (<*.txt>){
 			s{https?://imgur\.com/gallery/(\w{5})}{http://i.imgur.com/$1.jpg}g;
 			next unless /(http\S+\.(?:j?pe?n)?g(?:if)?(?=\?|$)|http\S{3}puu\.sh\/\S{4}|imgur.com)/i;
 			my $url = $1;
-			if ($url =~ /imgur/ && $url !~ /\.\w{3,4}$/){
+			if ($url =~ /imgur|puu\.sh/ && $url !~ /\.\w{3,4}$/){
 				if ($url =~ m{/a/}){
 					$albums{$url} = $name;
 					say "adding $url to \%albums" if $debug;
 					next;
 				} else {
-					$url .= '.jpg';
+					$url .= '.png';
 				}
 			}
 			# if ($url =~ /$awfulregex/ && !$awful){ next; } 
@@ -247,15 +248,16 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 	
 	my $resp = $ua->get($_, ':content_file' => $fourchan{$_}[0].'/'.$name);#$ua->mirror($_, $fourchan{$_}[0].'/'.$name);
 	
-	unless ($name =~ /\.\w{3,4}/){ #this sort of defeats the build-@already-from-disk thing, so probably add a switch
-		my $type = $resp->header('Content-Type') || 'image/jpeg'; #also of note: $resp->filename
-		if ($type =~ s{image/(jpe?g|png|gif)}{lc $1}e){
-			$type =~ s/jpeg/jpg/;
-		} else { #looks like puush carries swf or something
-			$type = 'jpg';
-		}
-		rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$name.'.'.$type;
-	}
+	#this block should be vestigial- you can just tack .jpg onto a puu.sh URL when you request it
+	# unless ($name =~ /\.\w{3,4}/){ #this sort of defeats the build-@already-from-disk thing, so probably add a switch
+		# my $type = $resp->header('Content-Type') || 'image/jpeg'; #also of note: $resp->filename
+		# if ($type =~ s{image/(jpe?g|png|gif)}{lc $1}e){
+			# $type =~ s/jpeg/jpg/;
+		# } else { #looks like puush carries swf or something
+			# $type = 'jpg';
+		# }
+		# rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$name.'.'.$type;
+	# }
 
 	if (! $resp->is_success && $_ !~ /4chan/ && $resp->code < 500){
 		open my $errors, '>>', '.errors';
