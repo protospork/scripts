@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.82;
+my $ver = 1.91;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -14,6 +14,7 @@ my $sprinkles = 1; #make this 0 to turn every color effect into boring green
 my $boring = 0;    #make this 1 to disable all color effects, even the green
 #re: those past two options - greentext is enabled no matter what, but it turns to nick-color if $sprinkles = 1
 my $colornicks = 1;#will find <quotes> and @mentions and color the nicks as xchat would
+my $BNCfix = 1;    #talking from two clients on a BNC? this'll treat any line from your nick as from your client
 
 #LINKS
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
@@ -24,8 +25,9 @@ my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
-my $dickhead = 0;  #make this 0 to disable autoghosts ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS. other people are dicks too
+my $dickhead = 0;  #removed. ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS.
 my $badcracks = 1;
+my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -52,6 +54,9 @@ sub magic_happens {
 	my $net = get_info('network') || 'none';
 	my ($nick,$message) = ($_[0],$_[1]);
 	return EAT_NONE unless $message;
+	
+	if ($red && $hilights){ highlighter($nick,$message); }
+	
 	return EAT_NONE if $channel =~ /tosho-api|newsflash/;
 	
 	my $clr = 23;
@@ -65,13 +70,13 @@ sub magic_happens {
 		command("msg nickserv ghost ".$nick.' '.$pass);
 		return EAT_NONE;
 	}
-	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
-		$nick =~ s/^\x03\d\d?//;
-		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
-		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
-		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
-		return EAT_NONE;
-	}
+	# if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
+		# $nick =~ s/^\x03\d\d?//;
+		# prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
+		# command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		# command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		# return EAT_NONE;
+	# }
 	
 	if ($nico){
 		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
@@ -108,7 +113,12 @@ sub magic_happens {
 	#colored >quotes
 	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
-	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|criten|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
+	unless ($message =~ /\x{03}|^\s*$/ #don't code colors if colors were already coded
+	|| $net =~ /freenode|criten|none/i #or if it's going to kill readability
+	|| $red							   #or if you've been highlighted
+	|| $nick =~ /\Q$mynick\E/ 		   #or if it'll interfere with $BNCfix
+	|| $boring == 1					   #or if you don't like fun
+	){ 
 		my @end;
 		for (split /\s+/, $message){ 
 			if (/\x{02}/){ push @end, $_; next; }
@@ -152,7 +162,7 @@ sub magic_happens {
 		}
 	}
 	
-	if ($nick =~ /\Q$mynick\E$/){ #fixed events for 2+ clients on a bnc
+	if ($nick =~ /\Q$mynick\E$/ && $BNCfix){ #fixed events for 2+ clients on a bnc
 		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); } 
 		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
@@ -165,6 +175,15 @@ sub magic_happens {
 		else { 							emit_print('Channel Message', $nick, $message, $_[2], $_[3]); }
 	}
 	return EAT_ALL;
+}
+sub highlighter {
+	my ($whom,$text) = @_;
+	my $dest = get_info('channel');
+	my $serv = get_info('server');
+	my ($server,$homechan) = ('irc.adelais.net','#fridge');
+#	prnt("\00311$whom\017\t$text (\00304$dest\017, \00304$serv\017)", $homechan, $server);
+	prnt("\x03".xccolor($whom).$whom."\x0F\t".$text." (\x0304".$dest."\x0F, \x0304".$serv."\x0F)", $homechan, $server);
+	return;# EAT_NONE;
 }
 sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	my $string = shift;
