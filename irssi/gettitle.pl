@@ -163,7 +163,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		if ($this && $this ne '0'){ return $this; }
 	}
 		
-	if ($url =~ m{^http://(i\.)?imgur\.com/\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
+	if ($url =~ m{^http://(i\.)?imgur\.com/\w{5,6}(?:\?full)?$}i && $url !~ /,|(?:jpe?g|gif|png)$/i){
 		$url .= '.jpg';
 		$return = "$url ($insult)" unless $url =~ m{/a(?:lbums?)?/|gallery};
 	} elsif ($url =~ /imagebin\.ca\/view/){
