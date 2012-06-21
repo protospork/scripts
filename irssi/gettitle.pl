@@ -182,7 +182,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	my $insult = $meanthings[(int rand scalar @meanthings)-1];
 	
 	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
-		if ($url =~ m{/a(?:lbums?)?/|gallery}){
+		if ($url =~ m{/a(?:lbums?)?/|gallery|,}){
 			$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url));
 		} else {
 			$url .= '.jpg';
