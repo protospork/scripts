@@ -68,11 +68,15 @@ for (@lines){
 	
 	if (! /#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?(http\S+)(?:\x0F)? \((\d+)KB\)$/){
 		if (/#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?(http\S+imgur\S+)(?:\x0F)?$/){
-			if (/#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?http\S+imgur\.com\/(\S+,\S+)(?:\x0F)?$/){ #comma list pseudoalbums
+			if (/#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?http\S+imgur\.com\/([a-z0-9,]+)(?:\x0F)?$/i){ #comma list pseudoalbums
 				my ($chan,$blob) = ($1,$2);
+				say $blob if $debug;
 				for (split /,/, $blob){
-					push @{$links{"http://i.imgur.com/".$_.".jpg"}}, $chan;
+					my $url = "http://i.imgur.com/".$_.".jpg";
+					push @{$links{$url}}, $chan;
+					say $url if $debug;
 				}
+				next;
 			} else {
 				$albums{$2} = $1;
 				say "adding $2 to \%albums" if $debug;
@@ -85,7 +89,6 @@ for (@lines){
 	my ($chan,$link,$size) = ($1,$2,$3);
 	$link .= '.png' if $link =~ /puu\.sh/; #turns out puush ignores any extension on requests
 	
-	# if ($link =~ /$awfulregex/ && !$awful){ next; }
 	
 	#4chan is rare enough in #wat that I don't have to care how inconsistent this is
 	if ($link =~ /4chan\.org/ || $size > 1600){ #get the smaller files out of the way first
@@ -117,13 +120,21 @@ for (<*.txt>){
 					$albums{$url} = $name;
 					say "adding $url to \%albums" if $debug;
 					next;
+				} elsif ($url =~ /imgur\.com\/([a-z0-9]+,[a-z0-9,]+)/i){ #comma split non-albums
+					my ($chan,$blob) = ($1,$2);
+					say $blob if $debug;
+					for (split /,/, $blob){
+						my $url = "http://i.imgur.com/".$_.".jpg";
+						push @{$links{$url}}, $chan;
+						say $url if $debug;
+					}
+					next;
 				} else {
 					$url .= '.png';
 				}
 			}
-			# if ($url =~ /$awfulregex/ && !$awful){ next; } 
 			
-			if ($url =~ m!4chan\.org|boons\.maidlab|puu\.sh!){ #boon's shit is slow lately <_< ##puushes are often huge
+			if ($url =~ m!4chan\.org|boons\.maidlab|puu\.sh!){ #big shit, shit that's probably a 404
 				if ($nowstamp eq $datestamp || $url !~ m!4chan\.org/[abgv]/!){ #can swing a few days for slow boards
 					push @{$fourchan{$url}}, $name;
 				}
