@@ -68,9 +68,16 @@ for (@lines){
 	
 	if (! /#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?(http\S+)(?:\x0F)? \((\d+)KB\)$/){
 		if (/#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?(http\S+imgur\S+)(?:\x0F)?$/){
-			$albums{$2} = $1;
-			say "adding $2 to \%albums" if $debug;
-			next;
+			if (/#(\S+?)\+?(?:\x0F)?: (?:<\S+> |\x03\d\d)?http\S+imgur\.com\/(\S+,\S+)(?:\x0F)?$/){ #comma list pseudoalbums
+				my ($chan,$blob) = ($1,$2);
+				for (split /,/, $blob){
+					push @{$links{"http://i.imgur.com/".$_.".jpg"}}, $chan;
+				}
+			} else {
+				$albums{$2} = $1;
+				say "adding $2 to \%albums" if $debug;
+				next;
+			}
 		} else { 
 			next;
 		}
