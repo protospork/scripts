@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.91;
+my $ver = 1.93;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -22,6 +22,7 @@ my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
 my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed/ version. overrules ytshorten
 my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
 my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
+my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
@@ -63,20 +64,20 @@ sub magic_happens {
 	if ($sprinkles){ $clr = xccolor($nick) }
 
 	#kill me I'm a bad idea
-	if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
-		my ($act,$pass) = ($1,$2);
-		$nick =~ s/^\x03\d\d?//;
-		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
-		command("msg nickserv ghost ".$nick.' '.$pass);
-		return EAT_NONE;
-	}
-	# if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
+	# if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
+		# my ($act,$pass) = ($1,$2);
 		# $nick =~ s/^\x03\d\d?//;
-		# prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
-		# command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
-		# command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		# prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
+		# command("msg nickserv ghost ".$nick.' '.$pass);
 		# return EAT_NONE;
 	# }
+	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
+		$nick =~ s/^\x03\d\d?//;
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
+		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://xchat-wdk.org/");
+		return EAT_NONE;
+	}
 	
 	if ($nico){
 		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
@@ -95,6 +96,9 @@ sub magic_happens {
 	}
 	if ($hideDCC){
 		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
+	}
+	if ($intents){
+		$message =~ s{http://(?:www\.)?twitter\.com/([^/?#]+)(?=\s|$)}{http://twitter.com/intent/user?screen_name=$1}g;
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi

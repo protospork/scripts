@@ -22,7 +22,7 @@
 	chihayafuru			=>	["Anime", [qw|commie|], 	"Chihaya",	[undef],		2271], #25 [ntv]
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
 	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"GC",	[undef],		2259],
-	horizon				=>	["Anime", [qw|commie|], 	"Horizon",		[undef],		2254], #kyoukai senjou no horizon
+	horizon				=>	["Anime", [undef], 	"Horizon",		[undef],		2605], #kyoukai senjou no horizon
 	"persona 4"			=>	["Anime", [qw|commie|],		"P4",			[undef],		2260],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		2277],
@@ -84,14 +84,35 @@
 	"polar bear cafe"	=>	["Anime", ['horriblesubs'],	'Shirokuma',	[undef],		undef],
 	'inuko-san'			=>	["Anime", ['migoto'],		'inuko',		[undef],		undef],
 	'space brothers'	=>	["Anime", [qw'horriblesubs commie'],'Bros',	[undef],		undef],
+#summer 2012
+	'lagrange'			=>	["Anime", [undef],			'Lagrange',		[undef],		2574],
+	'tari tari'			=>	["Anime", [undef],			'Tari',			[undef],		2593],
+	'arcana famiglia'	=>	["Anime", [undef],			'Arcana',		[undef],		2594],
+	'Jinrui wa Suitai Shimashita'=>["Anime",[undef],	'Jinrui',		[undef],		2587],
+	'chitose get you!!'	=>	["Anime", [undef],			'Chitose',		[undef],		2576],
+	'total eclipse'		=>	["Anime", [undef],			'MuvLuv',		[undef],		2586],
+	'Yuruyuri'			=>	["Anime", [undef],			'Yuruyuri',		[undef],		2567],
+	'binbougami'		=>	["Anime", [undef],			'Binbougami',	[undef],		2589],
+	'moyashimon'		=>	["Anime", [undef],			'Moyashimon',	[undef],		2602],
+	'Koi to Senkyo to Chocolate'=>["Anime",	[undef],	'KoiChoco',		[undef],		2577],
+	'imouto ga iru'		=>	["Anime", [undef],			'NakaImo',		[undef],		2592],
+	'joshiraku'			=>	["Anime", [undef],			'Joshiraku',	[undef],		2590],
+	'estetica'			=>	["Anime", [undef],			'Estetica',		[undef],		2584],
+	'h ga dekinai'		=>	["Anime", [undef],			'BokuH',		[undef],		2575],
+	'campione'			=>	["Anime", [undef],			'Campione',		[undef],		2571],
+	'driland'			=>	["Anime", [undef],			'Driland',		[undef],		2596],
+	'dog days'			=>	["Anime", [undef],			'Dogs',			[undef],		2595],
+	'sword art online'	=>	["Anime", [undef],			'SAO',			[undef],		2588],
+	'kokoro connect'	=>	["Anime", [undef],			'Kokoro',		[undef],		2585],
+	'Oda Nobuna no Yabou'=>	["Anime", [undef],			'Nobuna',		[undef],		2572],
+	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 );
-#???: shirokuma/polar bear cafe [HS], gakkatsu [CLBC], shiba inuko-san [migoto]
 
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
-german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint
-rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon 
+german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
+rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
