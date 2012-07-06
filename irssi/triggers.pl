@@ -21,7 +21,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.4";
+$VERSION = "2.5";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -88,7 +88,7 @@ sub event_privmsg {
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
-		when (/^airtimes$/){		$return = airtimes(); }
+		when (/^airtimes/){			$return = airtimes(@terms); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
 	#	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } #too crashy
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
@@ -218,6 +218,7 @@ sub codepoint {
 
 #these airtime bits are mostly code by tristan.willy@gmail.com
 sub airtimes {
+	my $max = $_[-1];
 	my $scraper = new HTML::Scrape(
 	Machine =>
 		[
@@ -265,10 +266,15 @@ sub airtimes {
 	) or die;
 	my $page = $ua->get('http://www.mahou.org/Showtime/');
 	die $page->status_line unless $page->is_success;
-	return tsv($scraper->scrape($page->decoded_content, 1));
+	if ($max =~ /\D/){
+		return tsv(4, $scraper->scrape($page->decoded_content, 1));
+	} elsif ($max == 0 || $max < 13) {
+		return tsv($max-1, $scraper->scrape($page->decoded_content, 1));
+	}
 }
 sub tsv {
   my %header;
+  my $max = shift;
   foreach my $item (@_){
     $header{$_} = 1 foreach (keys %$item);
   }
@@ -293,7 +299,7 @@ sub tsv {
 	$inorder{$time} = $out[0].' until '.$out[-2];
   }
   my @output;
-  for ((sort keys %inorder)[0..3]){
+  for ((sort keys %inorder)[0..$max]){
 	push @output, $inorder{$_}."\n"
   }
   return \@output;
@@ -455,7 +461,27 @@ sub conversion { #this doens't really work except for money
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':<';
 		}
+	} elsif ($out eq 'MSP'){
+		my $num; ($num,$in) = ($in =~ /([\d.]+)\s*(\D+)/);
+		if ($in =~ /USD$/){
+			my $base = ($num/4.99);
+			if ($base < 1){
+				return ((sprintf "%d", (($base)*400)).'MSP, but you\'d need to buy at least 400 for $4.99');
+			} else {
+				my $ideal = (sprintf "%d", (($base)*400));
+				my $real = (sprintf "%d", ((($base)*400)-((($base)*400)%400)+400));
+				my $realcost = (sprintf "%.02f", (($real/400)*4.99));
+				
+				($real-400) == $ideal 
+					? return $num.$in.' is '.$real.'MSP'
+					: return $num.$in.' is ideally '.$ideal.'MSP, but here in reality you\'ll pay '.$realcost.'USD for '.$real.'MSP';
+			}
+			return ':<';
+		} else {
+			return ':<';
+		}
 	}
+		
 	
 	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8($in);
 	$construct .= '=?'.uri_escape_utf8($out) if defined $out;
