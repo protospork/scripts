@@ -110,7 +110,7 @@ sub pubmsg {
 		}
 	}
 	
-	if ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
