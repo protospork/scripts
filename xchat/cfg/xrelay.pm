@@ -86,12 +86,13 @@
 	'space brothers'	=>	["Anime", [qw'horriblesubs commie'],'Bros',	[undef],		undef],
 #summer 2012
 	'lagrange'			=>	["Anime", [undef],			'Lagrange',		[undef],		2574],
-	'tari tari'			=>	["Anime", [undef],			'Tari',			[undef],		2593],
-	'arcana famiglia'	=>	["Anime", [undef],			'Arcana',		[undef],		2594],
-	'Jinrui wa Suitai Shimashita'=>["Anime",[undef],	'Jinrui',		[undef],		2587],
-	'chitose get you!!'	=>	["Anime", [undef],			'Chitose',		[undef],		2576],
+	'tari tari'			=>	["Anime", [undef],			'Tari',			[undef],		2593], #hs
+	'famiglia'			=>	["Anime", [undef],			'Arcana',		[undef],		2594], #commie, HS
+	'Jinrui wa Suitai Shimashita'=>["Anime",[undef],	'Fairies',		[undef],		2587], #hs, commie
+	'chitose get you!'	=>	["Anime", [undef],			'Chitose',		[undef],		2576], #cms, hs[480p]
 	'total eclipse'		=>	["Anime", [undef],			'MuvLuv',		[undef],		2586],
-	'Yuruyuri'			=>	["Anime", [undef],			'Yuruyuri',		[undef],		2567],
+	'Yuruyuri'			=>	["Anime", [undef],			'Yuruyuri',		[undef],		2567], #hs
+	'yuru yuri'			=>	["Anime", [undef],			"Yuruyuri",		[undef],		2567], #commie, fff
 	'binbougami'		=>	["Anime", [undef],			'Binbougami',	[undef],		2589],
 	'moyashimon'		=>	["Anime", [undef],			'Moyashimon',	[undef],		2602],
 	'Koi to Senkyo to Chocolate'=>["Anime",	[undef],	'KoiChoco',		[undef],		2577],
@@ -106,14 +107,15 @@
 	'kokoro connect'	=>	["Anime", [undef],			'Kokoro',		[undef],		2585],
 	'Oda Nobuna no Yabou'=>	["Anime", [undef],			'Nobuna',		[undef],		2572],
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
+	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
 );
 
 @blacklist = qw( 
-remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline
+remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline AnimeTL
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi
-kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas
+kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn", 

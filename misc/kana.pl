@@ -8,7 +8,7 @@ use utf8;
 #todo: /.o u/ may be written as (ex) 'booshi', not 'boushi' but I've seen it both ways :\
 #todo: repetition symbol && voiced repetition symbol aren't in the hiragana range \x{309d} \x{309e}
 
-my $debugmode = 1;
+my $debugmode = 0;
 my $mode = {
 	'Hiragana'	=> qr/[^\p{Hiragana}\x{30FC}]/,
 	'Katakana'	=> qr/[^\p{Katakana}\x{30FC}]/,
