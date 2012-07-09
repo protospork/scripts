@@ -264,9 +264,12 @@ sub set_airtimes {
 	#build a list of unique TIDs to request
 	my $TIDs = {}; 
 	for (values %{$cfg}){
+		my $ntr = $_;
 		#my ($tid, $stitle) = ($_->[4], $_->[2]);
-		if ($_->[4] && $_->[2]){
-			$TIDs->{$_->[4]} = $_->[2];
+		if ($ntr->[4] && $ntr->[2]){
+			unless (grep 'horrible' =~ /$_/i, $ntr->[1]){ #no sense announcing ends of simulcasted shows (was this already fixed elsewhere?)
+				$TIDs->{$ntr->[4]} = $ntr->[2]; 
+			}
 		}
 	}
 	#I could probably combine these two loops but :effort:
