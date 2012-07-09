@@ -83,7 +83,7 @@
 	'imouto ga iru'		=>	["Anime", [qw'UTW doki'],	'NakaImo',		[undef],		2592], #doki, utw
 	'joshiraku'			=>	["Anime", [undef],			'Joshiraku',	[undef],		2590], #gg
 	'estetica'			=>	["Anime", [undef],			'Estetica',		[undef],		2584], #subdesu
-	'h ga dekinai'		=>	["Anime", [undef],			'BokuH',		[undef],		2575], #subdesu
+	'h ga dekinai'		=>	["Anime", [undef],			'BokuH',		[undef],		2575], #subdesu, "gotyuu"(gotwoot/hiryuu)
 	'campione'			=>	["Anime", [qw'commie fff horrible'],'Campione',	[undef],	2571], #HS, fff, commie
 	'driland'			=>	["Anime", [qw'sage'],		'Driland',		[undef],		2596],
 	'dog days'			=>	["Anime", [undef],			'Dogs',			[undef],		2595], #"fbi"(fff/IB), hiryuu

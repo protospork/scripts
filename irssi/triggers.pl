@@ -66,7 +66,18 @@ sub event_privmsg {
 	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
 		@terms = split /\s+/, $1;
 	} elsif ($text =~ /$botnick/i){
-		if ($text =~ /$botnick\?\s*$|^\s*$botnick[:,]\s*\w+.*\?\s*$/i){ #I hate you, future self
+		if ($text =~ /^\s*$botnick[:,]\s*(\w+.*)\?\s*$/i){ #I hate you, future self
+			my $choices = $1;
+			my @query = split /\s+/, $choices;
+			if ($choices =~ s/\s+or\s+/, /ig){ #shortcut to .choose
+				$server->command('msg '.$target.' '.(choose('choose', (split /\s+/, $choices))));
+			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/){ #stupid 8ball
+				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data'))); 
+			} else { #straightup 8ball
+				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+			}
+			return;
+		} elsif ($text =~ /^\s*\w+.+\s+$botnick\?\s*$/i){ #this needs to be re-integrated with the last regex sometime
 			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
 			return;
 		} else { 
@@ -380,12 +391,17 @@ sub choose {
 	my (@choices, $pipes);
 	if ($call =~ /sins?/){
 		@choices = qw'greed gluttony wrath sloth lust envy pride';
-	} elsif ($call =~ /8ball/i && $#choices){
+	} elsif ($call =~ /8ball$/i && $#choices){
 		@choices = (
 			"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely",
 			"You may rely on it", "As I see it, yes", "Most likely", "Outlook good", "Signs point to yes", "Very doubtful",
 			"Yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
 			"Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good"
+		);
+	} elsif ($call =~ /8ballunsure/i && $#choices){
+		@choices = (
+			"Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
+			"Concentrate and ask again"
 		);
 	} elsif ((join ' ', @_) =~ /\|/){
 		@choices = (split /\|\s*/, (join ' ', @_));
