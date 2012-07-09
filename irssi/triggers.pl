@@ -62,7 +62,19 @@ sub event_privmsg {
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
 	
-	return if $text !~ /^\s*\.(.+?)\s*$/; #make sure it's a trigger
+	my @terms;
+	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
+		@terms = split /\s+/, $1;
+	} elsif ($text =~ /$botnick/i){
+		if ($text =~ /$botnick\?\s*$|^\s*$botnick[:,]\s*\w+.*\?\s*$/i){ #I hate you, future self
+			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+			return;
+		} else { 
+			return; 
+		}
+	} else {
+		return;
+	}
 
 #derp nevermind irssi is a piece of shit
 	#make sure someone else isn't doing this job
@@ -75,7 +87,6 @@ sub event_privmsg {
 		# }
 	# }
 	
-	my @terms = split /\s+/, $1;
 	
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
@@ -568,7 +579,7 @@ sub roll {
 }
 sub ident {
 	my $server = $_[0];
-	$server->command("nick".$botnick);
+	$server->command("nick ".$botnick);
 	sleep 4;
 	$server->command("msg nickserv identify ".$botpass);
 }
