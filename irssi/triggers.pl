@@ -5,6 +5,7 @@ use LWP;
 use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use HTML::Scrape 'put';
+use HTML::Entities;
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
@@ -116,6 +117,7 @@ sub event_privmsg {
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
+		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -128,6 +130,58 @@ sub event_privmsg {
 	}
 	else {
 		$server->command('msg '.$target.' '.$return);
+	}
+}
+
+
+my %lastfms;
+tie my @lastfmmemory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.cfg' 
+	or die $!;
+for (@lastfmmemory){ my @why = split /::/, $_; $lastfms{$why[0]} = $why[1]; } #why not just tie a hash?
+
+sub lastfm {	
+	my ($server,$nick) = (shift, lc shift);
+	my $text = '';
+	shift; #dump the trigger
+	$text = shift;
+	
+	my $location;
+	if (! $text || $text eq ''){ 
+		if (exists $lastfms{$nick}){
+			$location = $lastfms{$nick}
+		} else {
+			$server->command("notice $nick .lastfm [username]"); 
+			return; 
+		} 
+	} else { 
+		$location = $text; 
+	}
+	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$location.'/recenttracks.rss');
+
+	if (! $results->is_success ) {
+		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
+		return;
+	} else {
+		my $memstring = (join '::', $nick, $location);
+		unless (grep $memstring eq $_, @lastfmmemory){ push @lastfmmemory, $memstring; }
+		$lastfms{$nick} = $location;
+		
+		#COMPLETELY FUNCTIONAL
+		# my @songsplit = split(/  \s*/,$results->content);
+		# my $songname  = $songsplit[12];
+		 # 
+		# $songname =~ m/title\>([^<]+)/i; 
+		# my $cleanedsong = decode_entities $1;
+		# 
+		# return $location.': '.$cleanedsong;
+		
+		my $chunk = (split /<item>/, $results->content)[1];
+		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
+
+#	the timestamps are useless, sadly
+#		my @now = gmtime; my $now = ((sprintf "%02d", $now[2]).':'.(sprintf "%02d", $now[1]).':'.(sprintf "%02d", $now[0]));
+
+		return $location.' last played '.decode_entities($title);
 	}
 }
 
@@ -427,7 +481,7 @@ sub choose {
 	}
 	
 	#hehe
-	return 'Nah' if int rand 100 <= 4;
+	# return 'Nah' if int rand 100 <= 4;
 	
 	my $return = $choices[(int rand ($#choices + 1))-1];
 	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
