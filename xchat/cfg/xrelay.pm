@@ -70,20 +70,20 @@
 	'space brothers'	=>	["Anime", [qw'horriblesubs commie'],'Bros',	[undef],		undef],
 #summer 2012
 	'lagrange'			=>	["Anime", [undef],			'Lagrange',		[undef],		2574],
-	'tari tari'			=>	["Anime", [undef],			'Tari',			[undef],		2593], #hs, doki
-	'famiglia'			=>	["Anime", [undef],			'Arcana',		[undef],		2594], #commie, HS
+	'tari tari'			=>	["Anime", [qw'commie horrible'],'Tari',		[undef],		2593], #hs, doki
+	'famiglia'			=>	["Anime", [qw'commie horrible doki'],'Arcana',[undef],		2594], #commie, HS
 	'Jinrui wa Suitai Shimashita'=>["Anime",[undef],	'Fairies',		[undef],		2587], #hs, commie
 	'chitose get you!'	=>	["Anime", [undef],			'Chitose',		[undef],		2576], #cms, hs[480p]
 	'total eclipse'		=>	["Anime", [undef],			'MuvLuv',		[undef],		2586], #commie, HS
 	'Yuruyuri'			=>	["Anime", [qw'horrible'],	'Yuruyuri',		[undef],		2567], #hs
 	'yuru yuri'			=>	["Anime", [qw'commie fff shin-gx'],	"Yuruyuri",	[undef],	2567], #commie, fff, shin-gx
 	'binbougami'		=>	["Anime", [undef],			'Binbougami',	[undef],		2589], #gg
-	'moyashimon'		=>	["Anime", [undef],			'Moya2',		[undef],		2602], #gg, gotwoot
+	'moyashimon'		=>	["Anime", [qw'commie horrible gotwoot'],'Moya2',[undef],	2602], #gg, gotwoot
 	'Koi to Senkyo to Chocolate'=>["Anime",[qw'pomf doki subdesu', 'm.3.3.w'],'KoiChoco',[undef],2577], #"pomf"(fff/rori), m33w, doki, subdesu
 	'imouto ga iru'		=>	["Anime", [qw'UTW doki'],	'NakaImo',		[undef],		2592], #doki, utw
 	'joshiraku'			=>	["Anime", [undef],			'Joshiraku',	[undef],		2590], #gg
 	'estetica'			=>	["Anime", [undef],			'Estetica',		[undef],		2584], #subdesu
-	'h ga dekinai'		=>	["Anime", [undef],			'BokuH',		[undef],		2575], #subdesu, "gotyuu"(gotwoot/hiryuu)
+	'h ga dekinai'		=>	["Anime", [qw'subdesu gotyuu fff'],	'BokuH',[undef],		2575], #subdesu, "gotyuu"(gotwoot/hiryuu), fff
 	'campione'			=>	["Anime", [qw'commie fff horrible'],'Campione',	[undef],	2571], #HS, fff, commie
 	'driland'			=>	["Anime", [qw'sage'],		'Driland',		[undef],		2596],
 	'dog days'			=>	["Anime", [undef],			'Dogs',			[undef],		2595], #"fbi"(fff/IB), hiryuu
@@ -97,9 +97,9 @@
 
 @blacklist = qw( 
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline AnimeTL
-animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480
+animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480 peeps
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
-rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi
+rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
 ); #regex special characters should NOT be escaped
 @moreblacklist = (	
@@ -112,7 +112,7 @@ kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] Cherr
 push @blacklist, @moreblacklist;
 
 $do_hentai = 0;
-$do_airtime = 1;
+$do_airtime = 0;
 
 ####colorscheme
 $Cname	= "09";
