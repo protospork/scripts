@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.93;
+my $ver = 1.95;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -24,11 +24,16 @@ my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
 my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
 my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
 
+my $deshortentwitter = 1;
+my $deshortenall = 0;
+if ($deshortenall){ use WWW::Shorten; }
+
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $dickhead = 0;  #removed. ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
+
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -78,6 +83,19 @@ sub magic_happens {
 		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
 		return EAT_NONE;
 	}
+	
+	if ($deshortentwitter){
+		$message =~ s{https?://t\.co/\S+ <([^>\x{2026}]+)>}{http://$1}g;
+	}
+	#another awful idea
+	if ($deshortenall){
+		my @urls = ($message =~ m{(https?://[^>]+)}g);
+		for (@urls){
+			my $full = makealongerlink($_);
+			next if length $full > 100;
+			$message =~ s/$_/$full/;
+		}
+	}	
 	
 	if ($nico){
 		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
@@ -133,7 +151,7 @@ sub magic_happens {
 				next; 
 			}
 
-			#todo: avoid applying this regex to anyone in /names. can that even be done?
+			#todo: avoid applying this regex to anyone in /names. can that be done efficiently?
 			s/(
 				^[<(](?=http)|
 				^[^[:alnum:]#@]+(?=[[:alnum:]])|
