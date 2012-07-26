@@ -8,7 +8,7 @@ use JSON;
 use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core
 
-my $ver = '3.15';
+my $ver = '3.16';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -226,8 +226,8 @@ sub newtopic {
 		if ($1 >= $newep || $newep == 720 || $newep == 1080){ 
 			return; 
 		} else {
-			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
-			$topic =~ s/$short \d+/$short $newep/i;
+			$topic =~ s/$short (\d+)/$short $newep/i;
+			if ($newep - $1 > 1){ command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr); }
 #			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #anope is broken
 			command('topic '.$topic, $anime, $destsrvr);
 			

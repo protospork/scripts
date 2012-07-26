@@ -72,9 +72,9 @@
 	'lagrange'			=>	["Anime", [undef],			'Lagrange',		[undef],		2574],
 	'tari tari'			=>	["Anime", [qw'commie horrible'],'Tari',		[undef],		2593], #hs, doki
 	'famiglia'			=>	["Anime", [qw'commie horrible doki'],'Arcana',[undef],		2594], #commie, HS
-	'Jinrui wa Suitai Shimashita'=>["Anime",[undef],	'Fairies',		[undef],		2587], #hs, commie
+	'Jinrui wa Suitai Shimashita'=>["Anime",[qw'commie horrible'],'Fairies',[undef],	2587], #hs, commie
 	'chitose get you!'	=>	["Anime", [undef],			'Chitose',		[undef],		2576], #cms, hs[480p]
-	'total eclipse'		=>	["Anime", [undef],			'MuvLuv',		[undef],		2586], #commie, HS
+	'total eclipse'		=>	["Anime", [qw'commie horrible'],'MuvLuv',	[undef],		2586], #commie, HS
 	'Yuruyuri'			=>	["Anime", [qw'horrible'],	'Yuruyuri',		[undef],		2567], #hs
 	'yuru yuri'			=>	["Anime", [qw'commie fff shin-gx'],	"Yuruyuri",	[undef],	2567], #commie, fff, shin-gx
 	'binbougami'		=>	["Anime", [undef],			'Binbougami',	[undef],		2589], #gg
@@ -86,10 +86,10 @@
 	'h ga dekinai'		=>	["Anime", [qw'subdesu gotyuu fff'],	'BokuH',[undef],		2575], #subdesu, "gotyuu"(gotwoot/hiryuu), fff
 	'campione'			=>	["Anime", [qw'commie fff horrible'],'Campione',	[undef],	2571], #HS, fff, commie
 	'driland'			=>	["Anime", [qw'sage'],		'Driland',		[undef],		2596],
-	'dog days'			=>	["Anime", [undef],			'Dogs',			[undef],		2595], #"fbi"(fff/IB), hiryuu
+	'dog days'			=>	["Anime", [qw'fbi hiryuu horrible'],'Dogs',	[undef],		2595], #"fbi"(fff/IB), hiryuu
 	'sword art online'	=>	["Anime", [qw'horrible commie utw'],	'SAO',	[undef],	2588], #hs, commie, "utwoots"(utw/gotwoot)
 	'kokoro connect'	=>	["Anime", [qw'horrible rori commie'],	'Kokoro',	[undef],2585], #rori, hs, commie
-	'Oda Nobuna no Yabou'=>	["Anime", [undef],			'Nobuna',		[undef],		2572],
+	'Oda Nobuna no Yabou'=>	["Anime", [qw'commie horrible'],'Nobuna',	[undef],		2572],
 	'horizon'			=>	["Anime", [undef],			'Horizon',		[undef],		2605],
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
