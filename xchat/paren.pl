@@ -24,9 +24,8 @@ my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
 my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
 my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
 
-my $deshortentwitter = 1;
-my $deshortenall = 0;
-if ($deshortenall){ use WWW::Shorten; }
+my $deshortentwitter = 1; #
+my $deshortenall = 0; #insane
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
@@ -34,6 +33,7 @@ my $dickhead = 0;  #removed. ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
+if ($deshortenall){ use WWW::Shorten; }
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
