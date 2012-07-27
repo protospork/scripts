@@ -22,7 +22,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.5";
+$VERSION = "2.51";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -151,14 +151,16 @@ sub lastfm {
 			$location = $lastfms{$nick}
 		} else {
 			$server->command("notice $nick .lastfm [username]"); 
-			return; 
+			$location = $nick;
+			$lastfms{$nick} = $nick;
+			# return; 
 		} 
 	} else { 
 		$location = $text; 
 	}
 	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$location.'/recenttracks.rss');
 
-	if (! $results->is_success ) {
+	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
 		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
 		return;
 	} else {
