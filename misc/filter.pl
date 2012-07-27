@@ -34,7 +34,7 @@ if ($ARGV[0] && $ARGV[0] eq '-f'){ $sched--; }
 # is better than this line:
 # sleep 23400; #rudimentary scheduler
 
-my $ua = LWP::UserAgent->new(show_progress => 1, env_proxy => 1, timeout => 150);
+my $ua = LWP::UserAgent->new(show_progress => 1, env_proxy => 0, timeout => 150);
 my %links;
 my %fourchan;
 my %albums;

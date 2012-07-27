@@ -16,12 +16,13 @@ my $wingit = $#ARGV; #if you launch the script with -q (or -anythingelse <_<) it
 my $album = $ARGV[-1] || die "give it a URL";
 #hardcoding proxies baaaad
 my $ua = LWP::UserAgent->new();
-$ua->proxy('http', 'http://192.168.250.125:3128/');
+#$ua->proxy('http', 'http://192.168.250.125:3128/');
+#$ua->env_proxy;
 # $ua->agent('Mozilla/5.0 (X11; U; Linux; i686; en-US; '.
 	# 'rv:1.9.0.13; does anyone ever read this string?) '.
 	# 'Gecko/2009073022 Firefox/3.0.13'
 # );
-$ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)');
+$ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)'); #ie6 on xp
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
