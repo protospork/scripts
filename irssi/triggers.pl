@@ -22,7 +22,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.51";
+$VERSION = "2.52";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -113,10 +113,10 @@ sub event_privmsg {
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
 		when (/^airtimes/){			$return = airtimes(@terms); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
-	#	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } #too crashy
+	#crashy	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } 
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
-		when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
+	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
 		default { return; }
 	}
@@ -168,22 +168,13 @@ sub lastfm {
 		unless (grep $memstring eq $_, @lastfmmemory){ push @lastfmmemory, $memstring; }
 		$lastfms{$nick} = $location;
 		
-		#COMPLETELY FUNCTIONAL
-		# my @songsplit = split(/  \s*/,$results->content);
-		# my $songname  = $songsplit[12];
-		 # 
-		# $songname =~ m/title\>([^<]+)/i; 
-		# my $cleanedsong = decode_entities $1;
-		# 
-		# return $location.': '.$cleanedsong;
-		
 		my $chunk = (split /<item>/, $results->content)[1];
 		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
-
-#	the timestamps are useless, sadly
-#		my @now = gmtime; my $now = ((sprintf "%02d", $now[2]).':'.(sprintf "%02d", $now[1]).':'.(sprintf "%02d", $now[0]));
-
-		return $location.' last played '.decode_entities($title);
+		
+		$title = encode_entities($title);
+		$title =~ s/&ndash;/-/g;
+		$title = decode_entities($title);
+		return $location.' last played '.$title;
 	}
 }
 
