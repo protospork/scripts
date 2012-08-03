@@ -298,6 +298,12 @@ sub get_title {
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg\S+Product!){ return newegg($page); }
+		when (/instagram\.com/){ 
+			if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
+				print $1 if $debugmode; 
+				return $1;
+			} 
+		}
 		default {
 			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				my $title = $1;		
