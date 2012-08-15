@@ -1,6 +1,7 @@
 use Modern::Perl;
 use File::Slurp;
 use File::Path qw'make_path';
+use File::MMagic;
 use autodie;
 use LWP;
 use Cwd;
@@ -16,25 +17,35 @@ use URI;
 #
 #	rebuild the scheduler?
 #		something like 4chan.pl- don't stop between 7-2, but scale back traffic to ~1rq/30min
+#			no. that was only to check on threads 404ing
 #	switch to LWP::RobotUA
 #	make the 4chan timeout a bit more forgiving
 #	head everything and push the huge ones back? ##if so, make it a switch. two extra hops is crazy talk
-#	scrape for imgur albums and grab those too
 #		-rewrite imgur gallery links to direct img
 
 my $here = cwd;
 my $debug = 0;
-my $awful = 0;
-my $sched = 0;
-my $awfulregex = qr!.*meme.*|kym-cdn|qkme\.me|ch(ee)?z(comixed|memebase|derp)|pornsfw|shizno_2007!i;
+my $debug_skips = 0;
+my $debug_mimes = 1;
+my $debug_albums = 0;
+my $awful = 0; #enable downloading from sites in $awfulregex
+my $sched = 0; #enable (shitty) scheduler
+my $awfulregex = qr!.*meme.*|kym-cdn|qkme\.me|lolzbook|ch(ee)?z(comixed|memebase|derp)|pornsfw|shizno_2007!i;
+
+my $checkexts = 1;
+my $fixexts = 1;
 
 if ($ARGV[0] && $ARGV[0] eq '-f'){ $sched--; }
 
 # perl -e "sleep 3600*12; system 'copylogs2.bat'; do 'filter.pl';"
 # is better than this line:
-# sleep 23400; #rudimentary scheduler
-
-my $ua = LWP::UserAgent->new(show_progress => 1, env_proxy => 0, timeout => 150);
+sleep 5.5*3600 if $sched; #rudimentary scheduler
+my $ua = LWP::UserAgent->new(
+	show_progress => 1, 
+	env_proxy => 0, 
+	timeout => 150, 
+	agent => 'Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)' #ie6 on XP
+); 
 my %links;
 my %fourchan;
 my %albums;
@@ -151,7 +162,7 @@ for (keys %links){
 	if (@logged ~~ /\Q$_\E/ 
 	|| @oops ~~ /\Q$_\E/ 
 	|| (!$awful && $_ =~ /$awfulregex|speedtest\.net/)){ 
-		say 'skipping '.$_ if $debug;
+		say 'skipping '.$_ if $debug_skips;
 		delete $links{$_}; 
 	}
 }
@@ -160,7 +171,7 @@ for (keys %fourchan){
 	|| @fourohfours ~~ /\Q$_\E/ 
 	|| @oops ~~ /\Q$_\E/ 
 	|| (!$awful && $_ =~ /$awfulregex|speedtest\.net/)){ 
-		say 'skipping(4) '.$_ if $debug;
+		say 'skipping(4) '.$_ if $debug_skips;
 		delete $fourchan{$_}; 
 	}
 }
@@ -177,9 +188,10 @@ for (sort keys %links){ #sort makes it pretty ^_^
 	$name =~ s{^.+/([^/]+)$}{$1};
 	
 	if ($name =~ /^(original|\w{1,3})\.\w{3,4}$/){ #really short/common names 
-		my $newname = $_;
-		$newname =~ s/^.+?(\S{10})$/lc $1/e;
-		$name = ((URI->new($_)->host).'-'.$newname);
+		# my $newname = $_;
+		# $newname =~ s/^.+?(\S{10})$/lc $1/e;
+		# $name = ((URI->new($_)->host).'-'.$newname);
+		$name = ((URI->new($_)->host).'-'.$name);
 	}
 	
 	#why am I scraping the dir before every download?
@@ -187,9 +199,9 @@ for (sort keys %links){ #sort makes it pretty ^_^
 	push @already, keys %where; #why was this commented?
 	if (@already ~~ /\Q$name\E$/){ #dupe detection I hope
 		if ($where{$_}){
-			say $_.' already exists ('.$where{$_}.')' if $debug;
+			say $_.' already exists ('.$where{$_}.')' if $debug_skips;
 		} else {
-			say $_.' already exists' if $debug;
+			say $_.' already exists' if $debug_skips;
 			$where{$_} = $links{$_}[0]; #wooo lying is fun
 		}
 		next;
@@ -201,6 +213,32 @@ for (sort keys %links){ #sort makes it pretty ^_^
 	make_path($links{$_}[0]);
 	
 	my $resp = $ua->get($_, ':content_file' => $links{$_}[0].'/'.$name);
+	
+	if ($checkexts && $resp->is_success){ #I should be a function!
+		my $webmime = $resp->header('Content-Type');
+		my $diskmime = File::MMagic->new->checktype_filename($links{$_}[0].'/'.$name);
+		
+		if ($diskmime ne $webmime && $debug_mimes){
+			say 'unmatched mimetypes: '.$name.' expected: '.$webmime.' recieved: '.$diskmime;
+		} elsif ($diskmime !~ /image/ && $debug_mimes){
+			say 'not an image: '.$name;
+		}
+		
+		my $newext = $diskmime;
+		$newext =~ s{image/jpeg}{.jpg} 
+		|| $newext =~ s{image/png}{.png} 
+		|| $newext =~ s{image/gif}{.gif} 
+		|| $newext =~ s{(^|/)}{.}g; #should filename-safe any erroneous mimetypes
+				
+		my $newname = $name;
+		$newname =~ s/(\.(jpe?g|gif|png))?$//;
+		$newname .= $newext; #if I'd put $newext in the regex and failed a match, it'd be gone--rather have double exts
+		
+		if ($fixexts && $name ne $newname){ #reminder: this slightly breaks the "don't download something twice" checks
+			rename $links{$_}[0].'/'.$name, $links{$_}[0].'/'.$newname;
+			if ($debug_mimes){ say $name.' => '.$newname; }
+		}
+	}
 
 	if (! $resp->is_success && $resp->code < 500){ #the 500 errors are usually temporary
 		open my $errors, '>>', '.errors';
@@ -218,7 +256,7 @@ for (sort keys %links){ #sort makes it pretty ^_^
 # }
 # close $outtext;
 
-my @plain = (sort keys %fourchan);
+my @plain = (sort keys %fourchan); #what? why?
 my @shuffled = ();
 while (scalar @plain > 2){ 
 	push @shuffled, shift @plain; 
@@ -248,14 +286,14 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 	
 	if (@already ~~ /$name$/){ #dupe detection I hope
 		if ($where{$_}){
-			say $name.' already exists ('.$where{$_}.')' if $debug;
+			say $name.' already exists ('.$where{$_}.')' if $debug_skips;
 		} else {
-			say $name.' already exists' if $debug;
+			say $name.' already exists' if $debug_skips;
 			$where{$_} = $fourchan{$_}[0];
 		}
 		next;
 	} elsif (@fourohfours ~~ /$_/){
-		say $_.' 404ed before last run' if $debug;
+		say $_.' 404ed before last run' if $debug_skips;
 		next;
 	}
 	
@@ -276,6 +314,33 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 		# }
 		# rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$name.'.'.$type;
 	# }
+	
+	if ($checkexts && $resp->is_success){
+		my $webmime = $resp->header('Content-Type');
+		my $diskmime = File::MMagic->new->checktype_filename($fourchan{$_}[0].'/'.$name);
+		
+		if ($diskmime ne $webmime && $debug_mimes){
+			say 'unmatched mimetypes: '.$name.' expected: '.$webmime.' recieved: '.$diskmime;
+		} elsif ($diskmime !~ /image/ && $debug_mimes){
+			say 'not an image: '.$name;
+		}
+		
+		my $newext = $diskmime;
+		$newext =~ s{image/jpeg}{.jpg} 
+		|| $newext =~ s{image/png}{.png} 
+		|| $newext =~ s{image/gif}{.gif} 
+		|| $newext =~ s{(^|/)}{.}g; #should filename-safe any erroneous mimetypes
+				
+		my $newname = $name;
+		$newname =~ s/(\.(jpe?g|gif|png))?$//;
+		$newname .= $newext; #if I'd put $newext in the regex and failed a match, it'd be gone--rather have double exts
+
+		if ($fixexts && $name ne $newname){ #reminder: this slightly breaks the "don't download something twice" checks
+			rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$newname;
+			if ($debug_mimes){ say $name.' => '.$newname; }
+		}
+	}
+		
 
 	if (! $resp->is_success && $_ !~ /4chan/ && $resp->code < 500){
 		open my $errors, '>>', '.errors';
@@ -291,10 +356,10 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 	say $outtext $_.' '.$fourchan{$_}[0];
 }
 for (keys %albums){ #ADD DUPE DETECTION
-	say "grabbing $_" if $debug;
+	say "grabbing $_" if $debug_albums;
 	
 	if ($where{$_}){
-		say $_." already exists in ".$where{$_} if $debug;
+		say $_." already exists in ".$where{$_} if $debug_albums;
 		next;
 	}
 	
