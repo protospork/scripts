@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.95;
+my $ver = 1.101;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -23,9 +23,10 @@ my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed
 my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
 my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
 my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
+my $linkbucks = 1; #many (all?) linkbucks links are just some junk prepended to a valid URL. this'll strip that
 
-my $deshortentwitter = 1; #
-my $deshortenall = 0; #insane
+my $deshortentwitter = 1; #not perfect, but does what it does solely through text manipulation (no web calls, no UI lag)
+my $deshortenall = 0; #insane. hangs the UI on every message with a link in it
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
@@ -117,6 +118,10 @@ sub magic_happens {
 	}
 	if ($intents){
 		$message =~ s{http://(?:www\.)?twitter\.com/([^/?#]+)(?=\s|$)}{http://twitter.com/intent/user?screen_name=$1}g;
+	}
+	if ($linkbucks){
+		$message =~ s{https?://(?:[0-9a-f]+\.)?linkbucks\.com/url/(http://\S+)}{$1}g;
+		$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
