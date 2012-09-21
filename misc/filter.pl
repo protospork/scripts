@@ -2,7 +2,7 @@ use Modern::Perl;
 use File::Slurp;
 use File::Path qw'make_path';
 use File::MMagic;
-use autodie;
+# use autodie;
 use LWP;
 use Cwd;
 use URI;
@@ -30,7 +30,7 @@ my $debug_mimes = 1;
 my $debug_albums = 0;
 my $awful = 0; #enable downloading from sites in $awfulregex
 my $sched = 0; #enable (shitty) scheduler
-my $awfulregex = qr!.*meme.*|kym-cdn|qkme\.me|lolzbook|ch(ee)?z(comixed|memebase|derp)|pornsfw|shizno_2007!i;
+my $awfulregex = qr!.*meme.*|kym-cdn|qkme\.me|lolzbook|collegehumor|ch(ee)?z(comixed|memebase|derp)|pornsfw|shizno_2007!i;
 
 my $checkexts = 1;
 my $fixexts = 1;
@@ -100,6 +100,8 @@ for (@lines){
 	my ($chan,$link,$size) = ($1,$2,$3);
 	$link .= '.png' if $link =~ /puu\.sh/; #turns out puush ignores any extension on requests
 	
+	# next unless $link =~ /gif$/;
+	
 	
 	#4chan is rare enough in #wat that I don't have to care how inconsistent this is
 	if ($link =~ /4chan\.org/ || $size > 1600){ #get the smaller files out of the way first
@@ -145,6 +147,8 @@ for (<*.txt>){
 				}
 			}
 			
+			next unless $url =~ /maidlab|4chan|gif$/; #I'm sick of weeding through screenshots and shit from 40 channels
+			
 			if ($url =~ m!4chan\.org|boons\.maidlab|puu\.sh!){ #big shit, shit that's probably a 404
 				if ($nowstamp eq $datestamp || $url !~ m!4chan\.org/[abgv]/!){ #can swing a few days for slow boards
 					push @{$fourchan{$url}}, $name;
@@ -180,47 +184,20 @@ my $left = ((scalar keys %links)+(scalar keys %fourchan));
 open my $outtext, ">>", ".img-old";
 
 for (sort keys %links){ #sort makes it pretty ^_^
+
+	my $name = prepare_file($_,$_,$links{$_}[0]);
+	next if $name eq 'xDUPEx';
 	
-	my $now = [localtime(time)]; #rudimentary scheduler, act 2
-	if ($now->[2] > 6 && $sched){ endit(1); }
-	
-	my $name = $_;
-	$name =~ s{^.+/([^/]+)$}{$1};
-	
-	if ($name =~ /^(original|\w{1,3})\.\w{3,4}$/){ #really short/common names 
-		# my $newname = $_;
-		# $newname =~ s/^.+?(\S{10})$/lc $1/e;
-		# $name = ((URI->new($_)->host).'-'.$newname);
-		$name = ((URI->new($_)->host).'-'.$name);
-	}
-	
-	#why am I scraping the dir before every download?
-	my @already = read_dir($links{$_}[0], err_mode => 'quiet');
-	push @already, keys %where; #why was this commented?
-	if (@already ~~ /\Q$name\E$/){ #dupe detection I hope
-		if ($where{$_}){
-			say $_.' already exists ('.$where{$_}.')' if $debug_skips;
-		} else {
-			say $_.' already exists' if $debug_skips;
-			$where{$_} = $links{$_}[0]; #wooo lying is fun
-		}
-		next;
-	}
-	
-	say $left.' '.$links{$_}[0]; #countdown
-	$left--;
-	
-	make_path($links{$_}[0]);
-	
-	my $resp = $ua->get($_, ':content_file' => $links{$_}[0].'/'.$name);
+	my $resp = $ua->mirror($_, $links{$_}[0].'/'.$name);
 	
 	if ($checkexts && $resp->is_success){ #I should be a function!
 		my $webmime = $resp->header('Content-Type');
 		my $diskmime = File::MMagic->new->checktype_filename($links{$_}[0].'/'.$name);
 		
 		if ($diskmime ne $webmime && $debug_mimes){
-			say 'unmatched mimetypes: '.$name.' expected: '.$webmime.' recieved: '.$diskmime;
-		} elsif ($diskmime !~ /image/ && $debug_mimes){
+			say 'unmatched mimetypes: '.$name.' expected: '.$webmime.' received: '.$diskmime;
+		}
+		if ($diskmime !~ /image/ && $debug_mimes){
 			say 'not an image: '.$name;
 		}
 		
@@ -233,9 +210,12 @@ for (sort keys %links){ #sort makes it pretty ^_^
 		my $newname = $name;
 		$newname =~ s/(\.(jpe?g|gif|png))?$//;
 		$newname .= $newext; #if I'd put $newext in the regex and failed a match, it'd be gone--rather have double exts
+		$newname =~ s/\.JPE?G\.jpg/.jpg/i;
 		
 		if ($fixexts && $name ne $newname){ #reminder: this slightly breaks the "don't download something twice" checks
-			rename $links{$_}[0].'/'.$name, $links{$_}[0].'/'.$newname;
+			rename $links{$_}[0].'/'.$name, $links{$_}[0].'/'.$newname 
+			|| unlink $links{$_}[0].'/File'
+			|| say 'rename failed.';
 			if ($debug_mimes){ say $name.' => '.$newname; }
 		}
 	}
@@ -249,13 +229,6 @@ for (sort keys %links){ #sort makes it pretty ^_^
 	say $outtext $_.' '.$where{$_};
 }
 
-#write new entries now so if I have to kill it next stage I'll recover something
-# open my $outtext, ">", ".img-old"; #in ovrewrite mode, because we already slurped it into %where
-# for (keys %where){
-	# say $outtext $_.' '.$where{$_};
-# }
-# close $outtext;
-
 my @plain = (sort keys %fourchan); #what? why?
 my @shuffled = ();
 while (scalar @plain > 2){ 
@@ -268,52 +241,10 @@ if (@plain){
 
 for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot if I request too many 404s in a row
 	
-	my $now = [localtime(time)]; #rudimentary scheduler, act 2
-	if ($now->[2] > 6 && $sched){ endit(2); }
+	my $name = prepare_file($_,$_,$fourchan{$_}[0]);
+	next if $name eq 'xDUPEx';
 	
-	my $name = $_;
-	$name =~ s{^.+/([^/]+)$}{$1};
-	# $name .= '.jpg' unless $name =~ /\.\w{3,4}/; #puu.sh
-	
-	if ($name =~ /^(original|\w{1,3})\.\w{3,4}$/){ #really short/common names 
-		my $newname = $_;
-		$newname =~ s/^.+?(\S{10})$/lc $1/e;
-		$name = ((URI->new($_)->host).'-'.$newname);
-	}
-		
-	my @already = read_dir($fourchan{$_}[0], err_mode => 'quiet'); #not necessary, but nice insurance
-	# push @already, keys %where;
-	
-	if (@already ~~ /$name$/){ #dupe detection I hope
-		if ($where{$_}){
-			say $name.' already exists ('.$where{$_}.')' if $debug_skips;
-		} else {
-			say $name.' already exists' if $debug_skips;
-			$where{$_} = $fourchan{$_}[0];
-		}
-		next;
-	} elsif (@fourohfours ~~ /$_/){
-		say $_.' 404ed before last run' if $debug_skips;
-		next;
-	}
-	
-	say $left.' '.$fourchan{$_}[0]; #countdown
-	$left--;
-	
-	make_path($fourchan{$_}[0]);
-	
-	my $resp = $ua->get($_, ':content_file' => $fourchan{$_}[0].'/'.$name);#$ua->mirror($_, $fourchan{$_}[0].'/'.$name);
-	
-	#this block should be vestigial- you can just tack .jpg onto a puu.sh URL when you request it
-	# unless ($name =~ /\.\w{3,4}/){ #this sort of defeats the build-@already-from-disk thing, so probably add a switch
-		# my $type = $resp->header('Content-Type') || 'image/jpeg'; #also of note: $resp->filename
-		# if ($type =~ s{image/(jpe?g|png|gif)}{lc $1}e){
-			# $type =~ s/jpeg/jpg/;
-		# } else { #looks like puush carries swf or something
-			# $type = 'jpg';
-		# }
-		# rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$name.'.'.$type;
-	# }
+	my $resp = $ua->mirror($_, $fourchan{$_}[0].'/'.$name);
 	
 	if ($checkexts && $resp->is_success){
 		my $webmime = $resp->header('Content-Type');
@@ -321,7 +252,8 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 		
 		if ($diskmime ne $webmime && $debug_mimes){
 			say 'unmatched mimetypes: '.$name.' expected: '.$webmime.' recieved: '.$diskmime;
-		} elsif ($diskmime !~ /image/ && $debug_mimes){
+		} 
+		if ($diskmime !~ /image/ && $debug_mimes){
 			say 'not an image: '.$name;
 		}
 		
@@ -336,7 +268,9 @@ for (@shuffled){ #dont sort these, I'm afraid 4chan will decide I'm a scrapebot 
 		$newname .= $newext; #if I'd put $newext in the regex and failed a match, it'd be gone--rather have double exts
 
 		if ($fixexts && $name ne $newname){ #reminder: this slightly breaks the "don't download something twice" checks
-			rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$newname;
+			rename $fourchan{$_}[0].'/'.$name, $fourchan{$_}[0].'/'.$newname
+			|| unlink $fourchan{$_}[0].'/File'
+			|| say 'rename failed';
 			if ($debug_mimes){ say $name.' => '.$newname; }
 		}
 	}
@@ -397,4 +331,32 @@ sub endit {
 	write_file('.4chan-404', @fourohfours) if $_[0] >= 2; #broken: doesn't add linebreaks at all
 	say ('done '.(sprintf "%02d", (localtime)[2]).':'.(sprintf "%02d", (localtime)[1]));
 	exit;
+}
+sub prepare_file {
+	my ($url,$name,$dir) = @_;
+	$name =~ s{^.+/([^/]+)$}{$1};
+	
+	if ($name =~ /^(original|\w{1,3})\.\w{3,4}$/){ #really short/common names 
+		$name = ((URI->new($url)->host).'-'.$name);
+	}
+	$name =~ s/\?\S+$//; #queries
+	
+	#why am I scraping the dir before every download?
+	my @already = read_dir($dir, err_mode => 'quiet');
+	push @already, keys %where; #why was this commented?
+	if (@already ~~ /\Q$name\E$/){ #dupe detection I hope
+		if ($where{$url}){
+			say $url.' already exists ('.$where{$url}.')' if $debug_skips;
+		} else {
+			say $url.' already exists' if $debug_skips;
+			$where{$url} = $dir; #wooo lying is fun
+		}
+		return 'xDUPEx';
+	}
+	
+	say $left.' '.$dir; #countdown
+	$left--;
+	
+	make_path($dir);
+	return $name;
 }
