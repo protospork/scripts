@@ -39,7 +39,7 @@ sub whoosh {
 	my ($speaker, $msg) = ($_[0][0], $_[0][1]); 
 	my ($chan,$srvr) = (get_info('channel'),get_info('server'));
 	
-	unless ($speaker =~ /$bot/ && $chan eq $botchan){ return EAT_NONE; }
+	unless ($speaker =~ /$bot(?:\[Dev\])?/ && $chan eq $botchan){ return EAT_NONE; }
 	
 	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/){
 		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, $5, $6);
