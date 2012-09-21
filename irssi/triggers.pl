@@ -145,6 +145,15 @@ sub lastfm {
 	shift; #dump the trigger
 	$text = shift;
 	
+		# <%Lucifer7>  proto the bot noticed me even though it went through fine
+		# <%Lucifer7> i'm guessing it just does that automatically if there's nothing stored for my username
+		# <%Lucifer7> http://ss.srsbsns.org/tg_VuM4Q.png
+		# <%Lucifer7> ...i could've just copy pasted that i guess
+		# <%Lucifer7> [01:59:13] <%Lucifer7> .lastfm
+		# <%Lucifer7> [01:59:13] -c8h10n4o2- .lastfm [username]
+		# <%Lucifer7> [01:59:14] <c8h10n4o2> lucifer7 last played Lights – The Listening
+		# <@sugoidesune> ok
+		# <@sugoidesune> I'll fix this in the morning because there's a stupid amount of logic here that has no real right to be
 	my $location;
 	if (! $text || $text eq ''){ 
 		if (exists $lastfms{$nick}){
@@ -174,7 +183,7 @@ sub lastfm {
 		$title = encode_entities($title);
 		$title =~ s/&ndash;/-/g;
 		$title = decode_entities($title);
-		return $location.' last played '.$title;
+		return 'http://last.fm/user/'.$location.' last played '.$title;
 	}
 }
 
