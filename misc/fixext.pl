@@ -67,6 +67,7 @@ sub fixext {
 	$newext =~ s{image/jpeg}{.jpg}i
 	|| $newext =~ s{image/png}{.png}i
 	|| $newext =~ s{image/gif}{.gif}i
+	|| $newext =~ s{image/bmp}{.bmp}i
 	|| $newext =~ s{(^|/)}{.}g; #should filename-safe any erroneous mimetypes
 			
 	my $newname = $name;
@@ -94,6 +95,7 @@ if (! $recurse){
 		fixext $_ for <*.jpg *.jpeg>;
 		fixext $_ for <*.png>;
 		fixext $_ for <*.gif>;
+		fixext $_ for <*.bmp>;
 	}
 } else {
 #File::Find method, does
