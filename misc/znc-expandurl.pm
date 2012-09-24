@@ -43,7 +43,12 @@ sub OnChanMsg {
 			$self->PutModule("$url is actual url") if $debug;
 			return $ZNC::CONTINUE;
 		}
-		if (length $orig_url > 140){
+		if (length $orig_url > 140){ 
+		#todo in this block: 
+		#-filter nyt glogin links to proper ones
+		#-check length again
+		#-strip all queries
+		#-check length again
 			return $ZNC::CONTINUE;
 		}
 		
