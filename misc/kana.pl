@@ -8,7 +8,7 @@ use utf8;
 #todo: /.o u/ may be written as (ex) 'booshi', not 'boushi' but I've seen it both ways :\
 #todo: repetition symbol && voiced repetition symbol aren't in the hiragana range \x{309d} \x{309e}
 
-my $debugmode = 1;
+my $debugmode = 0;
 my $mode = {
 	'Hiragana'	=> qr/[^\p{Hiragana}\x{30FC}]/,
 	'Katakana'	=> qr/[^\p{Katakana}\x{30FC}]/,
@@ -178,7 +178,7 @@ sub readdict {
 			$entries{$term} = $def
 		} elsif ($adage){
 			next;
-		} elsif (! $adage){ #vanilla mode
+		} else { #vanilla mode
 			$entries{$term} = $def; 
 		}
 	}
@@ -215,137 +215,137 @@ sub readdict {
 		$num--;
 	}
 }
-sub hiragana {
-	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
-	my %entries;
-
-
-	print colored ('Hiragana', 'cyan on_blue');
-	print "\n";
-	
-	say 'menu choice '.$_[1] if $debugmode;
-	
-	my $adage;
-	if ($_[1] == 22){
-		$adage++;
-		print colored ('Adage mode enabled.', 'cyan on_blue');
-		print "\n";
-	}
-	
-	#build the dictionary
-	while (<$file>){
-		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
-#		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
-		next unless defined $term;
-		if ($term =~ /[^\p{Hiragana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
-			next; 
-		} elsif ($adage && $def =~ /\(exp\)/){
-			$entries{$term} = $def
-		} elsif ($adage){
-			next;
-		} elsif (! $adage){ #vanilla mode
-			$entries{$term} = $def; 
-		}
-	}
-	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
-	
-	print colored ("Round Length? ", 'green');
-	my $num = 0 + <STDIN>;
-	if ($debugmode){ say colored ($num.' words then.', 'green'); }
-	
-	
-	my ($right, $wrong, @gana) = (0, 0, keys %entries);
-	while ($num){
-		my ($string) = ($gana[int rand $#gana]);
-		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
-		chomp(my $in = <STDIN>);
-		$in = lc $in;
-		
-		#extra space for single-char sounds helps keeping track of where you are
-		$in =~ s/ //g; 
-		
-		my $sol = kanafix($string);
-		
-		say 'you said '.$in if $debugmode;
-		say 'I think  '.$sol if $debugmode;
-		
-		
-		if ($in ~~ $sol){
-			$right++;
-			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
-		} else {
-			$wrong++;
-			say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
-		}
-		$num--;
-	}
-}
-sub katakana {
-	open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
-	my %entries;
-
-
-	print colored ('Katakana', 'cyan on_blue');
-	print colored (' WORK IN PROGRESS. I don\'t even fucking know katakana.', 'red on_black');
-	print "\n";
-	
-	say 'menu choice '.$_[1] if $debugmode;
-	
-	my $adage;
-	if ($_[1] == 32){
-		$adage++;
-		print colored ('Adage mode enabled.', 'cyan on_blue');
-		print "\n";
-	}
-	
-	#build the dictionary
-	while (<$file>){
-		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
-#		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
-		next unless defined $term;
-		if ($term =~ /[^\p{Katakana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
-			next; 
-		} elsif ($adage && $def =~ /\(exp\)/){
-			$entries{$term} = $def
-		} elsif ($adage){
-			next;
-		} elsif (! $adage){ #vanilla mode
-			$entries{$term} = $def; 
-		}
-	}
-	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
-	
-	print colored ("Round Length? ", 'green');
-	my $num = 0 + <STDIN>;
-	if ($debugmode){ say colored ($num.' words then.', 'green'); }
-	
-	
-	my ($right, $wrong, @kana) = (0, 0, keys %entries);
-	while ($num){
-		my ($string) = ($kana[int rand $#kana]);
-		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
-		chomp(my $in = <STDIN>);
-		$in = lc $in;
-		
-		#extra space for single-char sounds helps keeping track of where you are
-		$in =~ s/ //g; 
-		
-		my $sol = kanafix($string);
-		
-		say 'you said '.$in if $debugmode;
-		say 'I think  '.$sol if $debugmode;
-		
-		
-		if ($in ~~ $sol){
-			$right++;
-			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
-		} else {
-			$wrong++;
-			say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
-		}
-		$num--;
-	}
-}
+# sub hiragana {
+	# open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
+	# my %entries;
+# 
+# 
+	# print colored ('Hiragana', 'cyan on_blue');
+	# print "\n";
+	# 
+	# say 'menu choice '.$_[1] if $debugmode;
+	# 
+	# my $adage;
+	# if ($_[1] == 22){
+		# $adage++;
+		# print colored ('Adage mode enabled.', 'cyan on_blue');
+		# print "\n";
+	# }
+	# 
+	# #build the dictionary
+	# while (<$file>){
+		# my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
+# #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
+		# next unless defined $term;
+		# if ($term =~ /[^\p{Hiragana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+			# next; 
+		# } elsif ($adage && $def =~ /\(exp\)/){
+			# $entries{$term} = $def
+		# } elsif ($adage){
+			# next;
+		# } elsif (! $adage){ #vanilla mode
+			# $entries{$term} = $def; 
+		# }
+	# }
+	# if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
+	# 
+	# print colored ("Round Length? ", 'green');
+	# my $num = 0 + <STDIN>;
+	# if ($debugmode){ say colored ($num.' words then.', 'green'); }
+	# 
+	# 
+	# my ($right, $wrong, @gana) = (0, 0, keys %entries);
+	# while ($num){
+		# my ($string) = ($gana[int rand $#gana]);
+		# say colored ($string.' {'.$entries{$string}.'}', 'cyan');
+		# chomp(my $in = <STDIN>);
+		# $in = lc $in;
+		# 
+		# #extra space for single-char sounds helps keeping track of where you are
+		# $in =~ s/ //g; 
+		# 
+		# my $sol = kanafix($string);
+		# 
+		# say 'you said '.$in if $debugmode;
+		# say 'I think  '.$sol if $debugmode;
+		# 
+		# 
+		# if ($in ~~ $sol){
+			# $right++;
+			# say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
+		# } else {
+			# $wrong++;
+			# say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
+		# }
+		# $num--;
+	# }
+# }
+# sub katakana {
+	# open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
+	# my %entries;
+# 
+# 
+	# print colored ('Katakana', 'cyan on_blue');
+	# print colored (' WORK IN PROGRESS. I don\'t even fucking know katakana.', 'red on_black');
+	# print "\n";
+	# 
+	# say 'menu choice '.$_[1] if $debugmode;
+	# 
+	# my $adage;
+	# if ($_[1] == 32){
+		# $adage++;
+		# print colored ('Adage mode enabled.', 'cyan on_blue');
+		# print "\n";
+	# }
+	# 
+	# #build the dictionary
+	# while (<$file>){
+		# my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
+# #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
+		# next unless defined $term;
+		# if ($term =~ /[^\p{Katakana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+			# next; 
+		# } elsif ($adage && $def =~ /\(exp\)/){
+			# $entries{$term} = $def
+		# } elsif ($adage){
+			# next;
+		# } elsif (! $adage){ #vanilla mode
+			# $entries{$term} = $def; 
+		# }
+	# }
+	# if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
+	# 
+	# print colored ("Round Length? ", 'green');
+	# my $num = 0 + <STDIN>;
+	# if ($debugmode){ say colored ($num.' words then.', 'green'); }
+	# 
+	# 
+	# my ($right, $wrong, @kana) = (0, 0, keys %entries);
+	# while ($num){
+		# my ($string) = ($kana[int rand $#kana]);
+		# say colored ($string.' {'.$entries{$string}.'}', 'cyan');
+		# chomp(my $in = <STDIN>);
+		# $in = lc $in;
+		# 
+		# #extra space for single-char sounds helps keeping track of where you are
+		# $in =~ s/ //g; 
+		# 
+		# my $sol = kanafix($string);
+		# 
+		# say 'you said '.$in if $debugmode;
+		# say 'I think  '.$sol if $debugmode;
+		# 
+		# 
+		# if ($in ~~ $sol){
+			# $right++;
+			# say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
+		# } else {
+			# $wrong++;
+			# say colored ('no, it\'s '.$sol.' ('.$right.' right|'.$wrong.' wrong)', 'red');
+		# }
+		# $num--;
+	# }
+# }
 sub kanafix {
 	my $string = $_[0];
 	my $katakana;

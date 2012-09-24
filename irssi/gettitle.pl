@@ -10,8 +10,16 @@ use strict;
 use utf8;	#?
 use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
-use vars qw( @ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes @meanthings @cutthesephrases @neweggreplace
-@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey $debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI);
+use vars qw(	
+	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
+	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan
+	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey 
+	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
+);
+
+#<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
+
+#<@cephalopods> looks like it tried to parse an HTTP 500 as JSON and was so surprised when it didn't work, it died
 
 $VERSION = "1.9";
 %IRSSI = (
@@ -26,6 +34,7 @@ my %titlecache; my %lastlink; my %mirrored;
 my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend) = (' ', ' ', ' ', (time-5));
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
+#what are these for, again? <_<
 Irssi::signal_add_last('message public', 'pubmsg');
 Irssi::signal_add_last('message irc action', 'pubmsg');
 Irssi::signal_add_last('message private', 'pubmsg');
@@ -59,8 +68,22 @@ sub pubmsg {
 	if (grep $target eq $_, (@offchans)){ $notitle++; }	#check channel blacklist
 	if ($nick =~ m{(?:Bot|Serv)$|c8h10n4o2}i || $mask =~ /bots\.adelais/i || $target =~ /tokyotosho|lurk/){ $notitle++; }	#quit talking to strange bots
 	
-	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|http://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
+	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
+	
+	#IRSSI WHY ARE YOU SO FUCKING BROKEN
+	# exit if another bot already does our job:
+	# my $pointlesstemporaryvariable = Irssi::active_win()->{active};
+	# my @names = $pointlesstemporaryvariable->nicks();
+	# print 'searching '.($#names+1).' nicks' if $debugmode;
+	# for (@yield_to){
+		# my $bot_found = grep $_, @names;
+		# if (defined $bot_found && $bot_found){
+			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
+			# $notitle++;
+		# }
+	# }
+	
 	
 	print $target.': '.$url if $debugmode == 1;
 	
@@ -69,7 +92,7 @@ sub pubmsg {
 #	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
 	$url = URI->new($url)->canonical;
 	
-	#todo: given/when this shit up dawg
+	#todo: given/when this shit up dawg ##wait no that won't work will it
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
 		loadconfig() || return;
@@ -81,16 +104,17 @@ sub pubmsg {
 		$server->command("msg $controlchan done.");
 	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
 		$url = unwrap_shortener($url);
+		return if $url eq '=\\';
 		if (! grep lc $target eq lc $_, @dont_unshorten){
 			$server->command("msg $target $url");
 		}
 	}
 	
-	if ($url =~ m|twitter\.com/.*status/(\d+)$|i){	#I can't be fucked to remember if there's a proper place to put these filters
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){	#I can't be fucked to remember if there's a proper place to put these filters
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
-	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/watch\S+v=)([\w-]{11})]i){
+	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
 		my $sec = $url->path;
@@ -144,7 +168,7 @@ sub pubmsg {
 	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	#there is a better way to do this. there has to be :(
 	
 	#if someone's a spammer
-	if ($title eq $lasttitle && $target eq $lastchan){ return; }
+	if ($title eq $lasttitle && $target eq $lastchan && time - $lastsend < 120){ return; }
 	
 	#error fallback titles, index pages, etc
 	return if grep $title =~ $_, (@defaulttitles);	
@@ -157,28 +181,32 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	my ($url,$nick,$chan,$data,$server) = @_; my $return = 0;
 	my $insult = $meanthings[(int rand scalar @meanthings)-1];
 	
-	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)/i){
-		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){ $return = imgur($url,$chan,$data,$server,$nick); return $return; }
-		my $this = check_image_size($url);
-		if ($this && $this ne '0'){ return $this; }
-	}
-		
-	if ($url =~ m{^http://(i\.)?imgur\.com/\w{5,6}(?:\?full)?$}i && $url !~ /,|(?:jpe?g|gif|png)$/i){
-		$url .= '.jpg';
-		$return = "$url ($insult)" unless $url =~ m{/a(?:lbums?)?/|gallery};
+	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
+		if ($url =~ m{/a(?:lbums?)?/|gallery|,}){
+			$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url));
+		} else {
+			$url .= '.jpg';
+			$return = "$url ($insult)";
+		}
 	} elsif ($url =~ /imagebin\.ca\/view/){
 		$url =~ s/view/img/i; $url =~ s/html/jpg/i;
 		$return = "$url ($insult)";
-	} elsif ($url =~ /(twitpic|tweetphoto)/i && int(rand(100)) > 75){ $return = lc($1).' sucks.';
+	}
+	
+	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
+		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){ $return = imgur($url,$chan,$data,$server,$nick); return $return; }
+		my $this = check_image_size($url,$nick,$chan,$server);
+		if ($this && $this ne '0'){ return $this; }
+	}		
+
+	if ($url =~ /(twitpic|tweetphoto)/i && int(rand(100)) > 75){ $return = lc($1).' sucks.';
 	} elsif ($url =~ m{(?:bash\.org|qdb\.us)/\??(\d+)}i){ if (($1 % 11) > 8){ $return = "that's not funny :|" }
 	} elsif ($url =~ s{youtube\.com/watch#!}{youtube.com/watch?}i || $url =~ s{m\.youtube\.com/\S+v=([^?&=]{11})}{youtu.be/$1}i){ $return = $url." ($insult)";
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
 	} elsif ($url =~ s{(?:www\.)?(?:(?<!ca\.)(kotaku|lifehacker|gawker|io9|gizmodo|deadspin|jezebel|jalopnik))\.com/(?:#!)?(\d+)/(\S+)}{ca.$1.com/$2/$3-also-$nick-sucks}i){ int rand 5 >= 4 ? return 'gross' : return 0;
 	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; 
-#	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; 
-	}
-	
-	
+	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; 
+	}	
 	
 	return $return;
 }
@@ -230,13 +258,17 @@ sub moreshenanigans {	#now, play around with the titles themselves
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
 	my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
-	if ($debugmode && ! $head->is_success){ print 'Error '.$head->status_line; }
+	if (! $head->is_success){ 
+		print 'Error '.$head->status_line if $debugmode; 
+		return '=\\';
+	}
 
-	my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]);
+	my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]) || '';
 	
 	print $url.' => '.$return if $debugmode;
 	
-	return $return;	
+	$return = URI->new($return)->canonical;
+	length $return < 200 ? return $return : return $return->host;	
 }
 
 sub get_title {
@@ -266,6 +298,12 @@ sub get_title {
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg\S+Product!){ return newegg($page); }
+		when (/instagram\.com/){ 
+			if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
+				print $1 if $debugmode; 
+				return $1;
+			} 
+		}
 		default {
 			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				my $title = $1;		
@@ -284,7 +322,8 @@ sub get_title {
 sub twitter {
 	my $page = shift;
 	my $junk;
-	unless ($junk = JSON->new->utf8->decode($page->decoded_content)){ return $page->status_line.' (twitter\'s api is broken again)'; } #should I really be decoding decoded_content?
+	eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #never done this before
+	if ($@){ return $page->status_line.' (twitter\'s api is broken again)'; } 
 
 	my $text = $junk->{'text'};	#expand t.co links.
 	for (@{$junk->{'entities'}{'urls'}}){
@@ -336,25 +375,32 @@ sub newegg {
 }
 
 sub check_image_size {
-	my ($url) = @_;
-#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#maybe this should be configurable, but it's a fair bet a gif is going to be large
+	my ($url,$nick,$chan,$server) = @_;
+	my $return;
+#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#fair bet a gif is going to be large
 	my $req = $ua->head($url); 
-	return 0 unless $req->is_success;	#?
+	$return = 0 unless $req->is_success;	#?
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
-	return 0 unless $req->content_type =~ /image/; 
+	$return = 0 unless $req->content_type =~ /image/; 
 	if ($req->content_type =~ /gif$/i){
-		if ($url =~ /imgur/i){
+		if ($url =~ /imgur(?!.+gif$)/i){
 			$req->content_length == 669 
-			? return '404' 
-			: return 'WITCH';
+			? $return = '404' 
+			: $return = 'WITCH';
 		} else {
-			return 'WITCH';
+			$url !~ /\.gif/i 
+			? $return = 'WITCH'
+			: undef $return;
 		}
 	} elsif ($req->content_length > $largeimage){
 		my $size = $req->content_length;
 		$size = sprintf "%.2fMB", ($size / 1048576);
-		return $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
+		$return = $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
 	}
+	if ($image_chan && $req->content_length){ #I guess facebook 404s are successes? so, we look for >0 length instead
+		$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url).' ('.(sprintf "%.0f", ($req->content_length/1024)).'KB)');
+	}
+	$return ? return $return : return; #sure why not
 }
 
 sub sendresponse {
@@ -416,7 +462,7 @@ sub imgur {
 	}
 	if ($stop == 1 || $go == 0){
 		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
-		return check_image_size($url);	
+		return check_image_size($url,$nick,$chan,$server);	
 	}
 	
 	my $urlqueries = $url->clone( );
@@ -456,6 +502,7 @@ sub imgur {
 	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
+	$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$mirrored{$url}[-1]).' ('.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB)') if $image_chan;
 	return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB'; 	
 }
 sub filler_title {
@@ -466,10 +513,13 @@ sub filler_title {
 	return ' '.$line;
 }
 sub xcc { #xchat-alike nick coloring
-		my ($person,$clr) = ($_[0],0); 
-		$clr += ord $_ for (split //, $person); 
+		my ($source,$clr,$string,$brk) = (shift,0);
+		if (@_){ $string = shift; }
+		else { $string = $source; $brk++; }
+		$clr += ord $_ for (split //, $source); 
 		$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];
-		$person = "\x03$clr<$person>\x0F";
-		return $person;
+		if ($brk){ $string = "\x03$clr<$string>\x0F"; }
+		else { $string = "\x03$clr$string\x0F"; }
+		return $string;
 }
 loadconfig();

@@ -1,0 +1,187 @@
+/*
+building this for mcstories for now
+
+Original Credits:
+
+"Contact" for epubzengarden.com
+Created by Anthony Caccese (http://www.alphatoanant.net)
+Based on type design found in "Contact" by Carl Sagan
+Released under a Creative Commons Attribution license.
+*/
+
+html {
+	font-size: 1em;
+	text-align: left;
+	padding: 0;
+	margin: 0;
+}
+
+	/* Headings */
+	h1,
+	h2,
+	h3,
+	h4 {
+		text-align: right;
+		padding: 0;
+		font-weight: normal;
+	}
+
+	/* H1 is used only for the Book title (e.g. "Book I") */
+	h1 {
+		font-size: 2em;
+		font-variant: small-caps;
+		margin: 10% 7% 1%;
+		color: #036;
+	}
+
+	/* H2 is used only for the Book subtitle (e.g. "Miss Brooke") */
+	h2 {
+		font-size: 2.1em;
+		line-height: .8em;
+		font-variant: small-caps;
+		margin: 0 7% 4%;
+	}
+
+	/* H3 is used as the chapter header on all chapter pages */
+	h3  {
+		font-size: 2.0em;
+		font-variant: small-caps;
+		margin: 10% 7% 0;
+	}
+		/* The chapter headings contain two spans with these classes: chapter-name (always contains the word "Chapter") 
+		   and chapter-number (as a roman numeral) */
+		/* haha not mine 
+		h3 .chapter-name {
+			border-top: 1px solid #999;
+			padding: .2em 0 0;
+		}
+		h3 .chapter-number {
+			font-size: 5em;
+			line-height: 1.1em;
+			color: #036;
+			margin-left: 0.1em;
+		}
+		*/
+
+		/* H4 is used as the chapter subtitle */
+	h4,
+	h3 .chapter {
+		font-weight: normal;
+		font-size: 1.8em;
+		margin: 0 7% 10%;
+	}
+	
+	/* Paragraphs */
+	p {
+		line-height: 1.4em;
+		margin-left: 5%;
+		margin-right: 5%;
+	}
+		p+p {
+			text-indent: 1em;
+		}
+		/* The first paragraph in the work has a class called "noindent" which 
+		suppresses any paragraph indentation applied by default, but you can 
+		override this. */
+		p.noindent {
+			text-indent: 0;
+		}/*
+		p::first-letter { 
+			font-size: 2.8em; 
+			float: left; 
+			line-height: .15em; 
+			padding-top: .15em; 
+			display: block;
+		}
+		p+p::first-letter { 
+			font-size: 1em; 
+			float: none; 
+			line-height: 1.4em; 
+			padding-top: 0;
+			display: inline;
+		}*/
+
+	/* Epigraphs at the beginning of each chapter are in blockquotes */
+	blockquote {
+		padding: 0;
+		margin: 10%;
+	}
+		blockquote p {
+			text-indent: 0;
+		}
+		/* The attribution of the blockquote is a span */
+		.attribution,
+		.bibl {
+			display: block;
+			font-size: 0.8em;
+		}
+			/* ...which also contains an attribution-name, wrapping the name of
+			   the person who made the quotation */
+			.attribution-name {
+				font-variant: small-caps;
+				font-style: normal;
+				letter-spacing: 1px;
+			}
+
+	/* chapter/page breaks, mostly */
+	hr {
+		margin: 5% 40%;
+		page-break-after: always;
+	}
+	/* if this actually exists, I've screwed up. old files though etc. */
+	.milestone { 
+		text-align: center;
+		margin-top: 12em;
+		padding: 0 40% 0 40%;
+		page-break-after: always;
+	}
+
+	/* The first letter of the text is wrapped in a span with
+	   the class 'firstletter', which can be used for dropcaps. */
+	/* disabled: use the ::first-letter stuff if possible (not possible in .mobi) */
+	.firstletter {
+		display: block;
+		float: left;
+		font-size: 2.8em;
+		line-height: .15em;
+		margin: 0 0.1em 0 0;
+		padding-top: 0.15em;
+		text-transform: uppercase;
+	}
+
+	/* Middlemarch contains a number of letters, which can be
+	   styled differently. */
+	.letter {
+		padding: 0;
+		margin: 5% 8% 2%;
+		color: #036;
+	}
+		.para-start-phrase {
+			font-variant: small-caps;
+		}
+	.closing {
+		text-align: right;
+		margin: 5% 8% 2%;
+		font-style: italic;
+		color: #036;
+	}
+	
+	
+	strong.byline {
+		font-variant: small-caps;
+		font-weight: bold;
+		font-size: .9em;
+		float: right;
+		margin-right: 7%;
+	}
+		span.docAuthor {
+			font-variant: normal;
+			font-style: italic;
+			text-align: right;
+		}
+		.storyCodes {
+			font-variant: normal;
+			text-transform: uppercase;
+			font-size: 1.2em;
+			text-align: center; 
+		}

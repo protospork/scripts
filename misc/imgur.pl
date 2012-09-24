@@ -16,7 +16,13 @@ my $wingit = $#ARGV; #if you launch the script with -q (or -anythingelse <_<) it
 my $album = $ARGV[-1] || die "give it a URL";
 #hardcoding proxies baaaad
 my $ua = LWP::UserAgent->new();
-$ua->proxy('http', 'http://192.168.250.125:3128/');
+#$ua->proxy('http', 'http://192.168.250.125:3128/');
+#$ua->env_proxy;
+# $ua->agent('Mozilla/5.0 (X11; U; Linux; i686; en-US; '.
+	# 'rv:1.9.0.13; does anyone ever read this string?) '.
+	# 'Gecko/2009073022 Firefox/3.0.13'
+# );
+$ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)'); #ie6 on xp
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
@@ -35,7 +41,7 @@ if ($album =~ m{/a/}){
 
 say $album;
 my $page = $ua->get($album) or die "$!";
-die $page->status_line unless $page->is_success;
+die $page->status_line unless $page->is_success; ##todo: dump headers and see wtf is making imgur 403 LWP
 
 #why did I use treebuilder for so little?
 my $albumname = HTML::TreeBuilder->new_from_content($page->decoded_content)->look_down(_tag => 'title')->as_text;
@@ -43,9 +49,11 @@ $albumname =~ s/^\s*(.+?) - Imgur.*$/$1/;
 
 #if the album name blows, fix it
 if ($wingit){
-	if ($ARGV[0] =~ /^-/ && $albumname =~ /^(Photo Albums?|Album)$/){
-		$albumname = $album;
-		$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
+	if ($ARGV[0] =~ /^-/){
+		if ($albumname =~ /^((?:Photo )?Albums?)$/){
+			$albumname = $album;
+			$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
+		}
 	} else {
 		$albumname = $ARGV[0];
 	}
@@ -67,9 +75,9 @@ downloadalbum();
 
 sub downloadalbum {
 	#for some reason mkdir doesn't work.
-	make_path("imgur/".$albumname);	
+	make_path($albumname);	
 	
-	chdir("imgur/".$albumname);
+	chdir($albumname);
 	my @files = glob "*";	#dupe detection database
 	my ($counter, $dupe) = (0, 0);
 	for (@imagehashes){ 
@@ -85,4 +93,4 @@ sub downloadalbum {
 		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.(sprintf "%.02d", ($img->content_length / 1024)).' kB');
 	}
 }
-print $albumname;
+say $albumname;

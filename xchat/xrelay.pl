@@ -8,7 +8,7 @@ use JSON;
 use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows. unidecode is core
 
-my $ver = '3.15';
+my $ver = '3.16';
 register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -39,7 +39,7 @@ sub whoosh {
 	my ($speaker, $msg) = ($_[0][0], $_[0][1]); 
 	my ($chan,$srvr) = (get_info('channel'),get_info('server'));
 	
-	unless ($speaker =~ /$bot/ && $chan eq $botchan){ return EAT_NONE; }
+	unless ($speaker =~ /$bot(?:\[Dev\])?/ && $chan eq $botchan){ return EAT_NONE; }
 	
 	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/){
 		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, $5, $6);
@@ -98,7 +98,7 @@ sub whoosh {
 		my $spam = 'bs say '.$spamchan.' '.$output;
 		
 		for (@blacklist){
-			if ($name =~ /\Q$_\E/i){ 
+			if ($name =~ /\Q$_\E|HorribleSubs.+\[1080p/i){ #hardcoding is bad but so is my blacklist engine
 				return EAT_NONE; 
 			} 			
 			if (defined($comment) && $comment =~ /\Q$_\E/i){ 
@@ -226,9 +226,10 @@ sub newtopic {
 		if ($1 >= $newep || $newep == 720 || $newep == 1080){ 
 			return; 
 		} else {
-			command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr);
-			$topic =~ s/$short \d+/$short $newep/i;
-			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr);
+			$topic =~ s/$short (\d+)/$short $newep/i;
+			if ($newep - $1 > 1){ command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr); }
+#			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #anope is broken
+			command('topic '.$topic, $anime, $destsrvr);
 			
 			#now unset that timer if necessary
 			for my $key (keys %timers){
@@ -263,9 +264,12 @@ sub set_airtimes {
 	#build a list of unique TIDs to request
 	my $TIDs = {}; 
 	for (values %{$cfg}){
+		my $ntr = $_;
 		#my ($tid, $stitle) = ($_->[4], $_->[2]);
-		if ($_->[4] && $_->[2]){
-			$TIDs->{$_->[4]} = $_->[2];
+		if ($ntr->[4] && $ntr->[2]){
+			unless (grep 'horrible' =~ /$_/i, $ntr->[1]){ #no sense announcing ends of simulcasted shows (was this already fixed elsewhere?)
+				$TIDs->{$ntr->[4]} = $ntr->[2]; 
+			}
 		}
 	}
 	#I could probably combine these two loops but :effort:

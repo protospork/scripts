@@ -2,17 +2,39 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.70;
-register('parentheses', $ver, "fixes parentheses in URLs", \&unload);
+my $ver = 1.101;
+register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
 hook_print("Channel Action", \&acting, {priority => PRI_LOW});
 hook_print("Channel Action Hilight", \&actinghigh, {priority => PRI_LOW});
 
+#COLORS
 my $sprinkles = 1; #make this 0 to turn every color effect into boring green
 my $boring = 0;    #make this 1 to disable all color effects, even the green
+#re: those past two options - greentext is enabled no matter what, but it turns to nick-color if $sprinkles = 1
+my $colornicks = 1;#will find <quotes> and @mentions and color the nicks as xchat would
+my $BNCfix = 1;    #talking from two clients on a BNC? this'll treat any line from your nick as from your client
+
+#LINKS
 my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
+my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed/ version. overrules ytshorten
+my $wikimobile = 1;#rewrite wikipedia links to use the (nicer) mobile layout
+my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
+my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
+my $linkbucks = 1; #many (all?) linkbucks links are just some junk prepended to a valid URL. this'll strip that
+
+my $deshortentwitter = 1; #not perfect, but does what it does solely through text manipulation (no web calls, no UI lag)
+my $deshortenall = 0; #insane. hangs the UI on every message with a link in it
+
+#ELSE
+my $hideDCC = 1;   #I don't need to see what people are downloading.
+my $dickhead = 0;  #removed. ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS.
+my $badcracks = 1;
+my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
+
+if ($deshortenall){ use WWW::Shorten; }
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -39,21 +61,73 @@ sub magic_happens {
 	my $net = get_info('network') || 'none';
 	my ($nick,$message) = ($_[0],$_[1]);
 	return EAT_NONE unless $message;
+	
+	if ($red && $hilights){ highlighter($nick,$message); }
+	
 	return EAT_NONE if $channel =~ /tosho-api|newsflash/;
 	
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	if ($nico == 1){
-		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
-	} elsif ($ytshorten == 1){
-		$message =~ s{(?:http://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
+	#kill me I'm a bad idea
+	# if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
+		# my ($act,$pass) = ($1,$2);
+		# $nick =~ s/^\x03\d\d?//;
+		# prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
+		# command("msg nickserv ghost ".$nick.' '.$pass);
+		# return EAT_NONE;
+	# }
+	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
+		$nick =~ s/^\x03\d\d?//;
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
+		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
+		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
+		return EAT_NONE;
+	}
+	
+	if ($deshortentwitter){
+		$message =~ s{https?://t\.co/\S+ <([^>\x{2026}]+)>}{http://$1}g;
+	}
+	#another awful idea
+	if ($deshortenall){
+		my @urls = ($message =~ m{(https?://[^>]+)}g);
+		for (@urls){
+			my $full = makealongerlink($_);
+			next if length $full > 100;
+			$message =~ s/$_/$full/;
+		}
+	}	
+	
+	if ($nico){
+		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
+	}
+	if ($ytembed){
+		$message =~ s{(?:https?://)?(?:(?:www\.)?youtube.com/watch\?v=|youtu.be/)([^\s&#]{11})[^\s>#]*}{http://youtube.com/embed/$1}g;
+	} elsif ($ytshorten){
+		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
+	}
+	
+	if ($wikimobile){
+		$message =~ s{(?:https?://)?en\.wikipedia\.org/wiki/(\S+)}{http://en.m.wikipedia.org/wiki/$1}gi;
+	}
+	if ($deHTTPS){
+		$message =~ s{https://}{http://}g; #sometimes opera won't default itself for https urls
+	}
+	if ($hideDCC){
+		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
+	}
+	if ($intents){
+		$message =~ s{http://(?:www\.)?twitter\.com/([^/?#]+)(?=\s|$)}{http://twitter.com/intent/user?screen_name=$1}g;
+	}
+	if ($linkbucks){
+		$message =~ s{https?://(?:[0-9a-f]+\.)?linkbucks\.com/url/(http://\S+)}{$1}g;
+		$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
-	$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
-	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether  this actually works
+	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether this actually works
+	
 	
 	#ascii:
 	#[:alpha:] [:alnum:] [:digit:] [:punct:]
@@ -66,7 +140,12 @@ sub magic_happens {
 	#colored >quotes
 	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
-	unless ($message =~ /\x{03}|^\s*$/ || $net =~ /freenode|none/i || $red || $nick =~ /\Q$mynick\E/ || $boring == 1){ #don't code colors if colors were already coded
+	unless ($message =~ /\x{03}|^\s*$/ #don't code colors if colors were already coded
+	|| $net =~ /freenode|criten|none/i #or if it's going to kill readability
+	|| $red							   #or if you've been highlighted
+	|| $nick =~ /\Q$mynick\E/ 		   #or if it'll interfere with $BNCfix
+	|| $boring == 1					   #or if you don't like fun
+	){ 
 		my @end;
 		for (split /\s+/, $message){ 
 			if (/\x{02}/){ push @end, $_; next; }
@@ -77,7 +156,7 @@ sub magic_happens {
 				next; 
 			}
 
-			#todo: avoid applying this regex to anyone in /names. can that even be done?
+			#todo: avoid applying this regex to anyone in /names. can that be done efficiently?
 			s/(
 				^[<(](?=http)|
 				^[^[:alnum:]#@]+(?=[[:alnum:]])|
@@ -86,13 +165,13 @@ sub magic_happens {
 				(?<=[[:alnum:]])[^[:alnum:]]+$|
 				[^[:alnum:]#@_]+|
 				(?<=[:;<=])[PpDoOVv3](?!\d))
-			/\x{03}$clr$1\017/gx unless /^[<@]\S+[>:,]$/; #why is the second-to-last match block there?
+			/\x{03}$clr$1\017/gx unless /^(?:[."]?[<@])\S+[>:,]$/; #why is the second-to-last match block there?
 			
-			s/(?<=\d)\x03$clr:\x0F(?=\d)/:/g; #don't like the colored : in timestamps
+			s/(?<=\d\d)\x03$clr:\x0F(?=\d\d)/:/g; #don't like the colored : in timestamps
 			
 			
 			#I'm trying to avoid checking every word against /names, which wouldn't work in #twitter anyway
-			if (/^(?:"?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/){ #quotes are already color quoted so that first bit doesn't work
+			if (/^(?:[."]?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/ && $colornicks){ #quotes are already color quoted so that first bit doesn't work
 				$_ = "\x03".($sprinkles ? xccolor($1) : 23).$_."\x0F";
 			}
 			
@@ -101,7 +180,8 @@ sub magic_happens {
 		$" = ' '; #p sure this is the default, dunno if other scripts share the builtin vars
 		$message = "@end";
 		
-		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ #this is halfassed as shit fix it later
+		#this is halfassed as shit fix it later
+		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ 
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help
 				my ($one,$two) = ($1,$2); #so redundant colorcodes need to be stripped, although
 				$message =~ s/$&/\x03$one$two /g; #this method only grabs the first redundant one
@@ -109,7 +189,7 @@ sub magic_happens {
 		}
 	}
 	
-	if ($nick =~ /\Q$mynick\E$/){ #fixed events for 2+ clients on a bnc
+	if ($nick =~ /\Q$mynick\E$/ && $BNCfix){ #fixed events for 2+ clients on a bnc
 		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); } 
 		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
@@ -123,9 +203,17 @@ sub magic_happens {
 	}
 	return EAT_ALL;
 }
-sub xccolor {
+sub highlighter {
+	my ($whom,$text) = @_;
+	my $dest = get_info('channel');
+	my $serv = get_info('server');
+	my ($server,$homechan) = ('irc.adelais.net','#fridge');
+#	prnt("\00311$whom\017\t$text (\00304$dest\017, \00304$serv\017)", $homechan, $server);
+	prnt("\x03".xccolor($whom).$whom."\x0F\t".$text." (\x0304".$dest."\x0F, \x0304".$serv."\x0F)", $homechan, $server);
+	return;# EAT_NONE;
+}
+sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	my $string = shift;
-	#this is a translation of xchat's nick coloring algorithm
 	my $clr = 0;
 	$string =~ s/\x03\d{1,2}|\x0F//g;	
 	$clr += ord $_ for (split //, $string); 

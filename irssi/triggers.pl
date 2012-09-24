@@ -5,6 +5,7 @@ use LWP;
 use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use HTML::Scrape 'put';
+use HTML::Entities;
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
@@ -12,13 +13,16 @@ use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
 use TMDB;
 
-use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
+				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 #todo: re-add the config rehash trigger
 
-$VERSION = "2.4";
+#<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
+
+$VERSION = "2.52";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -59,9 +63,42 @@ sub event_privmsg {
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
 	
-	return if $text !~ /^\s*\.(.+?)\s*$/;
+	my @terms;
+	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
+		@terms = split /\s+/, $1;
+	} elsif ($text =~ /$botnick/i){
+		if ($text =~ /^\s*$botnick[:,]\s*(\w+.*)\?\s*$/i){ #I hate you, future self
+			my $choices = $1;
+			my @query = split /\s+/, $choices;
+			if ($choices =~ s/\s+or\s+/, /ig){ #shortcut to .choose
+				$server->command('msg '.$target.' '.(choose('choose', (split /\s+/, $choices))));
+			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/){ #stupid 8ball
+				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data'))); 
+			} else { #straightup 8ball
+				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+			}
+			return;
+		} elsif ($text =~ /^\s*\w+.+\s+$botnick\?\s*$/i){ #this needs to be re-integrated with the last regex sometime
+			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+			return;
+		} else { 
+			return; 
+		}
+	} else {
+		return;
+	}
 
-	my @terms = split /\s+/, $1;
+#derp nevermind irssi is a piece of shit
+	#make sure someone else isn't doing this job
+	#todo: make this per-trigger, somehow (ie disable only weather or all but weather)
+	# for my $bot (@yield_to){
+		# my $bot_found = Irssi::active_win()->{active}->nick_find($bot);
+		# if (defined $bot_found && $bot_found){
+			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
+			# return;
+		# }
+	# }
+	
 	
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
@@ -70,16 +107,17 @@ sub event_privmsg {
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
-		when (/^gs$/i){				shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://gog.is/'.(join '+', @terms)); }
+		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
-		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.mkd' }
+		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
-		when (/^airtimes$/){		$return = airtimes(); }
+		when (/^airtimes/){			$return = airtimes(@terms); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
-		when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; }
+	#crashy	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } 
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
-		when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
+	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
+		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -92,6 +130,60 @@ sub event_privmsg {
 	}
 	else {
 		$server->command('msg '.$target.' '.$return);
+	}
+}
+
+
+my %lastfms;
+tie my @lastfmmemory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.cfg' 
+	or die $!;
+for (@lastfmmemory){ my @why = split /::/, $_; $lastfms{$why[0]} = $why[1]; } #why not just tie a hash?
+
+sub lastfm {	
+	my ($server,$nick) = (shift, lc shift);
+	my $text = '';
+	shift; #dump the trigger
+	$text = shift;
+	
+		# <%Lucifer7>  proto the bot noticed me even though it went through fine
+		# <%Lucifer7> i'm guessing it just does that automatically if there's nothing stored for my username
+		# <%Lucifer7> http://ss.srsbsns.org/tg_VuM4Q.png
+		# <%Lucifer7> ...i could've just copy pasted that i guess
+		# <%Lucifer7> [01:59:13] <%Lucifer7> .lastfm
+		# <%Lucifer7> [01:59:13] -c8h10n4o2- .lastfm [username]
+		# <%Lucifer7> [01:59:14] <c8h10n4o2> lucifer7 last played Lights – The Listening
+		# <@sugoidesune> ok
+		# <@sugoidesune> I'll fix this in the morning because there's a stupid amount of logic here that has no real right to be
+	my $location;
+	if (! $text || $text eq ''){ 
+		if (exists $lastfms{$nick}){
+			$location = $lastfms{$nick}
+		} else {
+			$server->command("notice $nick .lastfm [username]"); 
+			$location = $nick;
+			$lastfms{$nick} = $nick;
+			# return; 
+		} 
+	} else { 
+		$location = $text; 
+	}
+	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$location.'/recenttracks.rss');
+
+	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
+		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
+		return;
+	} else {
+		my $memstring = (join '::', $nick, $location);
+		unless (grep $memstring eq $_, @lastfmmemory){ push @lastfmmemory, $memstring; }
+		$lastfms{$nick} = $location;
+		
+		my $chunk = (split /<item>/, $results->content)[1];
+		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
+		
+		$title = encode_entities($title);
+		$title =~ s/&ndash;/-/g;
+		$title = decode_entities($title);
+		return 'http://last.fm/user/'.$location.' last played '.$title;
 	}
 }
 
@@ -123,7 +215,7 @@ sub moviedb {
 			while (length $out < 300 && @out){
 				$out .= ', '.(shift @out);
 			}
-			$server->command('msg '.$target.' '.$out);
+			$server->command('msg '.$target.' '.$out) if $out;
 			return;
 		} else {
 			my $det = $tmdb->movie($id);
@@ -204,6 +296,7 @@ sub codepoint {
 
 #these airtime bits are mostly code by tristan.willy@gmail.com
 sub airtimes {
+	my $max = $_[-1];
 	my $scraper = new HTML::Scrape(
 	Machine =>
 		[
@@ -251,10 +344,15 @@ sub airtimes {
 	) or die;
 	my $page = $ua->get('http://www.mahou.org/Showtime/');
 	die $page->status_line unless $page->is_success;
-	return tsv($scraper->scrape($page->decoded_content, 1));
+	if ($max =~ /\D/){
+		return tsv(4, $scraper->scrape($page->decoded_content, 1));
+	} elsif ($max == 0 || $max < 13) {
+		return tsv($max-1, $scraper->scrape($page->decoded_content, 1));
+	}
 }
 sub tsv {
   my %header;
+  my $max = shift;
   foreach my $item (@_){
     $header{$_} = 1 foreach (keys %$item);
   }
@@ -279,7 +377,7 @@ sub tsv {
 	$inorder{$time} = $out[0].' until '.$out[-2];
   }
   my @output;
-  for ((sort keys %inorder)[0..3]){
+  for ((sort keys %inorder)[0..$max]){
 	push @output, $inorder{$_}."\n"
   }
   return \@output;
@@ -349,12 +447,17 @@ sub choose {
 	my (@choices, $pipes);
 	if ($call =~ /sins?/){
 		@choices = qw'greed gluttony wrath sloth lust envy pride';
-	} elsif ($call =~ /8ball/i && $#choices){
+	} elsif ($call =~ /8ball$/i && $#choices){
 		@choices = (
 			"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely",
 			"You may rely on it", "As I see it, yes", "Most likely", "Outlook good", "Signs point to yes", "Very doubtful",
 			"Yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
 			"Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good"
+		);
+	} elsif ($call =~ /8ballunsure/i && $#choices){
+		@choices = (
+			"Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now",
+			"Concentrate and ask again"
 		);
 	} elsif ((join ' ', @_) =~ /\|/){
 		@choices = (split /\|\s*/, (join ' ', @_));
@@ -380,7 +483,7 @@ sub choose {
 	}
 	
 	#hehe
-	return 'Nah' if int rand 100 <= 4;
+	# return 'Nah' if int rand 100 <= 4;
 	
 	my $return = $choices[(int rand ($#choices + 1))-1];
 	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
@@ -441,7 +544,27 @@ sub conversion { #this doens't really work except for money
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':<';
 		}
+	} elsif ($out eq 'MSP'){
+		my $num; ($num,$in) = ($in =~ /([\d.]+)\s*(\D+)/);
+		if ($in =~ /USD$/){
+			my $base = ($num/4.99);
+			if ($base < 1){
+				return ((sprintf "%d", (($base)*400)).'MSP, but you\'d need to buy at least 400 for $4.99');
+			} else {
+				my $ideal = (sprintf "%d", (($base)*400));
+				my $real = (sprintf "%d", ((($base)*400)-((($base)*400)%400)+400));
+				my $realcost = (sprintf "%.02f", (($real/400)*4.99));
+				
+				($real-400) == $ideal 
+					? return $num.$in.' is '.$real.'MSP'
+					: return $num.$in.' is ideally '.$ideal.'MSP, but here in reality you\'ll pay '.$realcost.'USD for '.$real.'MSP';
+			}
+			return ':<';
+		} else {
+			return ':<';
+		}
 	}
+		
 	
 	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8($in);
 	$construct .= '=?'.uri_escape_utf8($out) if defined $out;
@@ -528,7 +651,7 @@ sub roll {
 }
 sub ident {
 	my $server = $_[0];
-	$server->command("nick".$botnick);
+	$server->command("nick ".$botnick);
 	sleep 4;
 	$server->command("msg nickserv identify ".$botpass);
 }
