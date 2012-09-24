@@ -50,7 +50,7 @@ sub OnChanMsg {
 			#-check length again
 			if (length $orig_url > 140){
 				#-strip all queries (they tend to help so I'd rather leave them if possible)
-				$orig_url =~ s{\?\S+$}{};
+				$orig_url =~ s{\?.+$}{};
 			}
 			#-check length again
 			if (length $orig_url > 140){ return $ZNC::CONTINUE; }
