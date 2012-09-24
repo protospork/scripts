@@ -10,7 +10,7 @@ my @abouttext =	("This module quietly looks up shortened URLs and replaces them 
 				"may not want it active in every channel - I wrote it specifically for ".
 				"twitter in Bitlbee and that's what the defaults reflect.");
 				
-my $debug = 0; #just for testing
+my $debug = 1; #just for testing
 
 sub description {
     "Deshortens short URLs"
@@ -44,12 +44,16 @@ sub OnChanMsg {
 			return $ZNC::CONTINUE;
 		}
 		if (length $orig_url > 140){ 
-		#todo in this block: 
-		#-filter nyt glogin links to proper ones
-		#-check length again
-		#-strip all queries
-		#-check length again
-			return $ZNC::CONTINUE;
+			$self->PutModule("$orig_url is too long: ".(length $orig_url)."ch") if $debug;
+			#-filter nyt glogin links to proper ones
+			$orig_url =~ s{^http://www.nytimes.com/glogin?URI=}{}i;
+			#-check length again
+			if (length $orig_url > 140){
+				#-strip all queries (they tend to help so I'd rather leave them if possible)
+				$orig_url =~ s{\?\S+$}{};
+			}
+			#-check length again
+			if (length $orig_url > 140){ return $ZNC::CONTINUE; }
 		}
 		
 		$self->PutModule($orig_url) if $debug;
