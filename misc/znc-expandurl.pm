@@ -29,7 +29,6 @@ sub OnChanMsg {
 		
 
 		$self->PutModule("$outmask: $url") if $debug;
-		$self->PutModule("online? ".$ua->is_online) if $debug;
 		
 		my $req = $ua->head($url);
 		if (!$req->is_success){
