@@ -9,13 +9,14 @@
 .amzn - amazon.com  
 .a(ni)db - search anidb
 .w(eather)  
+.tmdb - search themoviedb.org  
 
 ###misc triggers
 .x(e)/.calc/.cvt - google calculator and unit conversions (currently broken except for basic math/currency)  
 .flip - flip a coin  
 .roll [#d#] - roll some dice  
 .rose - a dice game  
-.choose - choose one item of a list (commas/pipes optional)  
+.choose - choose one item of a list (separate choices with commas, and separate comma-separated lists of choices with pipes)  
 .8ball - ask a question
 .sin - choose one of the seven deadly sins  
 .farnsworth - get a random quote from professor farnsworth  
