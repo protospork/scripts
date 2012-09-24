@@ -257,18 +257,45 @@ sub moreshenanigans {	#now, play around with the titles themselves
 }
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
-	my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
-	if (! $head->is_success){ 
-		print 'Error '.$head->status_line if $debugmode; 
-		return '=\\';
+	#valid, but why rely on another service
+	# my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
+	# if (! $head->is_success){ 
+		# print 'Error '.$head->status_line if $debugmode; 
+		# return '=\\';
+	# }
+# 
+	# my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]) || '';
+	
+	my $req = $ua->head($url);
+	if (!$req->is_success){
+		print 'Error '.$req->status_line if $debugmode; 
+		return '=\\';	
 	}
-
-	my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]) || '';
+	my $orig_url;
+	for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
+		if ($_->header('Location') =~ m[nytimes.com/glogin]i){ 
+			#NYT paywall redirects you according to some arcane logic that changes every week.
+			#Upshot: the final hop is worthless and extremely long.
+			last;
+		} else {
+			$orig_url = $_->header('Location');
+		}
+	}
+	if (! $orig_url){
+		$orig_url = $url;
+	}
 	
-	print $url.' => '.$return if $debugmode;
+	print $url.' => '.$orig_url if $debugmode;
 	
-	$return = URI->new($return)->canonical;
-	length $return < 200 ? return $return : return $return->host;	
+	$orig_url = URI->new($orig_url)->canonical;
+	if (length $orig_url < 200){
+		return $orig_url;
+	} elsif (length($orig_url)-length($orig_url->query) < 200){
+		$orig_url->query(undef);
+		return $orig_url;
+	} else { 
+		return $orig_url->host;
+	}
 }
 
 sub get_title {
