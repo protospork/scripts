@@ -30,7 +30,6 @@ my $deshortenall = 0; #insane. hangs the UI on every message with a link in it
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
-my $dickhead = 0;  #removed. ##THIS WILL GET YOU KILLED FOR BAD PASSWORDS.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
@@ -68,15 +67,7 @@ sub magic_happens {
 	
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
-
-	#kill me I'm a bad idea
-	# if ($dickhead && $message =~ /(?:nickserv|ns) (id(?:entify)?|register|g(?:roup|host) \w+) (\w+)/ && $channel !~ /xchat/){
-		# my ($act,$pass) = ($1,$2);
-		# $nick =~ s/^\x03\d\d?//;
-		# prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$act.' '.$pass, '#fridge', 'irc.adelais.net');
-		# command("msg nickserv ghost ".$nick.' '.$pass);
-		# return EAT_NONE;
-	# }
+	
 	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
