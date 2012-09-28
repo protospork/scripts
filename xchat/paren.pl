@@ -33,7 +33,7 @@ my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
-if ($deshortenall){ use WWW::Shorten; }
+if ($deshortenall){ use WWW::Shorten; } #unnecessary. just use the head trick
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
