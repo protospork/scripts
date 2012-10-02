@@ -2,15 +2,15 @@
 
 ###searches
 .g - google (feeling lucky)  
-.ddg - link a page of duckduckgo search results
+.ddg - link a page of duckduckgo search results  
 .gs - same as .ddg  
 .yt - youtube  
 .wiki - wikipedia  
 .imdb - imdb.com  
 .amzn - amazon.com  
-.a(ni)db - search anidb
-.w(eather) [zipcode] - it remembers
-.lastfm [username] - it remembers too
+.a(ni)db - search anidb  
+.w(eather) [zipcode] - it remembers  
+.lastfm [username] - it remembers too  
 .tmdb - search themoviedb.org  
 
 ###misc triggers
