@@ -93,6 +93,17 @@
 	'horizon'			=>	["Anime", [undef],			'Horizon',		[undef],		2605],
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
+#fall 2012
+	'shin sekai yori'	=>	["Anime", [undef],			undef,			[undef],		undef],
+	'wooser no sono higurashi'	=>	["Anime", [undef],	'wooser',		[undef],		undef],
+	'BTOOOM'			=>	["Anime", [undef],			'BTOOOM',		[undef],		undef],
+	'little busters'	=>	["Anime", [undef],			undef,			[undef],		undef],
+	'girls und panzer'	=>	["Anime", [undef],			'tanks',		[undef],		undef],
+	'aoi sekai no chuushin de'	=>	["Anime", [undef],	undef,			[undef],		undef],
+#	'K'					=> ["Anime", [undef],				'K',			[undef],		undef], #lol.
+	'hayate'			=> ["Anime", [undef],				'hayate',		[undef],		undef],
+	'haitai nanafa'		=> ["Anime", [undef],				'nanafa',		[undef],		undef],
+	'chuunibyou'		=> ["Anime", [undef],				undef,			[undef],		undef],
 );
 
 @blacklist = qw( 
