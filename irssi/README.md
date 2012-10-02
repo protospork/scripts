@@ -1,14 +1,16 @@
-##c8's functions as of 22/12/11
+##c8's functions as of 02/Oct/12
 
 ###searches
 .g - google (feeling lucky)  
-.gs - link a full page of google search results  
+.ddg - link a page of duckduckgo search results
+.gs - same as .ddg  
 .yt - youtube  
 .wiki - wikipedia  
 .imdb - imdb.com  
 .amzn - amazon.com  
 .a(ni)db - search anidb
-.w(eather)  
+.w(eather) [zipcode] - it remembers
+.lastfm [username] - it remembers too
 .tmdb - search themoviedb.org  
 
 ###misc triggers
@@ -24,7 +26,6 @@
 .airtimes - display the four soonest upcoming anime broadcasts
 .hex - given a number in base-ten, return it in hex  
 .help - link this page  
-.isup - check a link against downforeveryoneelseorjustme [triggers AND gettitle]
 
 ###other junk
 - link a tweet and it will be read to the channel [gettitle]

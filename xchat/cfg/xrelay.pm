@@ -94,7 +94,7 @@
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
 #fall 2012
-	'shin sekai yori'	=>	["Anime", [undef],			undef,			[undef],		undef],
+	'shin sekai yori'	=>	["Anime", [qw'utw commie'],	'shinsekai',	[undef],		undef],
 	'wooser no sono higurashi'	=>	["Anime", [undef],	'wooser',		[undef],		undef],
 	'BTOOOM'			=>	["Anime", [undef],			'BTOOOM',		[undef],		undef],
 	'little busters'	=>	["Anime", [undef],			undef,			[undef],		undef],
