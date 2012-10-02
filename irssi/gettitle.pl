@@ -21,7 +21,7 @@ use vars qw(
 
 #<@cephalopods> looks like it tried to parse an HTTP 500 as JSON and was so surprised when it didn't work, it died
 
-$VERSION = "1.9";
+$VERSION = "0.1.10";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -70,21 +70,7 @@ sub pubmsg {
 	
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
-	
-	#IRSSI WHY ARE YOU SO FUCKING BROKEN
-	# exit if another bot already does our job:
-	# my $pointlesstemporaryvariable = Irssi::active_win()->{active};
-	# my @names = $pointlesstemporaryvariable->nicks();
-	# print 'searching '.($#names+1).' nicks' if $debugmode;
-	# for (@yield_to){
-		# my $bot_found = grep $_, @names;
-		# if (defined $bot_found && $bot_found){
-			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
-			# $notitle++;
-		# }
-	# }
-	
-	
+
 	print $target.': '.$url if $debugmode == 1;
 	
 #load the link as a URI entity and just request the key you need, if possible. 
@@ -92,7 +78,6 @@ sub pubmsg {
 #	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
 	$url = URI->new($url)->canonical;
 	
-	#todo: given/when this shit up dawg ##wait no that won't work will it
 	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
 		$server->command("msg $controlchan reloading");
 		loadconfig() || return;
@@ -103,14 +88,15 @@ sub pubmsg {
 		sendmirror($nick,$server) || return;
 		$server->command("msg $controlchan done.");
 	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
-		$url = unwrap_shortener($url);
+		$url = unwrap_shortener($url); #TODO: find a better way than maintaining a list of shorteners
 		return if $url eq '=\\';
 		if (! grep lc $target eq lc $_, @dont_unshorten){
 			$server->command("msg $target $url");
 		}
 	}
 	
-	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){	#I can't be fucked to remember if there's a proper place to put these filters
+	#ANYTHING THAT CHANGES THE URL BEFORE PARSING IT (APIs)
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $target eq $_, (@offtwitter)){ return; }
 		print $url if $debugmode == 1;
@@ -148,6 +134,7 @@ sub pubmsg {
 	}
 	$lastlink{$nick} = $url;
 	
+	#why are we checking file extensions? this is what mimetypes are for
 	for my $extrx (@junkfiletypes){	
 		return if $url =~ /$extrx$/i;
 	}
@@ -190,7 +177,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		}
 	} elsif ($url =~ /imagebin\.ca\/view/){
 		$url =~ s/view/img/i; $url =~ s/html/jpg/i;
-		$return = "$url ($insult)";
+		$return = $url;
 	}
 	
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
@@ -199,23 +186,20 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		if ($this && $this ne '0'){ return $this; }
 	}		
 
-	if ($url =~ /(twitpic|tweetphoto)/i && int(rand(100)) > 75){ $return = lc($1).' sucks.';
-	} elsif ($url =~ m{(?:bash\.org|qdb\.us)/\??(\d+)}i){ if (($1 % 11) > 8){ $return = "that's not funny :|" }
+	if ($url =~ m{(?:bash\.org|qdb\.us)/\??(\d+)}i){ if (($1 % 11) > 8){ $return = "that's not funny :|" }
 	} elsif ($url =~ s{youtube\.com/watch#!}{youtube.com/watch?}i || $url =~ s{m\.youtube\.com/\S+v=([^?&=]{11})}{youtu.be/$1}i){ $return = $url." ($insult)";
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
-	} elsif ($url =~ s{(?:www\.)?(?:(?<!ca\.)(kotaku|lifehacker|gawker|io9|gizmodo|deadspin|jezebel|jalopnik))\.com/(?:#!)?(\d+)/(\S+)}{ca.$1.com/$2/$3-also-$nick-sucks}i){ int rand 5 >= 4 ? return 'gross' : return 0;
 	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; 
-	} elsif ($url =~ m{battlelog\.battlefield\.com}){ int rand 10 >= 4 ? $return = 'stop linking that shit' : $return = 'fuck you'; 
 	}	
 	
 	return $return;
 }
 
-sub moreshenanigans {	#now, play around with the titles themselves
+#edit titles in ways I can't do with the config file
+sub moreshenanigans {
 	my ($title,$ass,$target,$url) = @_;
 	
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
-	$title =~ s/High Impact Halo Forum and Fansite/HIH: /i;
 	$title =~ s/\bwww\.//;
 	
 	for my $rx (@cutthesephrases){
@@ -225,7 +209,7 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	for (keys %{$censorchans{$target}}){
 		my $repl = $censorchans{$target}->{$_};
 		if ($title =~ ucfirst $_){ #this block could be replaced by one big regex, but this has to run on 5.10. Also I'm scared.
-			$repl = join ' ', map { ucfirst $_ } split / /, $repl;
+			$repl = join ' ', map { ucfirst $_ } split / /, $repl; 
 		} elsif ($title =~ uc $_){
 			$repl = uc $repl;
 		}
@@ -238,10 +222,6 @@ sub moreshenanigans {	#now, play around with the titles themselves
 	#COLORS!
 	$title =~ s/^cnn/\00300,04CNN\017/i;
 	$title =~ s/^LiveLeak\.com/\00300,04Live\00304,00Leak\017/i; 
-	
-	#this chunk shouldn't actually be in use <_<
-#	$title =~ s/[(\x{2000}-\x{200F})]|[(\x{2028}-\x{202F})]//g if $title =~ /^youtube/i;
-#	$title =~ s/^YouTube/\00301,00You\00300,04Tube\017/i;
 	
 	$title =~ s/^Newegg(\.com)?/\00302,08Newegg\017/i;
 	$title =~ s/^BBC( News)?/\00300BBC\017/i;
@@ -310,6 +290,7 @@ sub get_title {
 	my $page = $ua->get($url);
 	if ($debugmode && ! $page->is_success){ print 'Error '.$page->status_line; }
 	
+#now, anything that requires digging in source/APIs for a better link or more info
 	given ($url){
 		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
 			return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
@@ -321,6 +302,7 @@ sub get_title {
 				return $title;
 			}
 		}
+#TODO: BEFORE LETTING JSON.PM TOUCH ANYTHING, VERIFY THAT IT IS application/json
 		when (/api\.twitter\.com/){ return twitter($page); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
@@ -404,11 +386,12 @@ sub newegg {
 sub check_image_size {
 	my ($url,$nick,$chan,$server) = @_;
 	my $return;
-#	return '0' if $url =~ /gif(?:\?.+)?$/i;	#fair bet a gif is going to be large
 	my $req = $ua->head($url); 
-	$return = 0 unless $req->is_success;	#?
+	$return = 0 unless $req->is_success;
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
 	$return = 0 unless $req->content_type =~ /image/; 
+	
+	#shout if it's a magic jpeg
 	if ($req->content_type =~ /gif$/i){
 		if ($url =~ /imgur(?!.+gif$)/i){
 			$req->content_length == 669 
@@ -419,7 +402,11 @@ sub check_image_size {
 			? $return = 'WITCH'
 			: undef $return;
 		}
-	} elsif ($req->content_length > $largeimage){
+	}
+	
+	#now actually do our job
+	if (($req->content_type !~ /gif$/ && $req->content_length > $largeimage)
+	|| ($req->content_type =~ /gif$/ && $req->content_length > ($largeimage * 2))){ #gifs are big and we all know this
 		my $size = $req->content_length;
 		$size = sprintf "%.2fMB", ($size / 1048576);
 		$return = $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
