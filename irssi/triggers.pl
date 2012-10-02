@@ -22,13 +22,13 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.52";
+$VERSION = "2.6.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
     name => 'triggers',
     description => 'a trigger script',
-    license => 'like I care'
+    license => 'MIT/X11'
 );
 
 my $json = JSON->new->utf8;
@@ -88,18 +88,6 @@ sub event_privmsg {
 		return;
 	}
 
-#derp nevermind irssi is a piece of shit
-	#make sure someone else isn't doing this job
-	#todo: make this per-trigger, somehow (ie disable only weather or all but weather)
-	# for my $bot (@yield_to){
-		# my $bot_found = Irssi::active_win()->{active}->nick_find($bot);
-		# if (defined $bot_found && $bot_found){
-			# print $target.' contains '.$bot_found->{'nick'} if $debugmode;
-			# return;
-		# }
-	# }
-	
-	
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
@@ -107,7 +95,8 @@ sub event_privmsg {
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
-		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
+#		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
+		when (/^gs$|^ddg$/i){		$return = ddg(@terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
@@ -134,6 +123,41 @@ sub event_privmsg {
 }
 
 
+sub ddg {
+	my $trigger = shift @_;
+	my @terms = @_;
+	my $feelinglucky;
+	
+	if ($trigger =~ /^ddg$/){ #.ddg = first result; .gs = index
+		$terms[0] = '!'.$terms[0];
+	}
+	if ($terms[0] =~ /^!/){
+		$feelinglucky++;
+	}
+	uri_escape_utf8($_) for @terms;
+	my $query = ('http://ddg.gg/?q='.(join '+', @terms));
+	
+	if (! $feelinglucky){
+		return $query;
+	}
+	
+	my $req = $ua->head($query);
+	if (!$req->is_success){
+		print ('DDG: '.$query.': HTTP '.$req->code) if $debug;
+		return $query;
+	}
+	my $orig_url;
+	for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
+		$orig_url = $_->header('Location');
+	}
+	if (! $orig_url){
+		print("DDG: $query is actual url") if $debug;
+		return $query;
+	}
+	return $orig_url;
+}
+
+
 my %lastfms;
 tie my @lastfmmemory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.cfg' 
 	or die $!;
@@ -144,16 +168,6 @@ sub lastfm {
 	my $text = '';
 	shift; #dump the trigger
 	$text = shift;
-	
-		# <%Lucifer7>  proto the bot noticed me even though it went through fine
-		# <%Lucifer7> i'm guessing it just does that automatically if there's nothing stored for my username
-		# <%Lucifer7> http://ss.srsbsns.org/tg_VuM4Q.png
-		# <%Lucifer7> ...i could've just copy pasted that i guess
-		# <%Lucifer7> [01:59:13] <%Lucifer7> .lastfm
-		# <%Lucifer7> [01:59:13] -c8h10n4o2- .lastfm [username]
-		# <%Lucifer7> [01:59:14] <c8h10n4o2> lucifer7 last played Lights – The Listening
-		# <@sugoidesune> ok
-		# <@sugoidesune> I'll fix this in the morning because there's a stupid amount of logic here that has no real right to be
 	my $location;
 	if (! $text || $text eq ''){ 
 		if (exists $lastfms{$nick}){
