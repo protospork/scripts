@@ -159,7 +159,6 @@ sub lastfm {
 		if (exists $lastfms{$nick}){
 			$location = $lastfms{$nick}
 		} else {
-			$server->command("notice $nick .lastfm [username]"); 
 			$location = $nick;
 			$lastfms{$nick} = $nick;
 			# return; 
