@@ -104,6 +104,7 @@
 	'hayate'			=> ["Anime", [undef],				'hayate',		[undef],		undef],
 	'haitai nanafa'		=> ["Anime", [undef],				'nanafa',		[undef],		undef],
 	'chuunibyou'		=> ["Anime", [undef],				undef,			[undef],		undef],
+	'tonari no kaibutsu-kun'=>["Anime",[undef],			'tonari',		[undef],		undef],
 );
 
 @blacklist = qw( 
