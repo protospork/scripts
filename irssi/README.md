@@ -2,8 +2,8 @@
 
 ###searches
 .g - google (feeling lucky)  
-.ddg - link a page of duckduckgo search results  
-.gs - same as .ddg  
+.ddg - duckduckgo (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
+.gs - duckduckgo search result page  
 .yt - youtube  
 .wiki - wikipedia  
 .imdb - imdb.com  

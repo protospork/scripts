@@ -128,10 +128,10 @@ sub ddg {
 	my @terms = @_;
 	my $feelinglucky;
 	
-	if ($trigger =~ /^ddg$/){ #.ddg = first result; .gs = index
-		$terms[0] = '!'.$terms[0];
+	if ($trigger =~ /^ddg$/ && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
+		$terms[0] = '\\'.$terms[0];
 	}
-	if ($terms[0] =~ /^!/){
+	if ($terms[0] =~ /^[\\!]/){
 		$feelinglucky++;
 	}
 	uri_escape_utf8($_) for @terms;
@@ -141,19 +141,25 @@ sub ddg {
 		return $query;
 	}
 	
-	my $req = $ua->head($query);
+	my $req = $ua->get($query);
 	if (!$req->is_success){
 		print ('DDG: '.$query.': HTTP '.$req->code) if $debug;
 		return $query;
 	}
-	my $orig_url;
-	for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
-		$orig_url = $_->header('Location');
+	my $orig_url = $query;
+	
+	if ($req->header('Refresh')){ #duckduckgo uses a soft redirect (to record impressions?) so we need to grab html
+		$orig_url = $req->header('Refresh');
+		$orig_url =~ s/^.*?(http\S+).*?$/$1/i;
 	}
-	if (! $orig_url){
-		print("DDG: $query is actual url") if $debug;
-		return $query;
+	$req = $ua->get($orig_url); #now grab that url and follow its redirects, because it's probably a landing page
+		
+	for ($req->redirects){
+		unless ($_->header('Location') =~ /duckduckgo/){
+			$orig_url = $_->header('Location');
+		}
 	}
+	
 	return $orig_url;
 }
 
