@@ -101,7 +101,6 @@ sub event_privmsg {
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
-		when (/^airtimes/){			$return = airtimes(@terms); }
 		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
 	#crashy	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } 
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
@@ -308,106 +307,13 @@ sub moviedb {
 	}
 	
 }
-
+#what does codepoint do and why does it do so?
 sub codepoint {
 	my $char = $_[0];
 	$char =~ s/^(.).*$/$1/;
 	
 	my $out = sprintf "HEX %x / DEC ", ord $char;
 	$out .= ord $char;
-}
-
-#these airtime bits are mostly code by tristan.willy@gmail.com
-sub airtimes {
-	my $max = $_[-1];
-	my $scraper = new HTML::Scrape(
-	Machine =>
-		[
-			{ 'label'   => 'top',
-			'tag'     => 'table',
-			'require' => { 'summary' => qr/currently airing/i } },
-			{ 'tag'     => 'table' },
-			{ 'tag'     => 'th' },
-
-			[ { 'label'   => 'next_row',
-			'tag'     => 'tr' },
-			{ 'tag'     => 'table',
-			'goto'    => 'top' }
-			],
-			{ 'label'   => 'td_nr',
-			'tag'     => 'td' },
-			{ 'text'    => put('nr') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('series') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('season') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('station') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('company') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('airtime') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('ETA') },
-			{ 'tag'     => 'td' },
-			{ 'text'    => put('eps') },
-			[ 
-			{ 'tag'     => 'a',
-			'require' => { 'href' => qr/anidb.info/i },
-			'attr'    => { 'href' => put('anidb_url') },
-			'commit'  => 1,  # commit happens when leaving state
-			'goto'    => 'next_row' },
-			{ 'tag'     => 'tr',
-			'commit'  => 1,
-			'goto'    => 'td_nr' },
-			{ 'tag'     => 'table',
-			'goto'    => 'top' }
-			]
-		]
-	) or die;
-	my $page = $ua->get('http://www.mahou.org/Showtime/');
-	die $page->status_line unless $page->is_success;
-	if ($max =~ /\D/){
-		return tsv(4, $scraper->scrape($page->decoded_content, 1));
-	} elsif ($max == 0 || $max < 13) {
-		return tsv($max-1, $scraper->scrape($page->decoded_content, 1));
-	}
-}
-sub tsv {
-  my %header;
-  my $max = shift;
-  foreach my $item (@_){
-    $header{$_} = 1 foreach (keys %$item);
-  }
-  my @order = sort keys %header;
-
-  my %inorder;
-#  $inorder{sprintf "%020d", 1} = sprintf "%-12s%-18s%-25s%-18s%-4s%4s %-10s%-30s%s", @order[0..$#order]; #header, not sure if necessary
-  
-  foreach my $item (@_){
-	
-    my %ditem = fillkeys($item, @order);
-	
-	my @out;
-	for (@order[0..$#order]){
-		$ditem{$_} =~ s{^http://anidb\S+?(\d+)$}{http://anidb.net/a$1};
-		push @out, $ditem{$_};
-	}
-	my $time = $ditem{$order[0]};
-	$time =~ s/(?:(\d+)d\s*)?(?:(\d+)h\s*)?(\d+)m/(($1 ? $1 * 1440 : 0)+($2 ? $2 * 60 : 0)+($3))/e; #convert '1d 3h 33m' to '1653' (minutes)
-	$time = sprintf "%020d", $time; #crude, but it makes sort stop being retarded
-#	$inorder{$time} = sprintf "%-12s%-18s%-25s%-18s%-4s%4s %-10s%-30s%s", @out;
-	$inorder{$time} = $out[0].' until '.$out[-2];
-  }
-  my @output;
-  for ((sort keys %inorder)[0..$max]){
-	push @output, $inorder{$_}."\n"
-  }
-  return \@output;
-}
-sub fillkeys {
-  my $href = shift;
-  return map { ($_, defined $href->{$_} ? $href->{$_} : '') } @_;
 }
 
 sub readtext {
