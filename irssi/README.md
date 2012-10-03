@@ -20,11 +20,11 @@
 `.roll [#d#]` - roll some dice  
 `.rose` - a dice game. figure it out yourself  
 `.choose` - choose one item of a list (separate choices with commas, and separate comma-separated lists of choices with pipes)  
-`.8ball` - ask a question
+`.8ball` - ask a question  
 `.sin` - choose one of the seven deadly sins  
 `.farnsworth` - get a random quote from professor farnsworth  
 `.anime`/`.animu` - suggest a random, decent anime (list chosen [largely] by consensus in #anime)  
-`.airtimes` - display the four soonest upcoming anime broadcasts
+`.airtimes` - display the four soonest upcoming anime broadcasts  
 `.hex` - given a number in base-ten, return it in hex  
 `.help` - link this page  
 
