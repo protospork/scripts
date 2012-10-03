@@ -22,7 +22,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.6.0";
+$VERSION = "2.6.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -33,7 +33,8 @@ $VERSION = "2.6.0";
 
 my $json = JSON->new->utf8;
 my $ua = LWP::UserAgent->new(
-	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
+#	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
+	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.7) Gecko/20100101 Firefox/10.0.7',
 	max_size => 15000,
 	timeout => 10,
 	protocols_allowed => ['http', 'https'],
@@ -96,7 +97,7 @@ sub event_privmsg {
 		when (/^identify$/){		$return = ident($server); }
 		when (/^when$/i){			$return = countdown(@terms); }
 #		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
-		when (/^gs$|^ddg$/i){		$return = ddg(@terms); }
+		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg(@terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
@@ -126,6 +127,9 @@ sub event_privmsg {
 sub ddg {
 	my $trigger = shift @_;
 	my @terms = @_;
+	if ($trigger =~ /^!/){ #whoops put trigger back if it's part of the query
+		unshift @terms, $trigger;
+	}
 	my $feelinglucky;
 	
 	if ($trigger =~ /^ddg$/ && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
@@ -135,7 +139,7 @@ sub ddg {
 		$feelinglucky++;
 	}
 	uri_escape_utf8($_) for @terms;
-	my $query = ('http://ddg.gg/?q='.(join '+', @terms));
+	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch, I hope
 	
 	if (! $feelinglucky){
 		return $query;
