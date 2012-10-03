@@ -2,7 +2,7 @@
 
 ###searches
 `.ddg` - duckduckgo (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
-`.[!bang](http://duckduckgo.com/bang.html)` - shorthand for `.ddg !bang`  
+`.!bang` - shorthand for `.ddg !bang`  
 `.gs` - duckduckgo search result page  
 `.g` - google (feeling lucky)  
 `.yt` - youtube  
