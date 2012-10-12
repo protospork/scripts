@@ -500,6 +500,10 @@ sub imgur {
 	}
 	
 	#now ...actually do it
+	if ($imgurkey eq 'replaceme'){
+		print "c8_imgur_key not set";
+		return;
+	}
 	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => ($url || $urlqueries)]) || print "I can't work out why it would die here";
 	#okay what broke
 	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }

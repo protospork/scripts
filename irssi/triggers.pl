@@ -53,6 +53,7 @@ sub loadconfig {
 
 	print "triggers: config $cfgver successfully loaded";
 	$lastcfgcheck = time;
+	return $cfgver;
 }
 loadconfig();
 
@@ -95,6 +96,7 @@ sub event_privmsg {
 		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); }
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/){		$return = ident($server); }
+		when (/^rehash$/){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
 #		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg(@terms); }
@@ -221,6 +223,10 @@ sub moviedb {
 	}
 	if ($query =~ /^\d+$/){ $id = $query; $full++; }
 	
+	if ($tmdb_key eq 'replaceme'){
+		print "c8_tmdb_key not set.";
+		return;
+	}
 	my $tmdb = TMDB->new({api_key => $tmdb_key});
 	if (! $person){
 		my @out;
@@ -582,6 +588,10 @@ sub ident {
 	my $server = $_[0];
 	$server->command("nick ".$botnick);
 	sleep 4;
+	if ($botpass eq 'replaceme'){
+		print 'c8_password not set.';
+		return;
+	}
 	$server->command("msg nickserv identify ".$botpass);
 }
 sub stats {
@@ -591,17 +601,15 @@ sub stats {
 	$chan eq 'programming' ? return 'http://www.galador.org/irc/'.$chan.'.html' : return 'http://protospork.moap.net/'.$chan.'.html';
 }
 
-#based on a script called weatherbot.pl by lyz@princessleia.com
+#originally based on an xchat script called weatherbot.pl by lyz@princessleia.com. not sure if it still bears any resemblance
 my %savedloc;
 tie my @memory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.cfg' or die $!; #this fucking file is ...interesting. and broken. fix it.
 for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
 
 sub weather {	
-#	my ($server, $nick, $text) = @_;
-#	$nick = lc $nick;
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
-	$text = join ' ', @_[1..$#_] if $#_ > 0; #huh, typing that made me think twice
+	$text = join ' ', @_[1..$#_] if $#_ > 0; ##pulling from 1 on b/c 0 is the trigger
 	
 	my $location;
 	if ($text eq ''){ 
@@ -628,12 +636,10 @@ sub weather {
 	} else {
 		push @memory, (join '::', $nick, $location); #todo: don't push if it's already in there
 		$savedloc{$nick} = $location;
-		my @goodarray = split(/[|]\s*/, $results->decoded_content);
-		my ($timestamp,$ctemp) = ($goodarray[0],'');
+		my @array = split(/[|]\s*/, $results->decoded_content);
+		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
-		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = 
-#		($goodarray[18], $goodarray[19], $goodarray[8], $goodarray[1], $goodarray[4], $goodarray[7], $goodarray[6], $goodarray[2]);	#augh
-		@goodarray[18,19,8,1,4,7,6,2];
+		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
 		if ($wind !~ / 0$/){

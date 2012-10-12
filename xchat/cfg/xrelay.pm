@@ -25,7 +25,6 @@
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],undef], #2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		undef], #2277],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		undef], #2257],
-	bakuman				=>	["Anime", [qw|TMD sage|],	"Bakuman",		['sage:^hi10p'],undef], #2295], #bakuman 2
 	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	[undef],		undef], #2270], #boku ha/wa tomodachi ga sukunai
 	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		undef],#2275], Ben-to airs first on TVA, which isn't listed on syoboi
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
@@ -94,17 +93,22 @@
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
 #fall 2012
-	'shin sekai yori'	=>	["Anime", [qw'utw commie'],	'shinsekai',	[undef],		undef],
+	'sekai yori'		=>	["Anime", [qw'utw commie'],	'shinsekai',	[undef],		undef], #utw calls it shinsekai yori, everyone else shin sekai yori. let's try this
 	'wooser no sono higurashi'	=>	["Anime", [undef],	'wooser',		[undef],		undef],
-	'BTOOOM'			=>	["Anime", [undef],			'BTOOOM',		[undef],		undef],
-	'little busters'	=>	["Anime", [undef],			undef,			[undef],		undef],
+	'BTOOOM'			=>	["Anime", [qw'horrible commie'],'BTOOOM',		[undef],		undef],
+	'little busters'	=>	["Anime", [qw'utw mazui'],		'Busters',		[undef],		undef],
 	'girls und panzer'	=>	["Anime", [undef],			'tanks',		[undef],		undef],
 	'aoi sekai no chuushin de'	=>	["Anime", [undef],	undef,			[undef],		undef],
-#	'K'					=> ["Anime", [undef],				'K',			[undef],		undef], #lol.
-	'hayate'			=> ["Anime", [undef],				'hayate',		[undef],		undef],
+	"\x{300c}K\x{300d}"=> ["Anime", ['commie'],			'[K]',			[undef],		undef], #lol.
+	'hayate'			=> ["Anime", ['commie'],			'hayate',		[undef],		undef],
 	'haitai nanafa'		=> ["Anime", [undef],				'nanafa',		[undef],		undef],
-	'chuunibyou'		=> ["Anime", [undef],				undef,			[undef],		undef],
-	'tonari no kaibutsu-kun'=>["Anime",[undef],			'tonari',		[undef],		undef],
+	'chuunibyou'		=> ["Anime", [qw'URW gg'],		'Chuunibyou',	[undef],		undef],
+	'tonari no kaibutsu'=> ["Anime", [qw'horrible commie'],'Tonari',		[undef],		undef], #commie chopped the -kun off
+	'jojo'				=> ["Anime", [qw'gg nutbladder'],	'Jojo',			[undef], 		undef],
+	#onii-chan dakedo ai sae areba kankeinai yo ne / oniiai / generic harem / doki and coppola
+	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],		"Bakuman",		[undef],		undef],
+	'Ixion Saga'		=> ["Anime", [undef],				'Ixion',		[undef],		undef],
+	'robotics;notes'	=> ["Anime", [undef],				undef,			[undef],		undef],
 );
 
 @blacklist = qw( 
