@@ -12,10 +12,10 @@
 `.a(ni)db` - search anidb  
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
-*`.tmdb` - search themoviedb.org (down for now)*  
+<strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
+`.x(e)`/`.calc`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
   
 ###misc triggers  
-`.x(e)`/`.calc`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
 `.flip` - flip a coin  
 `.roll [#d#]` - roll some dice  
 `.rose` - a dice game. figure it out yourself  
