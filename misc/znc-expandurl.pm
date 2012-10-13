@@ -2,6 +2,7 @@
 
 use LWP;
 use Modern::Perl;
+use URI; #another dependency :(
 package expandurl;
 use base 'ZNC::Module';
 
@@ -34,15 +35,20 @@ sub OnChanMsg {
 		if (!$req->is_success){
 			$self->PutModule($url.': HTTP '.$req->code) if $debug;
 		}
-		my $orig_url;
+		my ($orig_url,$second_last);
 		for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
 			if ($_->header('Location') =~ m[nytimes.com/glogin]i){ 
 				#NYT paywall redirects you according to some arcane logic that changes every week.
 				#Upshot: the final hop is worthless and extremely long.
 				last;
 			} else {
+				$second_last = $orig_url;
 				$orig_url = $_->header('Location');
 			}
+		}
+		if ($orig_url =~ m{^/}){
+			#grab the domain from last hop and stick it here.
+			$orig_url = URI->new_abs($orig_url, $second_last)->canonical;
 		}
 		if (! $orig_url){
 			$self->PutModule("$url is actual url") if $debug;
@@ -51,9 +57,10 @@ sub OnChanMsg {
 		if (length $orig_url > 140){ 
 			$self->PutModule("$orig_url is too long: ".(length $orig_url)."ch") if $debug;
 			#-strip all queries (they tend to help so I'd rather leave them if possible)
-			$orig_url =~ s{\?.+$}{};
+			$orig_url->query(undef);
 			#-check length again
 			if (length $orig_url > 140){ return $ZNC::CONTINUE; }
+
 		}
 		
 		$self->PutModule($orig_url) if $debug;

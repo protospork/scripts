@@ -237,7 +237,7 @@ sub moreshenanigans {
 }
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
-	#valid, but why rely on another service
+	#valid, but why rely on another service / JSON
 	# my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
 	# if (! $head->is_success){ 
 		# print 'Error '.$head->status_line if $debugmode; 
@@ -251,13 +251,14 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 		print 'Error '.$req->status_line if $debugmode; 
 		return '=\\';	
 	}
-	my $orig_url;
+	my ($orig_url,$second_last);
 	for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
 		if ($_->header('Location') =~ m[nytimes.com/glogin]i){ 
 			#NYT paywall redirects you according to some arcane logic that changes every week.
 			#Upshot: the final hop is worthless and extremely long.
 			last;
 		} else {
+			$second_last = $orig_url;
 			$orig_url = $_->header('Location');
 		}
 	}
@@ -267,7 +268,9 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	
 	print $url.' => '.$orig_url if $debugmode;
 	
-	$orig_url = URI->new($orig_url)->canonical;
+	#another script had an issue where the final link was often relative. this either prevents that or breaks everything
+	$orig_url = URI->new_abs($orig_url, $second_last)->canonical; 
+		
 	if (length $orig_url < 200){
 		return $orig_url;
 	} elsif (length($orig_url)-length($orig_url->query) < 200){
