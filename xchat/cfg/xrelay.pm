@@ -93,22 +93,22 @@
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
 #fall 2012
-	'sekai yori'		=>	["Anime", [qw'utw commie'],	'shinsekai',	[undef],		undef], #utw calls it shinsekai yori, everyone else shin sekai yori. let's try this
-	'wooser no sono higurashi'	=>	["Anime", [undef],	'wooser',		[undef],		undef],
+	'sekai yori'		=>	["Anime", [qw'utw commie'],	'Shinsekai',	[undef],		undef], #utw calls it shinsekai yori, everyone else shin sekai yori. let's try this
+	'wooser no sono higurashi'	=>	["Anime", [undef],	'Wooser',		[undef],		undef],
 	'BTOOOM'			=>	["Anime", [qw'horrible commie'],'BTOOOM',		[undef],		undef],
 	'little busters'	=>	["Anime", [qw'utw mazui'],		'Busters',		[undef],		undef],
-	'girls und panzer'	=>	["Anime", [undef],			'tanks',		[undef],		undef],
+	'girls und panzer'	=>	["Anime", [undef],			'Tanks',		[undef],		undef],
 	'aoi sekai no chuushin de'	=>	["Anime", [undef],	undef,			[undef],		undef],
 	"\x{300c}K\x{300d}"=> ["Anime", ['commie'],			'[K]',			[undef],		undef], #lol.
-	'hayate'			=> ["Anime", ['commie'],			'hayate',		[undef],		undef],
-	'haitai nanafa'		=> ["Anime", [undef],				'nanafa',		[undef],		undef],
+	'hayate'			=> ["Anime", ['commie'],			'Hayate',		[undef],		undef],
+	'haitai nanafa'		=> ["Anime", [undef],				'Nanafa',		[undef],		undef],
 	'chuunibyou'		=> ["Anime", [qw'URW gg'],		'Chuunibyou',	[undef],		undef],
 	'tonari no kaibutsu'=> ["Anime", [qw'horrible commie'],'Tonari',		[undef],		undef], #commie chopped the -kun off
 	'jojo'				=> ["Anime", [qw'gg nutbladder'],	'Jojo',			[undef], 		undef],
 	#onii-chan dakedo ai sae areba kankeinai yo ne / oniiai / generic harem / doki and coppola
 	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],		"Bakuman",		[undef],		undef],
 	'Ixion Saga'		=> ["Anime", [undef],				'Ixion',		[undef],		undef],
-	'robotics;notes'	=> ["Anime", [undef],				undef,			[undef],		undef],
+	'robotics;notes'	=> ["Anime", [undef],				'Robot',		[undef],		undef],
 );
 
 @blacklist = qw( 
