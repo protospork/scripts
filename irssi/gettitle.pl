@@ -127,7 +127,7 @@ sub pubmsg {
 	} elsif ($url !~ /^http/){
 		$url = 'http://' . $url;
 	}	
-	return if $data =~ /[\[<] *\S+ ?[\]>] *\w+/i;	# ignore copypasta
+	return if $data =~ /[\[<](?:\x{3}\S+| )*\S+ ?[\]>](?:\x{3}\S+| )*\w+/i;	# ignore copypasta
 	
 	if (exists $lastlink{$nick}){
 		if ($url eq $lastlink{$nick} && $target eq $lastchan){ return; }	#spam protection
