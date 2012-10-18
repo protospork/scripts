@@ -11,7 +11,7 @@ my @abouttext =	("This module quietly looks up shortened URLs and replaces them 
 				"may not want it active in every channel - I wrote it specifically for ".
 				"twitter in Bitlbee and that's what the defaults reflect.");
 				
-my $debug = 1; #just for testing
+my $debug = 0; #just for testing
 
 sub description {
     "Deshortens short URLs"
@@ -63,7 +63,7 @@ sub OnChanMsg {
 
 		}
 		
-		$self->PutModule($orig_url) if $debug;
+		$self->PutModule(' => '.$orig_url) if $debug;
 		$self->PutModule(scalar($req->redirects).' redirects') if $debug;
 		
 		#bitlbee returns the (incomplete and useless) preview url in angle brackets after the t.co one
@@ -78,7 +78,15 @@ sub OnChanMsg {
 #in-irc config
 sub OnModCommand {
 	my ($self,$cmd) = @_;
-	$self->PutModule($_) for @abouttext;
+	if ($cmd =~ /debug/i){
+		$debug++;
+		$debug %= 2;
+		$debug 
+		  ? $self->PutModule('Debug Enabled')
+		  : $self->PutModule('Debug Disabled');
+	} else {
+		$self->PutModule($_) for @abouttext;
+	}
 }
 
 #todo: 
