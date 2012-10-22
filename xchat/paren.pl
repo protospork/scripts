@@ -116,6 +116,7 @@ sub magic_happens {
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
+	$message =~ s/\b:C\b/:(/g; #also keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
 	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether this actually works
 	
@@ -138,7 +139,7 @@ sub magic_happens {
 	|| $boring == 1					   #or if you don't like fun
 	){ 
 		my @end;
-		for (split /\s+/, $message){ 
+		for (split /\s+/, $message){ #what if I split on /\b/?
 			if (/\x{02}/){ push @end, $_; next; }
 			if (/http|^www/i){ #MOTHERFUCKING URLS
 				s/^([<(]+)((http|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
