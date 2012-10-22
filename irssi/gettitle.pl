@@ -21,7 +21,7 @@ use vars qw(
 
 #<@cephalopods> looks like it tried to parse an HTTP 500 as JSON and was so surprised when it didn't work, it died
 
-$VERSION = "0.1.10";
+$VERSION = "0.1.11";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -352,13 +352,15 @@ sub twitter {
 }
 sub youtube {
 	my $page = shift;
-	my $junk = JSON->new->utf8->decode($page->decoded_content) || return 'YouTube - uh-oh ('.$page->status_line.')';
+	my $junk;
+	eval { $junk = JSON->new->utf8->decode($page->decoded_content); };
+	if ($@){ return 'YouTube - uh-oh ('.$page->status_line.')'; }
 	
 	my $title;
 	if ($junk->{'data'}{'title'}){
 		$title = "\00301,00You\00300,04Tube\017 - ".$junk->{'data'}{'title'};
 	} else {
-		$title = "\00301,00You\00300,04Tube\017 -".filler_title(); #does this actually work?
+		$title = "\00301,00You\00300,04Tube\017 -".filler_title();
 	}
 	return decode_entities($title);
 }
@@ -371,7 +373,9 @@ sub deviantart {
 }
 sub newegg {
 	my $page = shift;
-	my $obj = JSON->new->utf8->decode($page->decoded_content) || return 'newegg: '.$page->status_line;
+	my $obj;
+	eval { $obj = JSON->new->utf8->decode($page->decoded_content); };
+	if ($@){ return 'newegg: '.$page->status_line; }
 	
 	my $rating = $obj->{"ReviewSummary"}{"Rating"} || 'no rating';
 	
