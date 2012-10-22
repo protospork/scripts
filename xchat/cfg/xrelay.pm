@@ -52,17 +52,17 @@
 	Tsuritama			=>	["Anime", [undef],			'Tsuritama',	[undef],		undef],
 	Yurumates			=>	["Anime", [undef],			'Yurumates',	[undef],		undef],
 	"Accel World"		=>	["Anime", [qw'commie utw'],	'Accel',		[undef],		undef],
-	"Girlfriend X"		=>	["Anime", [undef],			'Girlfriend',	[undef],		undef], #Nazo no Kanojo X / Mysterious Girlfriend X ##HS
+	"Girlfriend X"	=>	["Anime", [undef],			'Girlfriend',	[undef],		undef], #Nazo no Kanojo X / Mysterious Girlfriend X ##HS
 	"Achiga-hen"		=>	["Anime", ['underwater'],	'Saki',			[undef],		undef], #Saki: Achiga-hen episode of side-A ##underwater
 	"Episode of Side A" =>	["Anime", ['horriblesubs'],	'Saki',			[undef],		undef],
 	"Koi-Ken"			=>	["Anime", [undef],			'Koi-Ken',		[undef],		undef], #Koi-Ken!
-	"Eureka Seven: AO"	=>	["Anime", [undef],			'E7',			[undef],		undef], #ugh
+	"Eureka Seven: AO"=>	["Anime", [undef],			'E7',			[undef],		undef], #ugh
 	"furusato saisei"	=>	["Anime", [undef],			undef,			[undef],		undef], #dunno. shokotan op/ed though ##it's folktales from japan
 	'folktales from japan'=>["Anime", ['horrible'],		undef,			[undef],		undef],
-	"Lupin III"			=>	["Anime", [qw'sage gg'],	'Lupin',		[undef],		undef], #Lupin III - Mine Fujiko to Iu Onna ##sage
+	"Lupin III"		=>	["Anime", [qw'sage gg'],	'Lupin',		[undef],		undef], #Lupin III - Mine Fujiko to Iu Onna ##sage
 	"Lupin the Third"	=>	["Anime", [qw'sage'],		'Lupin',		[undef],		undef],
 	"to Iu Onna"		=>	["Anime", [qw'sage commie gg'],'Lupin',		[undef],		undef],
-	"Acchi Kocchi"		=>	["Anime", ['commie'],		'Kocchi',		[undef],		undef],
+	"Acchi Kocchi"	=>	["Anime", ['commie'],		'Kocchi',		[undef],		undef],
 	"Nyarlko"			=>	["Anime", [qw'rori commie'],'Nyarlko',		[undef],		undef],
 	"polar bear cafe"	=>	["Anime", ['horriblesubs'],	'Shirokuma',	[undef],		undef],
 	'inuko-san'			=>	["Anime", ['migoto'],		'inuko',		[undef],		undef],
@@ -108,7 +108,7 @@
 	#onii-chan dakedo ai sae areba kankeinai yo ne / oniiai / generic harem / doki and coppola
 	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],		"Bakuman",		[undef],		undef],
 	'Ixion Saga'		=> ["Anime", [undef],				'Ixion',		[undef],		undef],
-	'robotics;notes'	=> ["Anime", [undef],				'Robot',		[undef],		undef],
+	'robotics;notes'	=> ["Anime", [undef],				'R;N',			[undef],		undef],
 );
 
 @blacklist = qw( 

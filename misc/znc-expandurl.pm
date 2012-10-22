@@ -46,7 +46,7 @@ sub OnChanMsg {
 				$orig_url = $_->header('Location');
 			}
 		}
-		if ($orig_url =~ m{^/}){
+		if ($orig_url =~ m{^(?:\.\.)?/}){ #sometimes relative links with .., generally just ^/ (absolute)
 			#grab the domain from last hop and stick it here.
 			$orig_url = URI->new_abs($orig_url, $second_last)->canonical;
 		}
