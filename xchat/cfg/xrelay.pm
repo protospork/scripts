@@ -108,7 +108,7 @@
 	#onii-chan dakedo ai sae areba kankeinai yo ne / oniiai / generic harem / doki and coppola
 	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],		"Bakuman",		[undef],		undef],
 	'Ixion Saga'		=> ["Anime", [undef],				'Ixion',		[undef],		undef],
-	'robotics;notes'	=> ["Anime", [undef],				'R;N',			[undef],		undef],
+	'robotics;notes'	=> ["Anime", [qw[commie whynot]],				'R;N',			[undef],		undef],
 );
 
 @blacklist = qw( 
