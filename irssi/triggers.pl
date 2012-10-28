@@ -11,7 +11,7 @@ use vars qw($VERSION %IRSSI);
 use JSON;
 use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
 use Tie::File;
-use TMDB;
+#use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
@@ -74,7 +74,7 @@ sub event_privmsg {
 			my @query = split /\s+/, $choices;
 			if ($choices =~ s/\s+or\s+/, /ig){ #shortcut to .choose
 				$server->command('msg '.$target.' '.(choose('choose', (split /\s+/, $choices))));
-			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/){ #stupid 8ball
+			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/i){ #stupid 8ball
 				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data'))); 
 			} else { #straightup 8ball
 				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
@@ -95,15 +95,15 @@ sub event_privmsg {
 		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); }
 		when (/^stats$/i){			$return = status($target); }
-		when (/^identify$/){		$return = ident($server); }
-		when (/^rehash$/){			$return = loadconfig(); }
+		when (/^identify$/i){		$return = ident($server); }
+		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
 #		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg(@terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
-		when (/^c(alc|vt)?$|^xe?$/){$return = conversion(@terms); }
-		when (/^w(eather)?$/){		$return = weather($server, $nick, @terms); }
+		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
+		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
 	#crashy	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } 
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
