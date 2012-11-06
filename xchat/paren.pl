@@ -2,7 +2,8 @@
 use strict;
 use warnings;
 use Xchat qw( :all );
-my $ver = 1.101;
+use v5.10;
+my $ver = 1.110;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -26,14 +27,12 @@ my $intents = 1;   #convert twitter userpage links into twitter intent links. us
 my $linkbucks = 1; #many (all?) linkbucks links are just some junk prepended to a valid URL. this'll strip that
 
 my $deshortentwitter = 1; #not perfect, but does what it does solely through text manipulation (no web calls, no UI lag)
-my $deshortenall = 0; #insane. hangs the UI on every message with a link in it
 
 #ELSE
 my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
-if ($deshortenall){ use WWW::Shorten; } #unnecessary. just use the head trick
 
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
@@ -79,15 +78,6 @@ sub magic_happens {
 	if ($deshortentwitter){
 		$message =~ s{https?://t\.co/\S+ <([^>\x{2026}]+)>}{http://$1}g;
 	}
-	#another awful idea
-	if ($deshortenall){
-		my @urls = ($message =~ m{(https?://[^>]+)}g);
-		for (@urls){
-			my $full = makealongerlink($_);
-			next if length $full > 100;
-			$message =~ s/$_/$full/;
-		}
-	}	
 	
 	if ($nico){
 		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
@@ -186,6 +176,30 @@ sub magic_happens {
 		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
 	}
+	if ($channel eq '#tac'){
+		no warnings 'uninitialized';
+		my $term = "\x03";
+		if ($message =~ /\x030?1,0?1/){
+			$term = "\x0301,01";
+		}
+		
+		given ($nick){
+			when (/aria/i){ 
+				$message =~ s/cock/\x03,20the$term/gi; 
+				$message =~ s/schlick(ed)?/if ($1 eq 'ed'){ "\x03,20fapped$term" } else { "\x03,20fap$term" }/eg;
+			}
+			when (/shou|murasa/i){
+				$message =~ s/hold(ing)? hands/\x03,20fuck$1$term/gi; #holded hands or hold handsed?
+				$message =~ s/(?<=god )kiss|kiss(?= it)/\x03,20damn$term/gi;
+				$message =~ s/cute butt/\x03,20shit$term/gi; #why
+				$message =~ s/(?<=what the )Gensokyo/\x03,20hell$term/gi;
+			}
+			default {
+				#nothing
+			}
+		}
+		use warnings 'uninitialized';
+	}
 	
 	unless ($message =~ /^\s*$/){ 
 		if ($action == 1 && $red == 1){ emit_print('Channel Action Hilight', $nick, $message, $_[2]); }
@@ -200,9 +214,8 @@ sub highlighter {
 	my $dest = get_info('channel');
 	my $serv = get_info('server');
 	my ($server,$homechan) = ('irc.adelais.net','#fridge');
-#	prnt("\00311$whom\017\t$text (\00304$dest\017, \00304$serv\017)", $homechan, $server);
 	prnt("\x03".xccolor($whom).$whom."\x0F\t".$text." (\x0304".$dest."\x0F, \x0304".$serv."\x0F)", $homechan, $server);
-	return;# EAT_NONE;
+	return;
 }
 sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	my $string = shift;
@@ -211,7 +224,7 @@ sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	$clr += ord $_ for (split //, $string); 
 	$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];	
 }
-sub unload{
+sub unload {
 	prnt("paren $ver unloaded");
 }
 prnt("parentheses $ver loaded");
