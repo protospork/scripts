@@ -12,7 +12,7 @@ use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw(	
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
-	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan
+	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey 
 	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
 );
@@ -269,11 +269,13 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	print $url.' => '.$orig_url if $debugmode;
 	
 	#another script had an issue where the final link was often relative. this either prevents that or breaks everything
-	$orig_url = URI->new_abs($orig_url, $second_last)->canonical; 
+	if ($second_last){
+		$orig_url = URI->new_abs($orig_url, $second_last)->canonical;
+	}
 		
 	if (length $orig_url < 200){
 		return $orig_url;
-	} elsif (length($orig_url)-length($orig_url->query) < 200){
+	} elsif ($orig_url->query && length($orig_url)-length($orig_url->query) < 200){
 		$orig_url->query(undef);
 		return $orig_url;
 	} else { 
@@ -400,10 +402,8 @@ sub check_image_size {
 	
 	#shout if it's a magic jpeg
 	if ($req->content_type =~ /gif$/i){
-		if ($url =~ /imgur(?!.+gif$)/i){
-			$req->content_length == 669 
-			? $return = '404' 
-			: $return = 'WITCH';
+		if ($url =~ /imgur(?!.+gif$)/i){ #404 gif is a png now
+			$return = 'WITCH';
 		} else {
 			$url !~ /\.gif/i 
 			? $return = 'WITCH'
@@ -419,6 +419,7 @@ sub check_image_size {
 		$return = $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
 	}
 	if ($image_chan && $req->content_length){ #I guess facebook 404s are successes? so, we look for >0 length instead
+		if ($chan eq $image_chan && grep $nick =~ /$_/i, (@nomirrornicks)){ return $return; }
 		$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url).' ('.(sprintf "%.0f", ($req->content_length/1024)).'KB)');
 	}
 	$return ? return $return : return; #sure why not
