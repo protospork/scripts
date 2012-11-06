@@ -1,4 +1,4 @@
-##c8's functions as of 02/Oct/12  
+##c8's functions as of 06/Nov/12  
   
 ###searches  
 `.ddg` - duckduckgo (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
@@ -10,10 +10,11 @@
 `.imdb` - imdb.com  
 `.amzn` - amazon.com  
 `.a(ni)db` - search anidb  
+`.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
 <strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
-`.x(e)`/`.calc`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
+`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
   
 ###misc triggers  
 `.flip` - flip a coin  
