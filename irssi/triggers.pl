@@ -96,9 +96,9 @@ sub event_privmsg {
 		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); }
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/i){		$return = ident($server); }
+		when (/^i(?:mgops)?$/){		shift @terms; $return .= ('http://imgops.com/'.$_.' ') for @terms; }
 		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
-#		when (/^gs$|^ddg$/i){		shift @terms; uri_escape_utf8($_) for @terms; $return = ('http://ddg.gg/?q='.(join '+', @terms)); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg(@terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
@@ -202,6 +202,7 @@ sub lastfm {
 		$lastfms{$nick} = $location;
 		
 		my $chunk = (split /<item>/, $results->content)[1];
+		return 'uh oh' unless $chunk;
 		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
 		
 		$title = encode_entities($title);
@@ -640,6 +641,8 @@ sub weather {
 		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
+		$weather =~ s/Drizzle/[Snoop Dogg joke]/;
+		
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
 		if ($wind !~ / 0$/){
