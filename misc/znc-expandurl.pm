@@ -1,4 +1,5 @@
 # look up full-length URLs for tinyurls
+#note to myself: ZNC modlib is in /usr/lib/znc
 
 use LWP;
 use Modern::Perl;
@@ -6,12 +7,16 @@ use URI; #another dependency :(
 package expandurl;
 use base 'ZNC::Module';
 
+
+
+#doesn't need to be a global. w/e
 my @abouttext =	("This module quietly looks up shortened URLs and replaces them in chat ".
 				"with their full-length targets.", "This will introduce latency, so you ".
 				"may not want it active in every channel - I wrote it specifically for ".
 				"twitter in Bitlbee and that's what the defaults reflect.");
 				
 my $debug = 0; #just for testing
+my @last50;
 
 sub description {
     "Deshortens short URLs"
@@ -28,7 +33,6 @@ sub OnChanMsg {
 	if ($msg =~ m{(http://\S+)}){
 		my $url = $1;
 		
-
 		$self->PutModule("$outmask: $url") if $debug;
 		
 		my $req = $ua->head($url);
@@ -58,8 +62,12 @@ sub OnChanMsg {
 			$self->PutModule("$orig_url is too long: ".(length $orig_url)."ch") if $debug;
 			#-strip all queries (they tend to help so I'd rather leave them if possible)
 			$orig_url->query(undef);
+			$orig_url->query_form(undef); #isn't query() supposed to be a catch-all?
 			#-check length again
-			if (length $orig_url > 140){ return $ZNC::CONTINUE; }
+			if (length $orig_url > 140){ 
+				return $ZNC::CONTINUE; 
+				$self->PutModule("$orig_url is still too long: ".(length $orig_url)."ch") if $debug;
+			}
 
 		}
 		
@@ -69,6 +77,11 @@ sub OnChanMsg {
 		#bitlbee returns the (incomplete and useless) preview url in angle brackets after the t.co one
 		$msg =~ s/$url(?: <[^>]+>)?/$orig_url/; 
 
+		#add this URL to history and drop the oldest entry if necessary
+		push @last50, [$url, $orig_url];
+		shift @last50 if $#last50 > 49;
+		
+		#IRC output
 		$self->PutUser(":$outmask PRIVMSG $chan :$msg");
 		return $ZNC::HALT;
 	} else {
@@ -84,6 +97,9 @@ sub OnModCommand {
 		$debug 
 		  ? $self->PutModule('Debug Enabled')
 		  : $self->PutModule('Debug Disabled');
+	} elsif ($cmd =~ /recent/i){
+		$self->PutModule('Printing the 50 most recent URLs, oldest first.');
+		$self->PutModule($_->[0].' => '.$_->[1]) for @last50;
 	} else {
 		$self->PutModule($_) for @abouttext;
 	}
