@@ -275,11 +275,14 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 		
 	if (length $orig_url < 200){
 		return $orig_url;
-	} elsif ($orig_url->query && length($orig_url)-length($orig_url->query) < 200){
+	} else {
 		$orig_url->query(undef);
-		return $orig_url;
-	} else { 
-		return $orig_url->host;
+		$orig_url->query_form(undef);
+		if (length($orig_url) < 200){
+			return $orig_url;
+		} else { 
+			return $orig_url->host;
+		}
 	}
 }
 
