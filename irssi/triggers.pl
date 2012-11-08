@@ -22,7 +22,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.6.1";
+$VERSION = "2.6.2";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -93,7 +93,7 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|anim[eu])$/i){ $return = readtext(@terms); }
+		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
 		when (/^stats$/i){			$return = status($target); }
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		shift @terms; $return .= ('http://imgops.com/'.$_.' ') for @terms; }
@@ -326,8 +326,9 @@ sub codepoint {
 sub readtext {
 	my $tgt;
 	given ($_[0]){
-		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; } #todo: make one $listloc in config
-		when (/anim[eu]/i){		$tgt = $listloc.'animu.txt'; }		#and keep all the textfiles there
+		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; } 
+		when (/anim[eu]/i){	$tgt = $listloc.'animu.txt'; }		
+		when (/natesilver/i){ $tgt = $listloc.'natesilver.txt'; }
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
