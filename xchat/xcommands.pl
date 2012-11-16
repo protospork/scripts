@@ -4,6 +4,7 @@ use JSON;
 use Xchat qw':all';
 use HTML::TreeBuilder;
 use Text::Unidecode;
+use Win32::Unicode::File; #needed solely for filesize in now_playing
 
 #absolutely none of the commands in this script have error handling and that's terrible
 
@@ -18,14 +19,16 @@ my $json = JSON->new->utf8;
 hook_command('MPC', \&now_playing);
 sub now_playing {
 	my $text = $ua->get('http://localhost:13579/status.html')->decoded_content;
-	$text =~ s/^OnStatus\('|'\)$//g;
-	my @info = split /'?,\s*'?/, $text;
-	my $filesize = sprintf "%.2f", ((stat($info[-1]))[7] / 1048576);
-	if ($info[5] =~ s/^00://){
-		$info[3] =~ s/^00://;
+	$text =~ s/^OnStatus\(|\)$//g;
+	$text = [split /,\s*/, $text];
+	s/^'|'$//g for (@$text);
+	#$text->[-1] = sprintf "%.2f", ((stat($text->[-1]))[7] / 1048576); #unicode breaks stat on win32
+	$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
+	if ($text->[5] =~ s/^00://){
+		$text->[3] =~ s/^00://;
 	}
 	
-	command 'action np: '.$info[0].' || '.$info[1].': '.$info[3].'/'.$info[5].' || Size: '.$filesize.'MB';
+	command 'action np: '.$text->[0].' || '.$text->[1].': '.$text->[3].'/'.$text->[5].' || Size: '.$text->[-1].'MB';
 	return EAT_XCHAT;
 }
 
