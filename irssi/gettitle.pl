@@ -12,7 +12,7 @@ use feature 'switch';
 #try declaring everything in gettitle.pm with 'our' and killing most of this line?
 use vars qw(	
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
-	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks
+	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey 
 	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
 );
@@ -67,6 +67,7 @@ sub pubmsg {
 	my $notitle = 0;
 	if (grep $target eq $_, (@offchans)){ $notitle++; }	#check channel blacklist
 	if ($nick =~ m{(?:Bot|Serv)$|c8h10n4o2}i || $mask =~ /bots\.adelais/i || $target =~ /tokyotosho|lurk/){ $notitle++; }	#quit talking to strange bots
+	if (grep $nick eq $_, (@ignorenicks)){ $notitle++; }
 	
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
@@ -171,9 +172,6 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
 		if ($url =~ m{/a(?:lbums?)?/|gallery|,}){
 			$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url));
-		} else {
-			$url .= '.jpg';
-			$return = "$url ($insult)";
 		}
 	} elsif ($url =~ /imagebin\.ca\/view/){
 		$url =~ s/view/img/i; $url =~ s/html/jpg/i;
