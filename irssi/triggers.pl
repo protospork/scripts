@@ -4,7 +4,8 @@ use warnings;
 use LWP;
 use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
-use HTML::Scrape 'put';
+use HTML::Scrape 'put'; #is this used for anything?
+use HTML::TreeBuilder;
 use HTML::Entities;
 use utf8;
 use vars qw($VERSION %IRSSI);
@@ -22,7 +23,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.6.2";
+$VERSION = "2.6.3";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -35,7 +36,7 @@ my $json = JSON->new->utf8;
 my $ua = LWP::UserAgent->new(
 #	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
 	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.7) Gecko/20100101 Firefox/10.0.7',
-	max_size => 15000,
+	max_size => 50000,
 	timeout => 10,
 	protocols_allowed => ['http', 'https'],
 	'Accept-Encoding' => 'gzip,deflate',
@@ -94,7 +95,7 @@ sub event_privmsg {
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
-		when (/^stats$/i){			$return = status($target); }
+	#	when (/^stats$/i){			$return = stats($target); }
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		shift @terms; $return .= ('http://imgops.com/'.$_.' ') for @terms; }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -109,14 +110,17 @@ sub event_privmsg {
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
+		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)]; }
 		default { return; }
 	}
 	if (! defined $return){
 		return;
 	}
 	elsif (ref $return){
+		my $top = 3;
+		if ($#{$return} < $top - 1){ $top = $#{$return}; }
 		for (@$return[0..3]){
-			$server->command('msg '.$target.' '.$_);
+			$server->command('msg '.$target.' '.$_) if $_;
 		}
 	}
 	else {
@@ -124,6 +128,91 @@ sub event_privmsg {
 	}
 }
 
+sub airtimes {
+	my $trigger = shift;
+	my $query = shift || 0;
+	my $atdebug = 0;
+	
+	print "query = $query" if $atdebug;
+	
+	#load mahou
+	my $req = $ua->get('http://www.mahou.org/Showtime/?o=ET');
+	return $req->code unless $req->is_success;
+	print "mahou ".$req->code if $atdebug;
+	
+	my $tree = HTML::TreeBuilder->new_from_content($req->decoded_content);
+	my $table = $tree->look_down(_tag => 'table', summary => 'Currently Airing')->look_down(_tag => 'table');
+	return "proto can't write perl for shit" unless $table;
+	#parse it, build a list of shows
+	my @rows = $table->look_down(_tag => 'tr');
+	print "$#rows rows" if $atdebug;
+	my @shows;
+	for my $row (@rows){
+		next if $row->look_down(_tag => 'th'); #the header row
+		my @boxes = $row->look_down(_tag => 'td');
+		my $i = 9;
+		while ($i){
+			$i--;
+			eval { 
+				if ($i == 8){
+					if ($boxes[$i]){
+						$boxes[$i] = ${$boxes[$i]->extract_links}[0][0]; #how did I get myself into this
+						$boxes[$i] =~ s{.+?(\d+)$}{http://anidb.net/a$1};
+					} else {
+						$boxes[$i] = 'Error';
+					}
+				} else {
+					if (! $boxes[$i] || $boxes[$i]->is_empty){ $boxes[$i] = 'Error'; }
+					else { $boxes[$i] = $boxes[$i]->as_trimmed_text; }
+				}
+			};
+			if ($@){
+				$tree = $tree->delete;
+				return $@;
+			}
+		}
+		eval {
+			push @shows, {
+					title => ($boxes[1]),
+					season => ($boxes[2]),
+					station => ($boxes[3]),
+					studio => ($boxes[4]),
+					slot => ($boxes[5]),
+					eta => ($boxes[6]),
+					numeps => ($boxes[7]),
+					links => ($boxes[8]),
+			}; 
+			print "show added: ".$boxes[1] if $atdebug;
+		};
+		if ($@){
+			$tree = $tree->delete;
+			return $@;
+		}
+	}
+	#return an array or the top match to the query
+	my @retlines;
+	my @fmt = qw(Title Slot ETA Links);
+	if ($query){
+		for (@shows){
+			if ($_->{'title'} =~ /$query/i){
+				push @retlines, $_;
+				print "found match: ".$_->{'title'} if $atdebug;
+			}
+		}
+	} else {
+		@retlines = @shows;
+	}
+	return "no match" unless @retlines;
+	for my $line (@retlines){
+		my $out;
+		for (@fmt){
+			$out .= "\x0303".$_.":[\x0307 ".$line->{lc $_}." \x0303] ";
+		}
+		$line = $out;
+	}
+	$tree = $tree->delete;
+	return @retlines;
+}
 
 sub ddg {
 	my $trigger = shift @_;
@@ -205,9 +294,12 @@ sub lastfm {
 		return 'uh oh' unless $chunk;
 		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
 		
+		#honestly I have no idea
 		$title = encode_entities($title);
 		$title =~ s/&ndash;/-/g;
 		$title = decode_entities($title);
+		$title =~ s/&amp;/&/g;
+		
 		return 'http://last.fm/user/'.$location.' last played '.$title;
 	}
 }
@@ -314,7 +406,6 @@ sub moviedb {
 	}
 	
 }
-#what does codepoint do and why does it do so?
 sub codepoint {
 	my $char = $_[0];
 	$char =~ s/^(.).*$/$1/;

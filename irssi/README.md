@@ -15,6 +15,7 @@
 `.lastfm [username]` - it remembers too  
 <strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
 `.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
+`.ai(rtime)` - search upcoming anime or just display some
   
 ###misc triggers  
 `.flip` - flip a coin  
