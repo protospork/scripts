@@ -9,13 +9,14 @@ use base 'ZNC::Module';
 
 
 
-#doesn't need to be a global. w/e
+#this doesn't need to be a global. w/e
 my @abouttext =	("This module quietly looks up shortened URLs and replaces them in chat ".
 				"with their full-length targets.", "This will introduce latency, so you ".
-				"may not want it active in every channel - I wrote it specifically for ".
-				"twitter in Bitlbee and that's what the defaults reflect.");
+				"may not want it active everywhere - especially if you're running znc on".
+				" a residential connection.", "When loaded on a network, link unwrapping".
+				" will (currently) be active in every channel.");
 				
-my $debug = 0; #just for testing
+my $debug = 0; #these two do need to be globals
 my @last50;
 
 sub description {
@@ -42,8 +43,9 @@ sub OnChanMsg {
 		my ($orig_url,$second_last);
 		for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
 			if ($_->header('Location') =~ m[nytimes.com/glogin]i){ 
-				#NYT paywall redirects you according to some arcane logic that changes every week.
-				#Upshot: the final hop is worthless and extremely long.
+			# NYT paywall redirects you according to some arcane logic that changes every week.
+			# so the final hop (if you've been paywalled) is worthless and extremely long.
+			# I don't look forward to adding special cases for 35253423 sites
 				last;
 			} else {
 				$second_last = $orig_url;
@@ -74,7 +76,8 @@ sub OnChanMsg {
 		$self->PutModule(' => '.$orig_url) if $debug;
 		$self->PutModule(scalar($req->redirects).' redirects') if $debug;
 		
-		#bitlbee returns the (incomplete and useless) preview url in angle brackets after the t.co one
+	# bitlbee returns the (incomplete and useless) preview url in angle brackets after the t.co one
+	# in any other situation this should just do the replace without touching the rest of the line
 		$msg =~ s/$url(?: <[^>]+>)?/$orig_url/; 
 
 		#add this URL to history and drop the oldest entry if necessary
@@ -108,7 +111,7 @@ sub OnModCommand {
 #todo: 
 #-option to look up just t.co, known hosts, or check all links
 #-input for user to edit known hosts
-#-actually fucking figure out how the web interface builds pages seriously what the hell
+#-I have no idea how znc builds web pages. (maybe http://people.znc.in/~psychon/znc/doc/classCWebSubPage.html is relevant?)
 sub GetWebMenuTitle { 
     "ExpandURL"
 }
