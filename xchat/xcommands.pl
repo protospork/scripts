@@ -4,7 +4,7 @@ use JSON;
 use Xchat qw':all';
 use HTML::TreeBuilder;
 use Text::Unidecode;
-use Win32::Unicode::File; #needed solely for filesize in now_playing
+if ($^O eq 'MSWin32'){ use Win32::Unicode::File; } #needed solely for filesize in now_playing
 
 #absolutely none of the commands in this script have error handling and that's terrible
 
@@ -22,8 +22,11 @@ sub now_playing {
 	$text =~ s/^OnStatus\(|\)$//g;
 	$text = [split /,\s*/, $text];
 	s/^'|'$//g for (@$text);
-	#$text->[-1] = sprintf "%.2f", ((stat($text->[-1]))[7] / 1048576); #unicode breaks stat on win32
-	$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
+	if ($^O eq 'MSWin32'){ #not that MPC runs on linux
+		$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
+	} else {
+		$text->[-1] = sprintf "%.2f", ((stat($text->[-1]))[7] / 1048576); #unicode breaks stat on win32
+	}
 	if ($text->[5] =~ s/^00://){
 		$text->[3] =~ s/^00://;
 	}
