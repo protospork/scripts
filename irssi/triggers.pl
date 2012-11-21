@@ -286,9 +286,8 @@ sub lastfm {
 		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
 		return;
 	} else {
-		my $memstring = (join '::', $nick, $location);
-		unless (grep $memstring eq $_, @lastfmmemory){ push @lastfmmemory, $memstring; }
 		$lastfms{$nick} = $location;
+		@lastfmmemory = map {$_.'::'.$lastfms{$_}} (keys %lastfms);
 		
 		my $chunk = (split /<item>/, $results->content)[1];
 		return 'uh oh' unless $chunk;
@@ -687,16 +686,10 @@ sub ident {
 	}
 	$server->command("msg nickserv identify ".$botpass);
 }
-sub stats {
-	my ($chan) = @_;
-	return if $chan !~ /(anime|moap|cfounders|programming)/i;
-	$chan = $1; $chan =~ s/anime/animu/;
-	$chan eq 'programming' ? return 'http://www.galador.org/irc/'.$chan.'.html' : return 'http://protospork.moap.net/'.$chan.'.html';
-}
 
 #originally based on an xchat script called weatherbot.pl by lyz@princessleia.com. not sure if it still bears any resemblance
 my %savedloc;
-tie my @memory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.cfg' or die $!; #this fucking file is ...interesting. and broken. fix it.
+tie my @memory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.cfg' or die $!; 
 for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
 
 sub weather {	
@@ -721,14 +714,23 @@ sub weather {
 	my $results = $ua->get("http://38.102.136.104/auto/raw/$location");
 	my @badarray = split(/\n/, $results->decoded_content);
 	if ( ! $results->is_success ) {
-		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
+		$server->command(
+			"notice $nick .w [zipcode|city, state|airport code] - if you can't ".
+			"get anything, search http://www.faacodes.com/ for an airport code"
+		);
 		return;
 	} elsif ( $results->content =~ /[<>]|^\s*$/ ) {
-		$server->command ( "notice $nick .w [zipcode|city, state|airport code] - if you can't get anything, search http://www.faacodes.com/ for an airport code" );
+		$server->command(
+			"notice $nick .w [zipcode|city, state|airport code] - if you can't ".
+			"get anything, search http://www.faacodes.com/ for an airport code"
+		);
 		return;
 	} else {
-		push @memory, (join '::', $nick, $location); #todo: don't push if it's already in there
+		# push @memory, (join '::', $nick, $location); #wow, I'm an idiot
 		$savedloc{$nick} = $location;
+		
+		@memory = map {$_.'::'.$savedloc{$_}} (keys %savedloc);
+		
 		my @array = split(/[|]\s*/, $results->decoded_content);
 		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
@@ -739,12 +741,15 @@ sub weather {
 		$ctemp =~ s/ //;
 		if ($wind !~ / 0$/){
 			if ($ftemp < 40 && $windchill !~ /N.A/){
-				return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | Windchill $windchill\xB0F | Wind $wind MPH");
+				return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
+						" - $weather | Windchill $windchill\xB0F | Wind $wind MPH";
 			} else {
-				return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Wind $wind MPH");
+				return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
+						" - $weather | $hum Humidity | Wind $wind MPH";
 			}
 		} else {
-			return ("\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C - $weather | $hum Humidity | Barometer: $bar");
+			return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
+					" - $weather | $hum Humidity | Barometer: $bar";
 		}
 	}
 }
