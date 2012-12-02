@@ -44,6 +44,7 @@ my $ua = LWP::UserAgent->new(
 );
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
+my %lastimg; #keep track of the most recent image linked in each channel, for pronoun use
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
@@ -88,6 +89,9 @@ sub event_privmsg {
 			return; 
 		}
 	} else {
+		if (my @r = ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b/g)){
+			$lastimg{$target} = $r[-1];
+		}
 		return;
 	}
 
@@ -97,15 +101,16 @@ sub event_privmsg {
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
 	#	when (/^stats$/i){			$return = stats($target); }
 		when (/^identify$/i){		$return = ident($server); }
-		when (/^i(?:mgops)?$/){		shift @terms; $return .= ('http://imgops.com/'.$_.' ') for @terms; }
+		when (/^i(?:mgops)?$/){		shift @terms; for (@terms){ $return .= ('http://imgops.com/'.$_.' ') if $_ =~ /\./; } }
 		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
-		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg(@terms); }
+		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
+		when (/^gis/i){				$terms[0] = '!gis'; $return = ddg($target, @terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
-	#crashy	when (/^isup$/){			$return = Irssi::Script::gettitle::get_title('http://isup.me/'.$terms[-1]); $return =~ s/(Up|Down).++$/$1./; } 
+		when (/^isup$/){			$return = isup(@terms); } 
 		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
@@ -128,6 +133,24 @@ sub event_privmsg {
 	}
 }
 
+sub isup {
+	my $url;
+	print $_[-1];
+	if ($_[-1] !~ /\./){
+		return "That doesn't look like a URL.";
+	} else {
+		$url = $_[-1];
+		$url =~ s{^https?://}{};
+	}
+	print $url;
+	
+	my $req = $ua->get('http://isup.me/'.$url);
+	return $req->code.' uhoh' unless $req->is_success;
+	
+	my $status = HTML::TreeBuilder->new_from_content($req->decoded_content)->look_down(_tag => 'div', id => 'container')->as_trimmed_text;
+	$status =~ s{^.+?just you[!.] | Check.+$}{}g;
+	return $status;
+}
 sub airtimes {
 	my $trigger = shift;
 	my $query = shift || 0;
@@ -215,46 +238,82 @@ sub airtimes {
 }
 
 sub ddg {
-	my $trigger = shift @_;
-	my @terms = @_;
+	my $target = shift;
+	my $trigger = shift;
+	my @terms;
+	
+	#use the last url posted in the channel as input. really intended for .gis
+	if (@_){ #it wouldn't let me use the shorthand for some reason
+		@terms = @_;
+	} else {
+		@terms = ($lastimg{$target});
+	}
+	
 	if ($trigger =~ /^!/){ #whoops put trigger back if it's part of the query
 		unshift @terms, $trigger;
 	}
 	my $feelinglucky;
 	
-	if ($trigger =~ /^ddg$/ && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
+	if ($trigger =~ /^ddg$/i && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
 		$terms[0] = '\\'.$terms[0];
 	}
 	if ($terms[0] =~ /^[\\!]/){
 		$feelinglucky++;
 	}
 	uri_escape_utf8($_) for @terms;
-	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch, I hope
+	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch
 	
 	if (! $feelinglucky){
 		return $query;
 	}
 	
-	my $req = $ua->get($query);
-	if (!$req->is_success){
+	my $skipgrab;
+	#time out. google's urls are actually so long they overload the url shortener's API
+	if ($trigger =~ /^!gis/i){
+		$query = 'http://images.google.com/searchbyimage?image_url='.$terms[1];
+		$skipgrab++;
+	}
+	
+	#k go
+	my $orig_url;
+	if (! $skipgrab){
+		my $req = $ua->get($query);
+		if (!$req->is_success){
 		print ('DDG: '.$query.': HTTP '.$req->code) if $debug;
 		return $query;
-	}
-	my $orig_url = $query;
-	
-	if ($req->header('Refresh')){ #duckduckgo uses a soft redirect (to record impressions?) so we need to grab html
+		}
+		$orig_url = $query;
+
+		if ($req->header('Refresh')){ #duckduckgo uses a soft redirect (to record impressions?) so we need to grab html
 		$orig_url = $req->header('Refresh');
 		$orig_url =~ s/^.*?(http\S+).*?$/$1/i;
-	}
-	$req = $ua->get($orig_url); #now grab that url and follow its redirects, because it's probably a landing page
-		
-	for ($req->redirects){
-		unless ($_->header('Location') =~ /duckduckgo/){
-			$orig_url = $_->header('Location');
 		}
+		$req = $ua->get($orig_url); #now grab that url and follow its redirects, because it's probably a landing page
+
+		for ($req->redirects){
+			unless ($_->header('Location') =~ /duckduckgo|search?tbs=sbi:/){ #second is google's ridic base64 search page
+				$orig_url = $_->header('Location');
+			}
+		}
+	} else {
+		$orig_url = $query;
+	}
+	if (length $orig_url > 80){
+		$orig_url = waaai($orig_url);
 	}
 	
 	return $orig_url;
+}
+sub waaai {
+	my $req = $ua->get('http://waa.ai/api.php?url='.$_[0]);
+	if ($req->is_success && length $req->decoded_content < 24){
+		print $_[0] if $debug;
+		print "Shortened to ".$req->decoded_content if $debug;
+		return $req->decoded_content;
+	} else {
+		print "Shorten failed: HTTP ".$req->code." / ".$req->content_length;
+		return $_[0];
+	}
 }
 
 
@@ -291,6 +350,7 @@ sub lastfm {
 		
 		my $chunk = (split /<item>/, $results->content)[1];
 		return 'uh oh' unless $chunk;
+		#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
 		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
 		
 		#honestly I have no idea
