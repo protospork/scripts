@@ -13,7 +13,7 @@ use feature 'switch';
 use vars qw(	
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
-	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey 
+	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey  %shocksites
 	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
 );
 
@@ -117,9 +117,11 @@ sub pubmsg {
 		$url->query_form(undef);
 	}
 	
-	if ($url =~ /pfordee.*jpe?g/i){
-		sendresponse('that\'s probably goatse',$target,$server);
-		return;
+	for (keys %shocksites){
+		if ($url =~ /$_/i){ #using hash keys as regexes, I should probably just shoot myself
+			sendresponse($shocksites{$_},$target,$server);
+			return;
+		}
 	}
 	return if grep $url =~ /\Q$_\E/i, (@ignoresites);	#leave somethingawful alone
 	
