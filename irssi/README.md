@@ -13,6 +13,8 @@
 `.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
+`.gis [url]` - search an image on google images  
+`.isup [url]` - see if a website is really down  
 <strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
 `.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
 `.ai(rtime)` - search upcoming anime or just display some
@@ -21,7 +23,7 @@
 `.flip` - flip a coin  
 `.roll [#d#]` - roll some dice  
 `.rose` - a dice game. figure it out yourself  
-`.choose` - choose one item of a list (separate choices with commas, and separate comma-separated lists of choices with pipes)  
+`.choose` - choose one item of a list (separate multi-word choices with commas, and separate comma-separated lists of choices with pipes)  
 `.8ball` - ask a question  
 `.sin` - choose one of the seven deadly sins  
 `.farnsworth` - get a random quote from professor farnsworth  
@@ -30,5 +32,5 @@
 `.help` - link this page  
   
 ###other junk  
-- link a tweet and it will be read to the channel [gettitle]  
+- link a tweet and it will be read to the channel  
 - link a shortened url (t.co, bit.ly, etc) and get the ultimate url back  
