@@ -50,10 +50,10 @@ my $ua = LWP::UserAgent->new(
 );	
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => "/home/proto/.irssi/scripts/cfg/gettitle.pm");	#you have to manually create ~/.irssi/scripts/cfg
+	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");	#you have to manually create ~/.irssi/scripts/cfg
 	unless ($req->is_success){ print $req->status_line; return; }
 
-	do '/home/proto/.irssi/scripts/cfg/gettitle.pm';
+	do $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm";
 	unless ($maxlength){ print "error loading variables from cfg: $@" }
 
 	print "gettitle: config $ver successfully loaded";

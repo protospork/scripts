@@ -45,11 +45,17 @@ my $ua = LWP::UserAgent->new(
 my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
 my %lastimg; #keep track of the most recent image linked in each channel, for pronoun use
+my $tries;
 
 sub loadconfig {
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
-		unless ($req->is_success){ die $req->status_line; }
+		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
+			print $req->status_line; 
+			$tries++;
+			loadconfig() unless $tries > 2;
+		}
 
+	$tries = 0;
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
 		unless ($cfgver =~ /./){ print "error loading variables from triggers cfg: $@" }
 
