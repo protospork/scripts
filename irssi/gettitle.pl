@@ -1,15 +1,16 @@
 use Irssi;
 use Irssi::Irc;
 use LWP::UserAgent;
-use HTML::Entities;	#?
+use HTML::Entities;
 use URI::Escape;
+use File::Path qw'make_path';
 use JSON;
 use URI;
-use strict;
+use Modern::Perl;
 #use warnings; #there are a lot of ininitialized value warnings I can't be bothered fixing
-use utf8;	#?
-use feature 'switch';
-#try declaring everything in gettitle.pm with 'our' and killing most of this line?
+no warnings qw'uninitialized';
+use utf8;
+
 use vars qw(	
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes 
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
@@ -31,7 +32,7 @@ $VERSION = "0.1.11";
 
 
 my %titlecache; my %lastlink; my %mirrored;
-my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend) = (' ', ' ', ' ', (time-5));
+my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend,$tries) = (' ', ' ', ' ', (time-5),0);
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
 #what are these for, again? <_<
@@ -50,15 +51,25 @@ my $ua = LWP::UserAgent->new(
 );	
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");	#you have to manually create ~/.irssi/scripts/cfg
-	unless ($req->is_success){ print $req->status_line; return; }
+	unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a directory as well?
+		make_path($ENV{HOME}."/.irssi/scripts/cfg/");
+	}
+	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
+		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
+			print $req->status_line; 
+			$tries++;
+			loadconfig() unless $tries > 2;
+		}
 
-	do $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm";
-	unless ($maxlength){ print "error loading variables from cfg: $@" }
+	$tries = 0;
+	do $ENV{HOME}.'/.irssi/scripts/cfg/gettitle.pm';
+		unless ($maxlength){ print "error loading variables from cfg: $@" }
 
 	print "gettitle: config $ver successfully loaded";
 	$lastcfgcheck = time;
+	return $ver;
 }
+loadconfig();
 
 sub pubmsg {
 	my ($server, $data, $nick, $mask, $target) = @_;
@@ -469,6 +480,9 @@ sub sendmirror {
 	$server->command("dcc send $nick $mirrorfile");
 }
 
+#todo:
+#-make this persistent across loads (Tie::YAML is pretty sweet)
+#-maybe find a way to add the original URL as a comment or something
 sub imgur {
 	my ($url,$chan,$msg,$server,$nick) = (@_);
 	
@@ -551,4 +565,3 @@ sub xcc { #xchat-alike nick coloring
 		else { $string = "\x03$clr$string\x0F"; }
 		return $string;
 }
-loadconfig();
