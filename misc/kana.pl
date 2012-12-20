@@ -172,7 +172,7 @@ sub readdict {
 	while (<$file>){
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 		next unless defined $term;
-		if ($term =~ $re || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
+		if ($term =~ $re || $def =~ /[,(](?:obsc?|Buddh|comp|geom|gram|ling|math|physics)[,)]/i){ 
 			next; 
 		} elsif ($adage && $def =~ /\(exp\)/){
 			$entries{$term} = $def
@@ -351,7 +351,7 @@ sub kanafix {
 	my $katakana;
 	if ($string =~ /[\p{Katakana}]/){ $katakana++; } #not sure if there are mixed phrases
 	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
-		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([kstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
+		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([dzjkstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
 	}
 	
 	if ($string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg){ warn 'regex' if $debugmode; } #(mainly) katakana vowel extender
