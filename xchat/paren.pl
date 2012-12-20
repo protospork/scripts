@@ -95,14 +95,15 @@ sub magic_happens {
 		$message =~ s{https://}{http://}g; #sometimes opera won't default itself for https urls
 	}
 	if ($hideDCC){
-		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i; #dirty leechers
+		$message =~ s/^[!.@](list|find|\w+?\d\d?|crc).*$//i if $net =~ /rizon/i; #dirty leechers
 	}
 	if ($intents){
 		$message =~ s{http://(?:www\.)?twitter\.com/([^/?#]+)(?=\s|$)}{http://twitter.com/intent/user?screen_name=$1}g;
 	}
 	if ($linkbucks){
-		$message =~ s{https?://(?:[0-9a-f]+\.)?linkbucks\.com/url/(http://\S+)}{$1}g;
-		$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
+		if ($message =~ s{https?://(?:[0-9a-f]+\.)?linkbucks\.com/url/(http://\S+)}{$1}g){
+			$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
+		}
 	}
 	
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
@@ -131,7 +132,7 @@ sub magic_happens {
 		my @end;
 		for (split /\s+/, $message){ #what if I split on /\b/?
 			if (/\x{02}/){ push @end, $_; next; }
-			if (/http|^www/i){ #MOTHERFUCKING URLS
+			if (/^http|^www|^ed2k/i){ #MOTHERFUCKING URLS
 				s/^([<(]+)((http|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
 				s/(http\S+?)([)>]+)$/$1\003$clr$2\x0F/ig;
 				push @end, $_; 
@@ -139,6 +140,7 @@ sub magic_happens {
 			}
 
 			#todo: avoid applying this regex to anyone in /names. can that be done efficiently?
+			#- it needs to pull names anyway for ln156 so w/e
 			s/(
 				^[<(](?=http)|
 				^[^[:alnum:]#@]+(?=[[:alnum:]])|
