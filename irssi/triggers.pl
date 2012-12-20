@@ -1,17 +1,15 @@
 use Irssi;
-use strict;
-use warnings;
+use Modern::Perl;
 use LWP;
 use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
-use HTML::Scrape 'put'; #is this used for anything?
 use HTML::TreeBuilder;
 use HTML::Entities;
 use utf8;
 use vars qw($VERSION %IRSSI);
 use JSON;
-use feature 'switch'; #for reference, Modern::Perl does enable 'switch'
-use Tie::File;
+use Tie::YAML;
+use File::Path qw'make_path';
 #use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
@@ -19,11 +17,10 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
-#todo: re-add the config rehash trigger
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "2.6.3";
+$VERSION = "2.7.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -34,21 +31,24 @@ $VERSION = "2.6.3";
 
 my $json = JSON->new->utf8;
 my $ua = LWP::UserAgent->new(
-#	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
-	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.7) Gecko/20100101 Firefox/10.0.7',
+	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox 17.0',
+#	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.7) Gecko/20100101 Firefox/10.0.7',
 	max_size => 50000,
 	timeout => 10,
 	protocols_allowed => ['http', 'https'],
 	'Accept-Encoding' => 'gzip,deflate',
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
-my ($lastreq,$lastcfgcheck,$animulastgrab) = (0,time,0);	#sheen is the only one that uses lastreq, roll probably should
+my ($lastcfgcheck,$animulastgrab,$rose) = (0,time,0);
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
 my %lastimg; #keep track of the most recent image linked in each channel, for pronoun use
 my $tries;
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");	#you have to manually create ~/.irssi/scripts/cfg
+	unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a directory as well?
+		make_path($ENV{HOME}."/.irssi/scripts/cfg/");
+	}
+	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");
 		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
 			print $req->status_line; 
 			$tries++;
@@ -65,6 +65,7 @@ sub loadconfig {
 }
 loadconfig();
 
+tie my %rosescores, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/rosescores.po' or die $!; 
 sub event_privmsg {
 	my ($server, $data, $nick, $mask) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
@@ -94,6 +95,13 @@ sub event_privmsg {
 		} else { 
 			return; 
 		}
+	} elsif (defined $rose && $text =~ /^$rose$/){
+		$rosescores{$target}{$nick}++;
+#		@roses = map {$_.'::'.$rosescores{$_}} (keys %rosescores);
+		tied(%rosescores)->save;
+		return_rose_scores($target, $nick, $rose, $server);
+		$rose = undef;
+		return;
 	} else {
 		if (my @r = ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b/g)){
 			$lastimg{$target} = $r[-1];
@@ -117,7 +125,6 @@ sub event_privmsg {
 		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
 		when (/^isup$/){			$return = isup(@terms); } 
-		when (/^anagram$/){			return; }#$return = anagram(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
@@ -154,7 +161,7 @@ sub isup {
 	return $req->code.' uhoh' unless $req->is_success;
 	
 	my $status = HTML::TreeBuilder->new_from_content($req->decoded_content)->look_down(_tag => 'div', id => 'container')->as_trimmed_text;
-	$status =~ s{^.+?just you[!.] | Check.+$}{}g;
+	$status =~ s{^.+?just you[!.] | Check.+$|^Huh? |(?<=interwho\.).+$}{}g;
 	return $status;
 }
 sub airtimes {
@@ -323,11 +330,7 @@ sub waaai {
 }
 
 
-my %lastfms;
-tie my @lastfmmemory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.cfg' 
-	or die $!;
-for (@lastfmmemory){ my @why = split /::/, $_; $lastfms{$why[0]} = $why[1]; } #why not just tie a hash?
-
+tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
 sub lastfm {	
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
@@ -352,7 +355,7 @@ sub lastfm {
 		return;
 	} else {
 		$lastfms{$nick} = $location;
-		@lastfmmemory = map {$_.'::'.$lastfms{$_}} (keys %lastfms);
+		tied(%lastfms)->save;
 		
 		my $chunk = (split /<item>/, $results->content)[1];
 		return 'uh oh' unless $chunk;
@@ -503,38 +506,6 @@ sub readtext {
 	return $line;
 }
 
-sub anagram {
-	my (@terms,@search);
-	shift;
-	for (@_){
-		/^\+/ ? push @search, $_ : push @terms, $_;
-	}
-	
-	my $url = URI->new('http://wordsmith.org/anagram/anagram.cgi?t=900&a=n&anagram='.(join '+', @terms))->canonical;
-	print 'triggers: '.$url;
-	my $req = $ua->get($url);
-	return unless $req->is_success;
-	
-	$req->decoded_content =~ m!Displaying first \d+00:\s+</b><br>(.+?)<br>\s+<bottomlinks>!s;
-	my @results = (split /\n?<br>\n?/, $1);
-	print $#results;
-	
-	my @spam;
-	if ($#search){
-		my $count = 1;
-		for (@results){
-			last if $count > 10;
-			if ($_ =~ /$search[0]/i){ #yeah, so I'm ignoring any other searches
-				$count++;
-				push @spam, $_;
-			}
-		}
-	} else {
-		@spam = @results[0..10];
-	}
-	$#spam ? return join ', ', @spam : return;
-}
-
 sub choose { 
 	my $call = shift;
 	my (@choices, $pipes);
@@ -584,7 +555,6 @@ sub choose {
 }
 
 sub countdown {
-
 	if (! @_ || scalar @_ == 0){ #help message
 		return (join ', ', keys %timers);
 	}
@@ -695,7 +665,15 @@ my @prev3 = ('heads','tails','heads');
 sub dice {
 	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
-		return join ' ', roll(5,6);
+		my @throws = roll(5,6);
+		for (@throws){
+			$_ == 3
+				? $rose += 2
+				: $_ == 5
+					? $rose += 4
+					: $rose += 0;
+		}
+		return join ' ', @throws;
 	} elsif ($flavor eq 'flip'){
 		my $toss = int(rand(30)+1);	#&roll seems to be unreliable for tiny numbers. not that this isn't.
 		if (($toss % 2) == 1){
@@ -752,12 +730,22 @@ sub ident {
 	}
 	$server->command("msg nickserv identify ".$botpass);
 }
+sub return_rose_scores {
+	$_[-1]->command("msg $_[0] $_[1] is correct: $_[2]");
+	my @out;
+	
+	for (keys %{$rosescores{$_[0]}}){
+		push @out, ((sprintf "%02d", $rosescores{$_[0]}{$_}).' - '.$_);
+	}
+	@out = reverse sort @out;
+	my $t;
+	$#out > 5 ? $t = 5 : $t = $#out;
+	$_[-1]->command("msg $_[0] ".(join ' ', @out[0..$t]));
+	return;
+}
 
 #originally based on an xchat script called weatherbot.pl by lyz@princessleia.com. not sure if it still bears any resemblance
-my %savedloc;
-tie my @memory, 'Tie::File', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.cfg' or die $!; 
-for (@memory){ my @why = split /::/, $_; $savedloc{$why[0]} = $why[1]; } #why not just tie a hash?
-
+tie my %savedloc, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.po' or die $!; 
 sub weather {	
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
@@ -792,10 +780,8 @@ sub weather {
 		);
 		return;
 	} else {
-		# push @memory, (join '::', $nick, $location); #wow, I'm an idiot
 		$savedloc{$nick} = $location;
-		
-		@memory = map {$_.'::'.$savedloc{$_}} (keys %savedloc);
+		tied(%savedloc)->save;
 		
 		my @array = split(/[|]\s*/, $results->decoded_content);
 		my ($timestamp,$ctemp) = ($array[0],'');
