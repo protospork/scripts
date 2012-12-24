@@ -2,8 +2,8 @@
 #note to myself: ZNC modlib is in /usr/lib/znc
 
 use LWP;
-use Modern::Perl;
-use URI; #another dependency :(
+use Modern::Perl; #replace this with `use strict; use warnings;` if you don't have cpan access
+use URI;
 package expandurl;
 use base 'ZNC::Module';
 
@@ -42,7 +42,7 @@ sub OnChanMsg {
 		}
 		my ($orig_url,$second_last);
 		for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
-			if ($_->header('Location') =~ m[nytimes.com/glogin]i){ 
+			if ($_->header('Location') =~ m[nytimes.com/glogin|unsupportedbrowser]i){ 
 			# NYT paywall redirects you according to some arcane logic that changes every week.
 			# so the final hop (if you've been paywalled) is worthless and extremely long.
 			# I don't look forward to adding special cases for 35253423 sites
@@ -67,11 +67,14 @@ sub OnChanMsg {
 			$orig_url->query_form(undef); #isn't query() supposed to be a catch-all?
 			#-check length again
 			if (length $orig_url > 140){ 
-				return $ZNC::CONTINUE; 
 				$self->PutModule("$orig_url is still too long: ".(length $orig_url)."ch") if $debug;
+				return $ZNC::CONTINUE; 
 			}
 
 		}
+		
+		## trailing quote fix
+		$orig_url =~ s/("|\x{2019}|\x{201d})$/ $1/;
 		
 		$self->PutModule(' => '.$orig_url) if $debug;
 		$self->PutModule(scalar($req->redirects).' redirects') if $debug;
