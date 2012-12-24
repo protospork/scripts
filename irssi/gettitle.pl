@@ -4,6 +4,7 @@ use LWP::UserAgent;
 use HTML::Entities;
 use URI::Escape;
 use File::Path qw'make_path';
+use Tie::YAML;
 use JSON;
 use URI;
 use Modern::Perl;
@@ -20,9 +21,7 @@ use vars qw(
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-#<@cephalopods> looks like it tried to parse an HTTP 500 as JSON and was so surprised when it didn't work, it died
-
-$VERSION = "0.1.11";
+$VERSION = "0.2.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -30,12 +29,18 @@ $VERSION = "0.1.11";
     description => 'grabs page titles'
 );
 
+#build the directory for the config/memory files if necessary
+unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a directory as well?
+	make_path($ENV{HOME}."/.irssi/scripts/cfg/");
+}
 
-my %titlecache; my %lastlink; my %mirrored;
+
+my %titlecache; my %lastlink; 
+tie my %mirrored, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/mirrored_imgs.po' or die $!; 
+
 my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend,$tries) = (' ', ' ', ' ', (time-5),0);
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
-#what are these for, again? <_<
 Irssi::signal_add_last('message public', 'pubmsg');
 Irssi::signal_add_last('message irc action', 'pubmsg');
 Irssi::signal_add_last('message private', 'pubmsg');
@@ -51,9 +56,6 @@ my $ua = LWP::UserAgent->new(
 );	
 
 sub loadconfig {
-	unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a directory as well?
-		make_path($ENV{HOME}."/.irssi/scripts/cfg/");
-	}
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
 		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
 			print $req->status_line; 
@@ -83,7 +85,7 @@ sub pubmsg {
 	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
 	my $url = $1;
 
-	print $target.': '.$url if $debugmode == 1;
+	print $target.': '.$url if $debugmode;
 	
 #load the link as a URI entity and just request the key you need, if possible. 
 #	canonizing it should simplify the regexes either way
@@ -95,39 +97,14 @@ sub pubmsg {
 		loadconfig() || return;
 		$server->command("msg $controlchan $ver complete.");
 		return;
-	} elsif ($url eq ':c8h10n4o2.mirror.log' && $target =~ $controlchan){	#send log of mirrored images
-		$server->command("msg $controlchan preparing log.");
-		sendmirror($nick,$server) || return;
-		$server->command("msg $controlchan done.");
 	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
-		$url = unwrap_shortener($url); #TODO: find a better way than maintaining a list of shorteners
+		$url = unwrap_shortener($url); #TODO: stop maintaining a list of shorteners
 		return if $url eq '=\\';
 		if (! grep lc $target eq lc $_, @dont_unshorten){
 			$server->command("msg $target $url");
 		}
 	}
-	
-	#ANYTHING THAT CHANGES THE URL BEFORE PARSING IT (APIs)
-	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
-		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
-		if (grep $target eq $_, (@offtwitter)){ return; }
-		print $url if $debugmode == 1;
-	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
-		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
-	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
-		my $sec = $url->path;
-		$sec =~ s!^/z!!; #/z/hash pages seem to crash the script
-		$url->path($sec);
-		undef $sec;
-	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #can is necessary b/c that url regex on line 60 sucks
-		my %que = $url->query_form;
-#		return unless $que{'Item'};
-		return unless $url =~ /item=\S+/i;
-		$url->host('www.ows.newegg.com');
-		$url->path('/Products.egg/'.$que{'Item'}.'/');
-		$url->query_form(undef);
-	}
-	
+
 	for (keys %shocksites){
 		if ($url =~ /$_/i){ #using hash keys as regexes, I should probably just shoot myself
 			sendresponse($shocksites{$_},$target,$server);
@@ -136,7 +113,7 @@ sub pubmsg {
 	}
 	return if grep $url =~ /\Q$_\E/i, (@ignoresites);	#leave somethingawful alone
 	
-	if($url !~ /^http/ && $url !~ m|/|) {	# try to avoid tracking site names simply used in conversation #is this still working after the canonization?
+	if($url !~ /^http/ && $url !~ m|/|) {	# try to avoid tracking site names simply used in conversation 
 		return;
 	} elsif ($url !~ /^http/){
 		$url = 'http://' . $url;
@@ -154,7 +131,7 @@ sub pubmsg {
 	}
 	
 	my $title = '0';
-	$title = shenaniganry($url,$nick,$target,$data,$server);
+	($title,$url) = shenaniganry($url,$nick,$target,$data,$server);
 	if (! $title || ($title && $title eq '0')){ 
 		$title = get_title($url);
 	} else { 
@@ -175,35 +152,63 @@ sub pubmsg {
 	return if grep $title =~ $_, (@defaulttitles);	
 	
 	$title = moreshenanigans($title,$nick,$target,$url);
-	if (defined $title && $title ne '1' && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am a terrible coder
+	if (defined $title && $title ne '1' && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am terrible
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	my ($url,$nick,$chan,$data,$server) = @_; my $return = 0;
 	my $insult = $meanthings[(int rand scalar @meanthings)-1];
 	
+	# image hosts that can be rewritten as bare links without parsing html
 	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
 		if ($url =~ m{/a(?:lbums?)?/|gallery|,}){
 			$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url));
 		}
 	} elsif ($url =~ /imagebin\.ca\/view/){
-		$url =~ s/view/img/i; $url =~ s/html/jpg/i;
+		$url =~ s/view/img/i; 
+		$url =~ s/html/jpg/i;
 		$return = $url;
 	}
 	
+	# bare image links, possibly produced by that last block
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
-		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){ $return = imgur($url,$chan,$data,$server,$nick); return $return; }
+		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){ 
+			$return = imgur($url,$chan,$data,$server,$nick); 
+			return ($return,$url); 
+		}
 		my $this = check_image_size($url,$nick,$chan,$server);
-		if ($this && $this ne '0'){ return $this; }
+		if ($this && $this ne '0'){ 
+			return ($this,$url); 
+		}
 	}		
 
+	# API transforms
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
+		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
+		if (grep $chan eq $_, (@offtwitter)){ return; }
+		print $url if $debugmode;
+	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
+		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
+	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){
+		my %que = $url->query_form;
+		return unless $url =~ /item=\S+/i;
+		$url->host('www.ows.newegg.com');
+		$url->path('/Products.egg/'.$que{'Item'}.'/');
+		$url->query_form(undef);
+	}
+	
+	# miscellany
 	if ($url =~ m{(?:bash\.org|qdb\.us)/\??(\d+)}i){ if (($1 % 11) > 8){ $return = "that's not funny :|" }
-	} elsif ($url =~ s{youtube\.com/watch#!}{youtube.com/watch?}i || $url =~ s{m\.youtube\.com/\S+v=([^?&=]{11})}{youtu.be/$1}i){ $return = $url." ($insult)";
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
 	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url; 
-	}	
+	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
+		my $sec = $url->path;
+		$sec =~ s!^/z!!; #/z/hash pages seem to crash the script
+		$url->path($sec);
+		undef $sec;
+	}
 	
-	return $return;
+	return ($return,$url);
 }
 
 #edit titles in ways I can't do with the config file
@@ -211,7 +216,7 @@ sub moreshenanigans {
 	my ($title,$ass,$target,$url) = @_;
 	
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
-	$title =~ s/\bwww\.//;
+	$title =~ s/\bwww\.//i;
 	
 	for my $rx (@cutthesephrases){
 		$title =~ s/$rx\s*//i;
@@ -248,14 +253,6 @@ sub moreshenanigans {
 }
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
-	#valid, but why rely on another service / JSON
-	# my $head = $ua->get('http://expandurl.appspot.com/expand?url='.uri_escape($url));
-	# if (! $head->is_success){ 
-		# print 'Error '.$head->status_line if $debugmode; 
-		# return '=\\';
-	# }
-# 
-	# my $return = URI->new(JSON->new->utf8->decode($head->content)->{'urls'}->[-1]) || '';
 	
 	my $req = $ua->head($url);
 	if (!$req->is_success){
@@ -321,7 +318,6 @@ sub get_title {
 				return $title;
 			}
 		}
-#TODO: BEFORE LETTING JSON.PM TOUCH ANYTHING, VERIFY THAT IT IS application/json
 		when (/api\.twitter\.com/){ return twitter($page); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
@@ -351,7 +347,7 @@ sub twitter {
 	my $page = shift;
 	my $junk;
 	eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #never done this before
-	if ($@){ return $page->status_line.' (twitter\'s api is broken again)'; } 
+	if ($@){ return $page->status_line.' (twitter\'s api is broken again)'.' '.$page->content_type; } 
 
 	my $text = $junk->{'text'};	#expand t.co links.
 	for (@{$junk->{'entities'}{'urls'}}){
@@ -370,7 +366,7 @@ sub youtube {
 	my $page = shift;
 	my $junk;
 	eval { $junk = JSON->new->utf8->decode($page->decoded_content); };
-	if ($@){ return 'YouTube - uh-oh ('.$page->status_line.')'; }
+	if ($@){ return 'YouTube - uh-oh ('.$page->status_line.')'.' '.$page->content_type; }
 	
 	my $title;
 	if ($junk->{'data'}{'title'}){
@@ -391,7 +387,7 @@ sub newegg {
 	my $page = shift;
 	my $obj;
 	eval { $obj = JSON->new->utf8->decode($page->decoded_content); };
-	if ($@){ return 'newegg: '.$page->status_line; }
+	if ($@){ return 'newegg: '.$page->status_line.' '.$page->content_type; }
 	
 	my $rating = $obj->{"ReviewSummary"}{"Rating"} || 'no rating';
 	
@@ -455,33 +451,7 @@ sub sendresponse {
 	if (time - $lastcfgcheck > 86400){ loadconfig(); }
 }
 
-sub sendmirror {
-	my ($nick,$server) = @_;
-	
-	#build the log from %mirrored
-	my $text = "\n"; my $count = 1;	
-	for (keys %mirrored){
-		my %e;	#what why did I do this
-		($e{'nick'},$e{'chan'},$e{'time'},$e{'size'},$e{'delhash'},$e{'count'},$e{'link'}) = @{$mirrored{$_}};
-		my $layout =	$e{'time'}.' |1| '.$e{'link'}.' || '.$_.' || http://api.imgur.com/2/delete/'.$e{'delhash'}."\n".
-						
-						$e{'time'}.' |2| '.(sprintf "%15s", $e{'nick'}).'/'.(sprintf "%-12s", $e{'chan'}).' || '.
-						(sprintf "%.0f KB", ($e{'size'}/1024)).' || Posted '.$e{'count'}.'x || '.(sprintf "%03g", $count).' total images.';
-		$text .= $layout."\n";
-		$count++;
-	}
-	
-	#save it to disk
-#	unlink $mirrorfile || $server->command("msg $controlchan can't delete old mirrorfile: $!");
-	open my $thing, '>>', $mirrorfile || $server->command("msg $controlchan unable to open logfile for write: $!");
-	print $thing $text; close $thing;
-	
-	#now try to send it
-	$server->command("dcc send $nick $mirrorfile");
-}
-
 #todo:
-#-make this persistent across loads (Tie::YAML is pretty sweet)
 #-maybe find a way to add the original URL as a comment or something
 sub imgur {
 	my ($url,$chan,$msg,$server,$nick) = (@_);
@@ -529,7 +499,7 @@ sub imgur {
 		print "c8_imgur_key not set";
 		return;
 	}
-	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => ($url || $urlqueries)]) || print "I can't work out why it would die here";
+	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => ($url || $urlqueries), 'caption' => ($url || $urlqueries)]) || print "I can't work out why it would die here";
 	#okay what broke
 	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
 	#nothing broke? weird.
@@ -538,6 +508,7 @@ sub imgur {
 	#push all this junk into %mirrored
 	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
 	$mirrored{$urlqueries} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
+	tied(%mirrored)->save;
 	print	$mirrored{$url}->[0].', '.$mirrored{$url}->[1].', '.$mirrored{$url}->[2].', '.$mirrored{$url}->[3].', '.
 			$mirrored{$url}->[4].', '.$mirrored{$url}->[5].', '.$mirrored{$url}->[6] || print 'empty mirror return values';
 	
