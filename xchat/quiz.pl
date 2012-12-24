@@ -26,9 +26,7 @@ hook_print('Channel Message', \&inevitable_failure);
 hook_print('Your Message', \&inevitable_failure);
 
 prnt "quiz loaded";
-# load_dict("X:/My Dropbox/Public/GIT/scripts/misc/edict_sub");
-#my %entries = load_dict("X:/My Dropbox/Public/GIT/scripts/misc/kana_library.po");
-my $entries = LoadFile("X:/My Dropbox/Public/GIT/scripts/misc/kana_library.po") || prnt 'fail';
+my $entries = LoadFile("X:/My Dropbox/Public/GIT/scripts/misc/kana_library.po") || prnt 'library load fail: '.$!;
 
 my $mode = 'b';
 #my %entries; #terms & answers from edict
@@ -36,8 +34,6 @@ my $mode = 'b';
 my @library = keys %$entries;
 map { $_ = [$_, kanafix($_), $entries->{$_}] } @library;
 prnt (($#library + 1).' words in dictionary.');
-# my @library = ("\x{3042}", "\x{3044}", "\x{3046}", "\x{3048}", "\x{304a}");
-# map { $_ = [$_, unidecode $_] } @library;
 
 #talk to yourself, or others?
 my $command = "say";
@@ -108,7 +104,6 @@ sub inevitable_failure {
 		else { $mode = 'b'; }
 		$num += 0; #to force it to stop being a string
 		if ($num > 99){ $num = 99; } #don't be a dick.
-#		command "timer 1 $command New round of $num starting."; #superfluous
 		new_round($deets, $num, $mode);
 	}
 	
@@ -174,29 +169,6 @@ sub spam_help {
 	command "timer 1 $command $helpmsg";
 }
 sub load_dict {
-	#loading full 12mb edict file makes windows think the client died
-#	open my $file, '<:encoding(euc-jp)', $_[0] || prnt "Edict not found.";
-
-	# my $re = qr/[^\p{Katakana}\p{Hiragana}\x{30FC}]/; #to remove kanji and whatever
-
-
-	# my $justonce = 0;
-	#build the dictionary
-	# while (<$file>){
-		# my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
-		# next unless defined $term;
-		# if ($term =~ $re || $def =~ /[,(](?:obsc?|Buddh|comp|geom|gram|ling|math|physics|exp)[,)]/i){ 
-			# next; 
-		# } else { 
-			# $entries{$term} = $def; 
-		# }
-		# if ($justonce){
-			# $justonce--;
-			# prnt "$term = $entries{$term}";
-		# }
-	# }
-	
-	
 	#there's really no point to this function anymore
 	my $entries = LoadFile($_[0]) || prnt 'fail';
 	prnt ((scalar keys %$entries).' terms in dictionary.');
