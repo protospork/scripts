@@ -115,7 +115,7 @@ sub event_privmsg {
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
 	#	when (/^stats$/i){			$return = stats($target); }
 		when (/^identify$/i){		$return = ident($server); }
-		when (/^i(?:mgops)?$/){		shift @terms; for (@terms){ $return .= ('http://imgops.com/'.$_.' ') if $_ =~ /\./; } }
+		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
@@ -144,6 +144,19 @@ sub event_privmsg {
 	else {
 		$server->command('msg '.$target.' '.$return);
 	}
+}
+
+sub imgops {
+	my $query = 'http://imgops.com/';
+	if ($_[2]){
+		$query .= $_[2];
+	} else {
+		$query .= $lastimg{$_[0]};
+	}
+	if (length $query > 80){
+		$query = waaai($query);
+	}
+	return $query;
 }
 
 sub isup {
@@ -665,6 +678,7 @@ my @prev3 = ('heads','tails','heads');
 sub dice {
 	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
+		$rose = 0;
 		my @throws = roll(5,6);
 		for (@throws){
 			$_ == 3
