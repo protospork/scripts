@@ -13,12 +13,14 @@ use File::Path qw'make_path';
 #use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
-				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	##perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
+
+
 
 $VERSION = "2.7.0";
 %IRSSI = (
@@ -50,7 +52,7 @@ sub loadconfig {
 	}
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");
 		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
-			print $req->status_line; 
+			print $req->status_line;
 			$tries++;
 			loadconfig() unless $tries > 2;
 		}
@@ -65,15 +67,15 @@ sub loadconfig {
 }
 loadconfig();
 
-tie my %rosescores, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/rosescores.po' or die $!; 
+tie my %rosescores, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/rosescores.po' or die $!;
 sub event_privmsg {
 	my ($server, $data, $nick, $mask) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
 	my $return;
-	
+
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
-	
+
 	my @terms;
 	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
 		@terms = split /\s+/, $1;
@@ -84,20 +86,19 @@ sub event_privmsg {
 			if ($choices =~ s/\s+or\s+/, /ig){ #shortcut to .choose
 				$server->command('msg '.$target.' '.(choose('choose', (split /\s+/, $choices))));
 			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/i){ #stupid 8ball
-				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data'))); 
+				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data')));
 			} else { #straightup 8ball
-				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data')));
 			}
 			return;
 		} elsif ($text =~ /^\s*\w+.+\s+$botnick\?\s*$/i){ #this needs to be re-integrated with the last regex sometime
-			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data'))); 
+			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data')));
 			return;
-		} else { 
-			return; 
+		} else {
+			return;
 		}
 	} elsif (defined $rose && $text =~ /^$rose$/){
 		$rosescores{$target}{$nick}++;
-#		@roses = map {$_.'::'.$rosescores{$_}} (keys %rosescores);
 		tied(%rosescores)->save;
 		return_rose_scores($target, $nick, $rose, $server);
 		$rose = undef;
@@ -111,9 +112,8 @@ sub event_privmsg {
 
 	given ($terms[0]){
 		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
-		when (/^sins?$|^choose$|^8ball$/i){	$return = choose(@terms); }
+		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
-	#	when (/^stats$/i){			$return = stats($target); }
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -124,7 +124,7 @@ sub event_privmsg {
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
-		when (/^isup$/){			$return = isup(@terms); } 
+		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
@@ -169,10 +169,10 @@ sub isup {
 		$url =~ s{^https?://}{};
 	}
 	print $url;
-	
+
 	my $req = $ua->get('http://isup.me/'.$url);
 	return $req->code.' uhoh' unless $req->is_success;
-	
+
 	my $status = HTML::TreeBuilder->new_from_content($req->decoded_content)->look_down(_tag => 'div', id => 'container')->as_trimmed_text;
 	$status =~ s{^.+?just you[!.] | Check.+$|^Huh? |(?<=interwho\.).+$}{}g;
 	return $status;
@@ -181,14 +181,14 @@ sub airtimes {
 	my $trigger = shift;
 	my $query = shift || 0;
 	my $atdebug = 0;
-	
+
 	print "query = $query" if $atdebug;
-	
+
 	#load mahou
 	my $req = $ua->get('http://www.mahou.org/Showtime/?o=ET');
 	return $req->code unless $req->is_success;
 	print "mahou ".$req->code if $atdebug;
-	
+
 	my $tree = HTML::TreeBuilder->new_from_content($req->decoded_content);
 	my $table = $tree->look_down(_tag => 'table', summary => 'Currently Airing')->look_down(_tag => 'table');
 	return "proto can't write perl for shit" unless $table;
@@ -202,7 +202,7 @@ sub airtimes {
 		my $i = 9;
 		while ($i){
 			$i--;
-			eval { 
+			eval {
 				if ($i == 8){
 					if ($boxes[$i]){
 						$boxes[$i] = ${$boxes[$i]->extract_links}[0][0]; #how did I get myself into this
@@ -230,7 +230,7 @@ sub airtimes {
 					eta => ($boxes[6]),
 					numeps => ($boxes[7]),
 					links => ($boxes[8]),
-			}; 
+			};
 			print "show added: ".$boxes[1] if $atdebug;
 		};
 		if ($@){
@@ -267,19 +267,19 @@ sub ddg {
 	my $target = shift;
 	my $trigger = shift;
 	my @terms;
-	
+
 	#use the last url posted in the channel as input. really intended for .gis
 	if (@_){ #it wouldn't let me use the shorthand for some reason
 		@terms = @_;
 	} else {
 		@terms = ($lastimg{$target});
 	}
-	
+
 	if ($trigger =~ /^!/){ #whoops put trigger back if it's part of the query
 		unshift @terms, $trigger;
 	}
 	my $feelinglucky;
-	
+
 	if ($trigger =~ /^ddg$/i && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
 		$terms[0] = '\\'.$terms[0];
 	}
@@ -288,18 +288,18 @@ sub ddg {
 	}
 	uri_escape_utf8($_) for @terms;
 	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch
-	
+
 	if (! $feelinglucky){
 		return $query;
 	}
-	
+
 	my $skipgrab;
 	#time out. google's urls are actually so long they overload the url shortener's API
 	if ($trigger =~ /^!gis/i){
 		$query = 'http://images.google.com/searchbyimage?image_url='.$terms[1];
 		$skipgrab++;
 	}
-	
+
 	#k go
 	my $orig_url;
 	if (! $skipgrab){
@@ -327,7 +327,7 @@ sub ddg {
 	if (length $orig_url > 80){
 		$orig_url = waaai($orig_url);
 	}
-	
+
 	return $orig_url;
 }
 sub waaai {
@@ -344,22 +344,22 @@ sub waaai {
 
 
 tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
-sub lastfm {	
+sub lastfm {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
 	shift; #dump the trigger
 	$text = shift;
 	my $location;
-	if (! $text || $text eq ''){ 
+	if (! $text || $text eq ''){
 		if (exists $lastfms{$nick}){
 			$location = $lastfms{$nick}
 		} else {
 			$location = $nick;
 			$lastfms{$nick} = $nick;
-			# return; 
-		} 
-	} else { 
-		$location = $text; 
+			# return;
+		}
+	} else {
+		$location = $text;
 	}
 	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$location.'/recenttracks.rss');
 
@@ -369,18 +369,18 @@ sub lastfm {
 	} else {
 		$lastfms{$nick} = $location;
 		tied(%lastfms)->save;
-		
+
 		my $chunk = (split /<item>/, $results->content)[1];
 		return 'uh oh' unless $chunk;
 		#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
 		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
-		
+
 		#honestly I have no idea
 		$title = encode_entities($title);
 		$title =~ s/&ndash;/-/g;
 		$title = decode_entities($title);
 		$title =~ s/&amp;/&/g;
-		
+
 		return 'http://last.fm/user/'.$location.' last played '.$title;
 	}
 }
@@ -396,7 +396,7 @@ sub moviedb {
 		when (/:full/){ $full++; }
 	}
 	if ($query =~ /^\d+$/){ $id = $query; $full++; }
-	
+
 	if ($tmdb_key eq 'replaceme'){
 		print "c8_tmdb_key not set.";
 		return;
@@ -423,7 +423,7 @@ sub moviedb {
 			my $det = $tmdb->movie($id);
 			$det = $det->info();
 			# print keys %$det if $debug;
-			
+
 			my $out = '<'.$det->{name}.'>';
 			if ($det->{released}){
 				$out .= ' Released:[ '.$det->{released}.' ]';
@@ -433,14 +433,14 @@ sub moviedb {
 			}
 			if ($det->{genres}){
 				$out .= ' Genre:[ ';
-				
+
 				my $i = 0;
 				while ($i < 5 && $i <= $#{$det->{genres}}){
 					$out .= ', ' unless $i == 0;
 					$out .= $det->{genres}[$i]{name};
 					$i++;
 				}
-				
+
 				$out .= ' ]';
 			}
 			if ($det->{trailer}){
@@ -461,7 +461,7 @@ sub moviedb {
 		print $query.': '.$rep[0]->{id} if $debug;
 		$them = $tmdb->person($them);
 		$them = $them->info();
-		
+
 		my $out = '<'.$them->{name}.'>';
 		if ($them->{known_movies}){
 			$out .= ' Total Movies:[ '.$them->{known_movies}.' ]';
@@ -485,12 +485,12 @@ sub moviedb {
 		$server->command('msg '.$target.' '.$out);
 		return;
 	}
-	
+
 }
 sub codepoint {
 	my $char = $_[0];
 	$char =~ s/^(.).*$/$1/;
-	
+
 	my $out = sprintf "HEX %x / DEC ", ord $char;
 	$out .= ord $char;
 }
@@ -498,28 +498,28 @@ sub codepoint {
 sub readtext {
 	my $tgt;
 	given ($_[0]){
-		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; } 
-		when (/anim[eu]/i){	$tgt = $listloc.'animu.txt'; }		
+		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; }
+		when (/anim[eu]/i){	$tgt = $listloc.'animu.txt'; }
 		when (/natesilver/i){ $tgt = $listloc.'natesilver.txt'; }
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
-	return 'error: '.$req->status_line 
+	return 'error: '.$req->status_line
 		unless $req->is_success;
-	
+
 	my @lines = split /[\r\n]+/, $req->content;
-	return 'error: protospork is retarded' 
+	return 'error: protospork is retarded'
 		if scalar @lines == 1;
 	my $line = $lines[(int rand ($#lines + 1) - 1)];
 	($line = uc $line) if ($_[0] eq uc $_[0]);
-	
+
 	#turns out URLs don't like to be uppercased
 	$line =~ s/(HTTP\S+)/lc $1/eg;
-	
+
 	return $line;
 }
 
-sub choose { 
+sub choose {
 	my $call = shift;
 	my (@choices, $pipes);
 	if ($call =~ /sins?/){
@@ -549,19 +549,19 @@ sub choose {
 	for my $choice (@choices2){
 		push @choices, $choice unless grep $choice =~ /$_/i, @donotwant;
 	}
-	
-	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1] 
+
+	return 'gee I don\'t know, '.$meanthings[(int rand scalar @meanthings)-1]
 		if scalar @choices == 1;
-	
+
 	my %chcs; #choose 1, 1, 1, 1, 1
 	for (@choices){ $chcs{$_}++; }
 	if (scalar keys %chcs == 1){
 		return ':| '.$meanthings[(int rand scalar @meanthings)-1];
 	}
-	
+
 	#hehe
 	# return 'Nah' if int rand 100 <= 4;
-	
+
 	my $return = $choices[(int rand ($#choices + 1))-1];
 	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
 	else { return $return; }
@@ -598,24 +598,24 @@ sub conversion { #this doens't really work except for money
 	my $out;
 	print join ', ', ($trig,$in) if $debug;
 	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
-	
+
 	if ($in =~ /BTC$/ || $out eq 'BTC'){
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
 		return $prices->status_line unless $prices->is_success;
-		
+
 		my $junk = $json->decode($prices->decoded_content) || return 'uhoh';
 		my $num; ($num,$in) = ($in =~ /(\d+)\s*(\D+)/);
 		if (uc $in eq 'BTC'){
 			my $multi = ($junk->{$out}->{'24h'} || $junk->{$out}->{'7d'} || $junk->{$out}->{'30d'})
 			|| return 'something seems to have exploded';
-			
+
 			my $product = $num * $multi;
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':(';
 		} else {
 			my $divide = ($junk->{$in}->{'24h'} || $junk->{$in}->{'7d'} || $junk->{$in}->{'30d'})
 			|| return 'something is on fire';
-			
+
 			my $product = $num / $divide;
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':<';
@@ -630,8 +630,8 @@ sub conversion { #this doens't really work except for money
 				my $ideal = (sprintf "%d", (($base)*400));
 				my $real = (sprintf "%d", ((($base)*400)-((($base)*400)%400)+400));
 				my $realcost = (sprintf "%.02f", (($real/400)*4.99));
-				
-				($real-400) == $ideal 
+
+				($real-400) == $ideal
 					? return $num.$in.' is '.$real.'MSP'
 					: return $num.$in.' is ideally '.$ideal.'MSP, but here in reality you\'ll pay '.$realcost.'USD for '.$real.'MSP';
 			}
@@ -640,29 +640,29 @@ sub conversion { #this doens't really work except for money
 			return ':<';
 		}
 	}
-		
-	
+
+
 	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8($in);
 	$construct .= '=?'.uri_escape_utf8($out) if defined $out;
-	
-	print $construct if $debug;	
-	
+
+	print $construct if $debug;
+
 	my $req = $ua->get($construct);
 	return $req->status_line unless $req->is_success;
-	
+
 	my $output = $req->decoded_content;
 	print $output if $debug;
 	#it's not actually real JSON :(
 	#try $json->allow_barekey(1) ?
 	$output =~ /lhs: "(.*?)",rhs: "(.*?)",error: "(.*?)"/i || return 'regex error';
 	my ($from,$to,$error) = ($1,$2,$3);
-	
+
 	#\x3c / \x3e are <>. \x25#215; is &#215; is ×
 	$to =~ s/\\x22/\"/g;
 	$to =~ s/\\x26#215;/\*/g;
 	$to =~ s/\\x3csup\\x3e/\^/g;
 	$to =~ s/\\x3c\/sup\\x3e/ /g;
-	
+
 	unless ($error){ return $from.' = '.$to; }
 	$error =~ s/\\x22/"/g;
 	#4 is "I don't know what that unit is" or something
@@ -695,7 +695,7 @@ sub dice {
 		} else {
 			$toss = 'tails';
 		}
-		
+
 		#can't remember why I'm doing this @prev3 shit
 		if ($toss eq $prev3[0] && $toss eq $prev3[1]){
 			push @prev3, $toss;
@@ -704,7 +704,7 @@ sub dice {
 			push @prev3, $toss;
 		}
 		shift @prev3;	#throw away the oldest toss
-		
+
 		return $toss;
 	} elsif ($flavor eq 'roll'){
 		my @xdy = split /d/i, $_[1];
@@ -720,7 +720,7 @@ sub dice {
 		if ($xdy[0] <= $maxdicedisplayed){
 			return (join ' + ', @throws)." = $total";
 		} else {
-			return $total;	
+			return $total;
 		}
 	}
 }
@@ -747,7 +747,7 @@ sub ident {
 sub return_rose_scores {
 	$_[-1]->command("msg $_[0] $_[1] is correct: $_[2]");
 	my @out;
-	
+
 	for (keys %{$rosescores{$_[0]}}){
 		push @out, ((sprintf "%02d", $rosescores{$_[0]}{$_}).' - '.$_);
 	}
@@ -759,24 +759,24 @@ sub return_rose_scores {
 }
 
 #originally based on an xchat script called weatherbot.pl by lyz@princessleia.com. not sure if it still bears any resemblance
-tie my %savedloc, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.po' or die $!; 
-sub weather {	
+tie my %savedloc, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.po' or die $!;
+sub weather {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
 	$text = join ' ', @_[1..$#_] if $#_ > 0; ##pulling from 1 on b/c 0 is the trigger
-	
+
 	my $location;
-	if ($text eq ''){ 
+	if ($text eq ''){
 		if (exists $savedloc{$nick}){
 			$location = $savedloc{$nick}
 		} else {
-			$server->command("notice $nick Could you please repeat that?"); 
-			return; 
-		} 
-	} else { 
-		$location = $text; 
+			$server->command("notice $nick Could you please repeat that?");
+			return;
+		}
+	} else {
+		$location = $text;
 	}
-	
+
 	$location =~ s/ /_/g; $location =~ s/,//g;
 
 	my $results = $ua->get("http://38.102.136.104/auto/raw/$location");
@@ -796,13 +796,13 @@ sub weather {
 	} else {
 		$savedloc{$nick} = $location;
 		tied(%savedloc)->save;
-		
+
 		my @array = split(/[|]\s*/, $results->decoded_content);
 		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
 		$weather =~ s/Drizzle/[Snoop Dogg joke]/;
-		
+
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
 		if ($wind !~ / 0$/){
