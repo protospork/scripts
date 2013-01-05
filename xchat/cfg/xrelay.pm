@@ -21,7 +21,6 @@
 #fall 2011 starts here
 	"gundam AGE"		=>	["Anime", ["sage"],			'AGE',			[undef],		2266],
 	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"GC",		[undef],		undef], #2259],
-#	horizon				=>	["Anime", [undef], 			"Horizon",		[undef],		undef], #2605], #kyoukai senjou no horizon
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],undef], #2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		undef], #2277],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		undef], #2257],
@@ -33,7 +32,6 @@
 	pirates				=>	["Anime", [qw!horriblesubs commie!],'Pirates',	[undef],	undef], #2370], #26 eps [randomc]
 	'basket army'		=>  ["Anime", [undef],			'Basketarmy',	[undef],		undef], #busou chuugakusei basketarmy
 	"high school dxd"	=>  ["Anime", [qw!subdesu afftw!],'DxD',		[undef],		undef], #2366],	#12 eps [randomc]
-#	"rinne no lagrange"	=>  ["Anime", [qw!commie underwater!],'Lagrange',[undef],		2390],	#12 eps [randomc]
 	nisemonogatari		=>	["Anime", [qw!commie horriblesubs!],'Nisemono',	[undef],	undef],#2396], #13 eps [randomc] ##horriblesubs rips and releases the simulcasts before they're done airing. TV may be a dinosaur
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		undef], #2368], #ano natsu de matteru #12eps [randomc]
 	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		undef], #2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou \x{7537}\x{5b50}\x{9ad8}\x{6821}\x{751f}\x{306e}\x{65e5}\x{5e38}
@@ -46,7 +44,7 @@
 	Jormungand			=>	["Anime", ['gg'],			'Jormungand',	[undef],		undef],
 	"Shining Hearts"	=>	["Anime", [undef],			'Bread',		[undef],		undef], #hiryuu
 	Sankarea			=>	["Anime", [qw'commie sfw doki'],'Sankarea',	[undef],		undef],
-	"Natsuiro Kiseki"	=>	["Anime", [qw'warui rori'],	'NatsuKise',	[undef],		undef],		
+	"Natsuiro Kiseki"	=>	["Anime", [qw'warui rori'],	'NatsuKise',	[undef],		undef],
 	"Medaka Box"		=>	["Anime", [qw'whynot horriblesubs'],'Medaka',[undef],		undef], #whynot, HS, darksoul
 	Zetman				=>	["Anime", [qw'doki whynot warui'],'Zetman',	[undef],		undef], #doki, whynot, warui
 	Tsuritama			=>	["Anime", [undef],			'Tsuritama',	[undef],		undef],
@@ -93,33 +91,40 @@
 	'ebiten'			=>	["Anime", [undef],			'Ebiten',		[undef],		undef],
 	'computer kakumei'	=>	["Anime", [undef],			undef,			[undef],		undef],
 #fall 2012
-	'sekai yori'		=>	["Anime", [qw'utw commie'],	'Shinsekai',	[undef],		undef], #utw calls it shinsekai yori, everyone else shin sekai yori. let's try this
-	'wooser no sono higurashi'	=>	["Anime", [undef],	'Wooser',		[undef],		undef],
-	'BTOOOM'			=>	["Anime", [qw'horrible commie'],'BTOOOM',		[undef],		undef],
-	'little busters'	=>	["Anime", [qw'utw mazui'],		'Busters',		[undef],		undef],
-	'girls und panzer'	=>	["Anime", [undef],			'Tanks',		[undef],		undef],
-	'aoi sekai no chuushin de'	=>	["Anime", [undef],	undef,			[undef],		undef],
-	"\x{300c}K\x{300d}"=> ["Anime", ['commie'],			'[K]',			[undef],		undef], #lol.
-	'hayate'			=> ["Anime", ['commie'],			'Hayate',		[undef],		undef],
-	'haitai nanafa'		=> ["Anime", [undef],				'Nanafa',		[undef],		undef],
-	'chuunibyou'		=> ["Anime", [qw'URW gg'],		'Chuunibyou',	[undef],		undef],
-	'tonari no kaibutsu'=> ["Anime", [qw'horrible commie'],'Tonari',		[undef],		undef], #commie chopped the -kun off
-	'jojo'				=> ["Anime", [qw'gg nutbladder'],	'Jojo',			[undef], 		undef],
+	'sekai yori'		=>	["Anime", [qw'utw commie'],				'Shinsekai',[undef],		undef],
+	'little busters'	=>	["Anime", [qw'utw mazui'],				'Busters',	[undef],		undef],
+	'girls und panzer'	=>	["Anime", [undef],						'Tanks',	[undef],		undef],
+	'aoi sekai no chuushin de'	=>	["Anime", [undef],				undef,		[undef],		undef],
+	"\x{300c}K\x{300d}"=> ["Anime", ['commie'],						'[K]',		[undef],		undef], #lol.
+	'hayate'			=> ["Anime", ['commie'],					'Hayate',	[undef],		undef],
+	'haitai nanafa'		=> ["Anime", [undef],						'Nanafa',	[undef],		undef],
+	'chuunibyou'		=> ["Anime", [qw'URW gg'],					'Chuunibyou',[undef],		undef],
+	'tonari no kaibutsu'=> ["Anime", [qw'horrible commie'],			'Tonari',	[undef],		undef], #commie chopped the -kun off
+	'jojo'				=> ["Anime", [qw'gg nutbladder'],			'Jojo',		[undef], 		undef],
 	#onii-chan dakedo ai sae areba kankeinai yo ne / oniiai / generic harem / doki and coppola
-	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],		"Bakuman",		[undef],		undef],
-	'Ixion Saga'		=> ["Anime", [undef],				'Ixion',		[undef],		undef],
-	'robotics;notes'	=> ["Anime", [qw[commie whynot]],				'R;N',			[undef],		undef],
+	'Bakuman S3'		=> ["Anime", [qw|TMD sage|],				"Bakuman",	[undef],		undef],
+	'Ixion Saga'		=> ["Anime", [undef],						'Ixion',	[undef],		undef],
+	'robotics;notes'	=> ["Anime", [qw[commie whynot]],			'R;N',		[undef],		undef],
+#winter 2012/13
+	'mangirl'			=>	["Anime", [qw'commie horriblesubs'],'Mangirl',		[undef],		undef],
+	'maoyuu maou yuusha'=>	["Anime", [undef],				'Maoyuu',		[undef],		undef], #HS FFF Hadena
+	'bakumatsu gijinden roman'=>	["Anime", [undef],		'Roman',		[undef],		undef], #lupin knockoff featuring monkey punch
+	'senyuu'			=>	["Anime", [undef],				'Senyuu',		[undef],		undef],
+	'tamako market'		=>	["Anime", [undef],				'Tamako',		[undef],		undef],
+	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],	'Nekomono',		[undef],		undef],
+	'minami-ke'			=>	["Anime", [undef],				'Minamike',		[undef],		undef],
+	'vividred'			=>	["Anime", [undef],				'Vividred',		[undef],		undef],
 );
 
-@blacklist = qw( 
+@blacklist = qw(
 remux .iso .flv .rmvb .fr PSP ipod [iP- unofficial un-official xvid ashtr 400p indonesian sunred sheline AnimeTL
 animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity senshiencodes 480p 848x480 peeps
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
 ); #regex special characters should NOT be escaped
-@moreblacklist = (	
-	"one piece", "galactic heroes", "kamen rider", "hitman reborn", 
+@moreblacklist = (
+	"one piece", "galactic heroes", "kamen rider", "hitman reborn",
 	"shin koihime musou", "shugo chara", "heartcatch precure", "pretty cure",
 	"hidamari sketch", "character song", "character album", "dragon ball",
 	"tinkle", "shuffle", "rainbow gate", "cardfight", "doraemon",
