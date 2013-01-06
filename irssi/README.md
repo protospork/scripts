@@ -10,7 +10,7 @@
 `.imdb` - imdb.com  
 `.amzn` - amazon.com  
 `.a(ni)db` - search anidb  
-`.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image
+`.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image  
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
 `.gis [url]` - search an image on google images  
