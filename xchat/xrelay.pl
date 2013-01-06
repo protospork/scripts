@@ -9,8 +9,8 @@ use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows.
 no warnings 'misc';
 
-my $ver = '4.00';
-register('relay', $ver, 'bounce new uploads from TT into irc', \&unload);
+my $ver = '4.03';
+register('relay', $ver, 'bounce new TokyoTosho uploads into an irc channel', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
 
@@ -22,7 +22,8 @@ my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
 my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
 
-my %dupe; my $last = ' ';
+my %dupe;
+my $last = ' '; #maybe look into making this an array and returning the last #, or last [string] and match
 hook_command('lastannounce', \&sayprev);
 hook_command('dumprelaycache', \&dumpcache);
 
@@ -49,29 +50,7 @@ sub whoosh {
 			$comment = $7;
 		}
 
-
-		$name =~ s/_(?!ST\])/ /g;        #Replace underscore with space, except for the one in GX_ST
-		$name =~ s/\.(?!\w{3}$|264)/ /g; #Replace dots with spaces
-		$name =~ s/\x{200B}//g;        #200B is zero-width space
-
-		$comment =~ s/\x{200B}//g;     #TT throws them in for proper line-wrapping
-		$comment =~ s{#(\S+?)\@(\S+\.(?:com|net|org))}{irc://$2/$1}gi; #irc:// links
-
-		$URL =~ s/download/torrentinfo/i
-			if $URL =~ /nyaa\.eu/i;
-		$URL =~ s/\(/%28/g;
-		$URL =~ s/\)/%29/g;
-
-		#rounding!
-		my ($size,$unit) = ($size =~ /(\d+(?:\.\d+)?)([GMK]i?B)/);
-		$unit =~ s/i//;
-		if ($unit eq 'GB'){ $size = sprintf "%.2f", $size; $size .= $unit; }
-		elsif ($unit eq 'MB'){ $size = sprintf "%.0f", $size; $size .= $unit; }
-		else { $size .= $unit; }
-
-		$cat = 'Hentai (Manga)'
-			if $URL =~ /sukebei/i;
-
+		($name, $comment, $URL, $cat, $size) = reformat_info($name, $comment, $URL, $cat, $size);
 
 		do $cfgpath;	#load the config
 		if (! %config){ prnt("Relay can't load config\x07file", $ctrlchan, $destsrvr); return EAT_NONE; }
@@ -104,14 +83,16 @@ sub whoosh {
 #aaaand we finally get down to the job at hand
 		my ($cfg_title, $value);
 		while (($cfg_title, $value) = each %config){
-			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist, $cfg_syo_tid) = @$value;
+			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value;
+			#scalar, arrayref, scalar, arrayref
 
-			$cat =~ s/Batch/Anime-Batch/;
+			$cat =~ s/Batch/Anime-Batch/; #lets $cat match /Anime/, so full batches get announced
+
 			next unless $cat =~ /\Q$cfg_cat\E/i;
 			next unless $name =~ /\Q$cfg_title\E/i;
 
+			#make sure it's an acceptable group if we have a whitelist
 			my ($okgroup, $other) = (0, 0);
-
 			if (defined($cfg_groups)){
 				$okgroup = 1
 					if grep $name =~ /\[.*\Q$_\E.*\]/i, (@$cfg_groups);
@@ -121,6 +102,7 @@ sub whoosh {
 				$okgroup = 1;
 			}
 
+			#I suspect this is broken hardcore, but that's the least of my problems right now
 			if (defined($cfg_blacklist)){
 				for (@$cfg_blacklist){
 					last if !defined $_;
@@ -156,17 +138,20 @@ sub whoosh {
 				}
 			}
 
-			if ($okgroup == 1 && $other == 0){
 
+
+			#now the actual channel announces
+			if ($okgroup == 1 && $other == 0){
 				if ($cat eq 'Anime'){
 					command('bs say '.$anime.' '.$output, undef, $destsrvr);
 					$last = $output;
+					#don't return, we want the summary in $ctrlchan and possible topic update
 				}
 				elsif ($cat eq 'Music'){
 					command('msg '.$music.' '.$output, undef, $destsrvr);
 					$last = $output;
 				}
-				elsif ($cat =~ m'^Hentai'){ #wait. why isn't $do_hentai in here?
+				elsif ($cat =~ m'^Hentai'){ #remember to enable $do_hentai in the cfg if you want this
 					command($spam, undef, $destsrvr);
 					$last = $output;
 					return EAT_NONE;
@@ -192,7 +177,8 @@ sub whoosh {
 				return EAT_NONE;
 			}
 		}
-		if ($cat =~ /Anime|Batch|^Music$|Manga/){ #does this do anything? shouldn't. maybe I should test it sometime
+		#this block prints anything that made it through the blacklist but isn't a series listed in the config
+		if ($cat =~ /Anime|Batch|^Music$|Manga/){
 			command($spam, undef, $destsrvr);
 			$last = $output;
 		}
@@ -219,7 +205,7 @@ sub newtopic {
 		} else {
 			$topic =~ s/$short (\d+)/$short $newep/i;
 			if ($newep - $1 > 1){ command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr); }
-#			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #anope is broken
+#			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #adelais is broken
 			command('topic '.$topic, $anime, $destsrvr);
 		}
 	}
@@ -238,4 +224,38 @@ sub dumpcache {
 	for (keys %dupe){ delete($dupe{$_}); }
 	prnt("Relay cache emptied.");
 	return EAT_XCHAT;
+}
+
+sub reformat_info {
+	my ($name, $comment, $URL, $cat, $size) = @_;
+
+	$name =~ s/_(?!ST\])/ /g;        #Replace underscore with space, except for the one in GX_ST
+	$name =~ s/\.(?!\w{3}$|264)/ /g; #Replace dots with spaces
+	$name =~ s/\x{200B}//g;          #200B is zero-width space
+
+	$comment =~ s/\x{200B}//g;       #TT throws them in for proper line-wrapping
+	$comment =~ s{#(\S+?)\@(\S+\.(?:com|net|org))}{irc://$2/$1}gi; #irc:// links
+
+	$URL =~ s/download/torrentinfo/i
+		if $URL =~ /nyaa\.eu/i;
+	$URL =~ s/\(/%28/g;
+	$URL =~ s/\)/%29/g;
+
+	#(not) rounding!
+	my ($size,$unit) = ($size =~ /(\d+(?:\.\d+)?)([GMK]i?B)/);
+	$unit =~ s/i//;
+	if ($unit eq 'GB'){
+		$size = sprintf "%.2f", $size;
+		$size .= $unit;
+	} elsif ($unit eq 'MB'){
+		$size = sprintf "%.0f", $size;
+		$size .= $unit;
+	} else {
+		$size .= $unit;
+	}
+
+	$cat = 'Hentai (Manga)' #why? I don't remember
+		if $URL =~ /sukebei/i;
+
+	return ($name, $comment, $URL, $cat, $size);
 }
