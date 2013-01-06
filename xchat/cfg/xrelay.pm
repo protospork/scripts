@@ -1,3 +1,5 @@
+
+#airtime entry is useless now; blacklist entry may have never worked
 #item (show) => ["cat", ["group1", "group2"], "stitle", "blacklist", airtime]
 
 #Sample test line:
@@ -106,12 +108,13 @@
 	'Ixion Saga'		=> ["Anime", [undef],						'Ixion',	[undef],		undef],
 	'robotics;notes'	=> ["Anime", [qw[commie whynot]],			'R;N',		[undef],		undef],
 #winter 2012/13
-	'mangirl'			=>	["Anime", [qw'commie horriblesubs'],'Mangirl',		[undef],		undef],
-	'maoyuu maou yuusha'=>	["Anime", [undef],				'Maoyuu',		[undef],		undef], #HS FFF Hadena
+	'mangirl'			=>	["Anime", [qw'commie horriblesubs'],'Mangirl',	[undef],		undef], #fri/sat
+	'maoyuu maou yuusha'=>	["Anime", [undef],				'Maoyuu',		[undef],		undef], #HS FFF Hadena, friday/saturday
+	'shuraba'			=>	["Anime", [qw'rori commie'],	'OreShura',		[undef],		undef], #<Ore no Kanojo to Osananajimi ga Shuraba Sugiru>, saturday night
 	'bakumatsu gijinden roman'=>	["Anime", [undef],		'Roman',		[undef],		undef], #lupin knockoff featuring monkey punch
 	'senyuu'			=>	["Anime", [undef],				'Senyuu',		[undef],		undef],
 	'tamako market'		=>	["Anime", [undef],				'Tamako',		[undef],		undef],
-	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],	'Nekomono',		[undef],		undef],
+	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],	'Nekomono',	[undef],		undef],
 	'minami-ke'			=>	["Anime", [undef],				'Minamike',		[undef],		undef],
 	'vividred'			=>	["Anime", [undef],				'Vividred',		[undef],		undef],
 );
@@ -133,7 +136,6 @@ kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] Cherr
 push @blacklist, @moreblacklist;
 
 $do_hentai = 0;
-$do_airtime = 0;
 
 ####colorscheme
 $Cname	= "09";
