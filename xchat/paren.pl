@@ -18,7 +18,6 @@ my $colornicks = 1;#will find <quotes> and @mentions and color the nicks as xcha
 my $BNCfix = 1;    #talking from two clients on a BNC? this'll treat any line from your nick as from your client
 
 #LINKS
-my $nico = 0;      #make this 1 to translate youtube URLs to niconico ones
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
 my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed/ version. overrules ytshorten
 my $wikimobile = 0;#rewrite wikipedia links to use the (nicer) mobile layout
@@ -59,35 +58,32 @@ sub magic_happens {
 	my $net = get_info('network') || 'none';
 	my ($nick,$message) = ($_[0],$_[1]);
 	return EAT_NONE unless $message;
-	
+
 	if ($red && $hilights){ highlighter($nick,$message); }
-	
+
 	return EAT_NONE if $channel =~ /tosho-api|newsflash/;
-	
+
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
-	
+
 	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
 		$nick =~ s/^\x03\d\d?//;
-		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');		
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');
 		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
 		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
 		return EAT_NONE;
 	}
-	
+
 	if ($deshortentwitter){
 		$message =~ s{https?://t\.co/\S+ <([^>\x{2026}]+)>}{http://$1}g;
 	}
-	
-	if ($nico){
-		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1 (http://video.niconico.com/watch/ut$1)}ig;
-	}
+
 	if ($ytembed){
 		$message =~ s{(?:https?://)?(?:(?:www\.)?youtube.com/watch\?v=|youtu.be/)([^\s&#]{11})[^\s>#]*}{http://youtube.com/embed/$1}g;
 	} elsif ($ytshorten){
 		$message =~ s{(?:https?://)?(?:www\.)?youtube.com/watch\?v=([^\s&#]{11})[^\s>#]*}{http://youtu.be/$1}ig;
 	}
-	
+
 	if ($wikimobile){
 		$message =~ s{(?:https?://)?en\.wikipedia\.org/wiki/(\S+)}{http://en.m.wikipedia.org/wiki/$1}gi;
 	}
@@ -105,21 +101,21 @@ sub magic_happens {
 			$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
 		}
 	}
-	
+
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/\b:C\b/:(/g; #also keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
 	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether this actually works
-	
-	
+
+
 	#ascii:
 	#[:alpha:] [:alnum:] [:digit:] [:punct:]
-	#unicode: 
+	#unicode:
 	#\p{L} matches anything intended as a letter
 	#\p{P} for punctuation
 	#\p{S} random symbols not in {P}
 	#[\p{Hiragana}\p{Katakana}\p{Han}] should match all japanese script
-	
+
 	#colored >quotes
 	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
 	#colored symbols (hey why not)
@@ -128,15 +124,15 @@ sub magic_happens {
 	|| $red							   #or if you've been highlighted
 	|| $nick =~ /\Q$mynick\E/ 		   #or if it'll interfere with $BNCfix
 	|| $boring == 1					   #or if you don't like fun
-	){ 
+	){
 		my @end;
 		for (split /\s+/, $message){ #what if I split on /\b/?
 			if (/\x{02}/){ push @end, $_; next; }
 			if (/^http|^www|^ed2k/i){ #MOTHERFUCKING URLS
 				s/^([<(]+)((http|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
 				s/(http\S+?)([)>]+)$/$1\003$clr$2\x0F/ig;
-				push @end, $_; 
-				next; 
+				push @end, $_;
+				next;
 			}
 
 			#todo: avoid applying this regex to anyone in /names. can that be done efficiently?
@@ -150,31 +146,31 @@ sub magic_happens {
 				[^[:alnum:]#@_]+|
 				(?<=[:;<=])[PpDoOVv3](?!\d))
 			/\x{03}$clr$1\017/gx unless /^(?:[."]?[<@])\S+[>:,]$/; #why is the second-to-last match block there?
-			
+
 			s/(?<=\d\d)\x03$clr:\x0F(?=\d\d)/:/g; #don't like the colored : in timestamps
-			
-			
+
+
 			#I'm trying to avoid checking every word against /names, which wouldn't work in #twitter anyway
 			if (/^(?:[."]?\@|<[~&!@%+ ]?)([[:alnum:]|\[\]_`-]++)(?:[>:,]$|\x03\d\d)?/ && $colornicks){ #quotes are already color quoted so that first bit doesn't work
 				$_ = "\x03".($sprinkles ? xccolor($1) : 23).$_."\x0F";
 			}
-			
-			push @end, $_; 
-		} 
+
+			push @end, $_;
+		}
 		$" = ' '; #p sure this is the default, dunno if other scripts share the builtin vars
 		$message = "@end";
-		
+
 		#this is halfassed as shit fix it later
-		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){ 
+		if ($message =~ /\x03(\d\d)(\w+)\x0F \x03(\d\d)/){
 			if ($1 eq $3){ #I'm trying to be nice to WDK's text renderer, god knows it's retarded enough without my help
 				my ($one,$two) = ($1,$2); #so redundant colorcodes need to be stripped, although
 				$message =~ s/$&/\x03$one$two /g; #this method only grabs the first redundant one
 			}
 		}
 	}
-	
+
 	if ($nick =~ /\Q$mynick\E$/ && $BNCfix){ #fixed events for 2+ clients on a bnc
-		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); } 
+		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); }
 		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
 	}
@@ -184,10 +180,10 @@ sub magic_happens {
 		if ($message =~ /\x030?1,0?1/){
 			$term = "\x0301,01";
 		}
-		
+
 		given ($nick){
-			when (/aria/i){ 
-				$message =~ s/cock/\x03,20the$term/gi; 
+			when (/aria/i){
+				$message =~ s/cock/\x03,20the$term/gi;
 				$message =~ s/schlick(ed)?/if ($1 eq 'ed'){ "\x03,20fapped$term" } else { "\x03,20fap$term" }/eg;
 			}
 			when (/shou|murasa/i){
@@ -202,8 +198,8 @@ sub magic_happens {
 		}
 		use warnings 'uninitialized';
 	}
-	
-	unless ($message =~ /^\s*$/){ 
+
+	unless ($message =~ /^\s*$/){
 		if ($action == 1 && $red == 1){ emit_print('Channel Action Hilight', $nick, $message, $_[2]); }
 		elsif ($action == 1){ 			emit_print('Channel Action', $nick, $message, $_[2]); }
 		elsif ($red == 1){ 				emit_print('Channel Msg Hilight', $nick, $message, $_[2], $_[3]); }
@@ -222,9 +218,9 @@ sub highlighter {
 sub xccolor { 	#this is a translation of xchat's nick coloring algorithm
 	my $string = shift;
 	my $clr = 0;
-	$string =~ s/\x03\d{1,2}|\x0F//g;	
-	$clr += ord $_ for (split //, $string); 
-	$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];	
+	$string =~ s/\x03\d{1,2}|\x0F//g;
+	$clr += ord $_ for (split //, $string);
+	$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];
 }
 sub unload {
 	prnt("paren $ver unloaded");
