@@ -36,6 +36,9 @@ unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a direct
 }
 
 
+#fix the per-nick spam protection: check nick && $lastmsg or whatever
+
+
 my %titlecache; my %lastlink;
 tie my %mirrored, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/mirrored_imgs.po' or die $!;
 
@@ -83,7 +86,8 @@ sub pubmsg {
 	if ($nick =~ m{(?:Bot|Serv)$|c8h10n4o2}i || $mask =~ /bots\.adelais/i || $target =~ /tokyotosho|lurk/){ $notitle++; }	#quit talking to strange bots
 	if (grep $nick eq $_, (@ignorenicks)){ $notitle++; }
 
-	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://images\.4chan\.org.+(?:jpe?g|gif|png))}ix;	#shit's fucked
+	#fix this immediately (what is regexp::common using?)
+	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://(?:boards|images)\.4chan\.org.+(?:jpe?g|gif|png)?)}ix;	#shit's fucked
 	my $url = $1;
 
 	print $target.': '.$url if $debugmode;
@@ -144,7 +148,7 @@ sub pubmsg {
 	if (! defined($title) || ! $title){ return; }
 
 	#if the URL has the title in it
-	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	#there is a better way to do this. there has to be :(
+	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	# wat
 
 	#if someone's a spammer
 	if ($title eq $lasttitle && $target eq $lastchan && time - $lastsend < 120){ return; }
@@ -153,7 +157,7 @@ sub pubmsg {
 	return if grep $title =~ $_, (@defaulttitles);
 
 	$title = moreshenanigans($title,$nick,$target,$url);
-	if (defined $title && $title ne '1' && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am terrible
+	if (defined $title && $title !~ /^1$|shit's broke/ && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am terrible
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
@@ -161,7 +165,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	my $insult = $meanthings[(int rand scalar @meanthings)-1];
 
 	# image hosts that can be rewritten as bare links without parsing html
-	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,6}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
+	if ($url =~ m{^https?://(i\.)?imgur\S+?\w{5,7}(?:\?full)?$}i && $url !~ /(?:jpe?g|gif|png)$/i){
 		if ($url =~ m{/a(?:lbums?)?/|gallery|,}){
 			$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$url));
 		}
@@ -187,10 +191,9 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $chan eq $_, (@offtwitter)){ return; }
-		print $url if $debugmode;
 	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
-	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){
+	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
 		my %que = $url->query_form;
 		return unless $url =~ /item=\S+/i;
 		$url->host('www.ows.newegg.com');
@@ -198,6 +201,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		$url->query_form(undef);
 	} elsif ($url =~ m{https?://(?:www\.)?amazon\.(\S{2,5})/(?:[a-zA-Z0-9-]+)?/[dg]p(?:/product)?/([A-Z0-9]{10})}){
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
+	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/res/\d+)$}){
+		$url = 'http://api.4chan.org/'.$1.'.json';
 	}
 
 	# miscellany
@@ -211,6 +216,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		undef $sec;
 	}
 
+
+	print $url if $debugmode;
 	return ($return,$url);
 }
 
@@ -299,7 +306,7 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 
 sub get_title {
 	my ($url) = @_;
-	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme/i){
+	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme|isitup|4chan\S+res/i){
 		unless (time - $titlecache{$url}{'time'} > 28800){ #is eight hours a sane expiry? I have no idea!
 			print '(cached)' if $debugmode == 1;
 			return $titlecache{$url}{'url'};
@@ -330,6 +337,7 @@ sub get_title {
 		when (m!newegg\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return amazon($page); }
 		when (m!store\.steampowered!){ return steam($page); }
+		when (m!4chan\S+/res/!){ return fourchan($page); }
 		when (/instagram\.com/){
 			if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
 				print $1 if $debugmode;
@@ -346,7 +354,7 @@ sub get_title {
 
 				return $title;
 			} else {
-				return "shit\'s broke" unless $page !~ /<title>/;
+				return "shit\'s broke" unless $page !~ /<title>/; # wha
 			}
 		}
 	}
@@ -388,7 +396,7 @@ sub youtube {
 	if ($junk->{'data'}{'duration'}){
 		$length .=
 		(sprintf "%02d", ($junk->{'data'}{'duration'} / 3600)).':'. #h
-		(sprintf "%02d", ($junk->{'data'}{'duration'} / 60)).':'. #m
+		(sprintf "%02d", ($junk->{'data'}{'duration'} % 60)).':'. #m
 		(sprintf "%02d", ($junk->{'data'}{'duration'} % 60)); #s
 	} else {
 		$length = 'Live';
@@ -423,28 +431,63 @@ sub newegg {
 	? return decode_entities('Newegg - '.$price.' || '.$info)
 	: return decode_entities('Newegg - '.$rating.'/5 Eggs || '.$price.' || '.$info);
 }
+sub fourchan {
+	my $page = shift;
+	my $thread;
+	eval { $thread = JSON->new->utf8->decode($page->decoded_content); };
+	if ($@){ return '4chan - oops ('.$page->status_line.')'.' '.$page->content_type; }
+
+	my ($title, $imgct, $repct) = ('No Title', 0, 0);
+	if ($thread->{'posts'}[0]){
+		my $op = $thread->{'posts'}[0];
+
+		if ($op->{'sub'}){ $title = $op->{'sub'}; }
+		if ($op->{'images'}){ $imgct = $op->{'images'}; }
+		if ($op->{'replies'}){ $repct = $op->{'replies'}; }
+	}
+	return "$title || $repct replies / $imgct images";
+}
 sub amazon {
 	my $page = shift;
 	my $obj;
 	eval { $obj = HTML::TreeBuilder->new_from_content($page->decoded_content); };
 	if ($@ || ! $obj || ! ref $obj || ! $obj->can("look_down")){ return 'amazon: '.$page->status_line.' '.$page->content_type.' '.length($page->content); }
 
-	my $rating = $obj->look_down(_tag => 'span', class => 'crAvgStars');
-	if ($rating){
+	my $rating;
+	eval { $rating = $obj->look_down(_tag => 'span', class => 'crAvgStars'); };
+	if ($@ || !$rating){ $rating = 'unrated'; }
+
+	if ($rating && $rating ne 'unrated'){
 		$rating = $rating->as_trimmed_text;
 		$rating =~ s{^.*?(\d(?:\.\d)?) out of (\d) stars.*$}{$1/$2 Stars}i;
-	} else {
-		$rating = 'unrated';
 	}
-	my $price = $obj->look_down(_tag => 'span', id => 'actualPriceValue'); #normal items
-	if ($price && decode_entities($price->as_trimmed_text =~ /[\x{A3}\$]/)){
-		$price = $price->as_trimmed_text;
-	} elsif ($obj && $obj->can("look_down")) { #seriously, how are these "hurr can't call look_down on undef" errors escaping?
-		my @prices; #this logic takes over for books
-		unshift @prices, $obj->look_down(_tag => 'tbody', id => 'kindle_meta_binding_winner')->look_down(_tag => 'td', class => 'price');
-		unshift @prices, $obj->look_down(_tag => 'tbody', id => 'kindle_meta_binding_winner')->look_down(_tag => 'span', class => 'price');
-		unshift @prices, $obj->look_down(_tag => 'tbody', id => 'paperback_meta_binding_winner')->look_down(_tag => 'td', class => 'price');
-		unshift @prices, $obj->look_down(_tag => 'tbody', id => 'paperback_meta_binding_winner')->look_down(_tag => 'td', class => 'tmm_olpLinks');
+
+	my $price;
+	eval { $price = $obj->look_down(_tag => 'span', id => 'actualPriceValue'); }; #normal items
+	if ($@ || !$price){ $price = 'free'; }
+	if ($price && $price ne 'free'){
+		if ($price->can("as_trimmed_text") && decode_entities($price->as_trimmed_text =~ /[\x{A3}\$]/)){
+			$price = $price->as_trimmed_text;
+		}
+	} elsif ($price eq 'free' && $obj && $obj->can("look_down")) { #seriously, how are these "hurr can't call look_down on undef" errors escaping?
+		#this logic takes over for books
+		my (@prices,$p);
+
+		eval { $p = $obj->look_down(_tag => 'tbody', id => 'kindle_meta_binding_winner')->look_down(_tag => 'td', class => 'price'); };
+		if (!$@){ unshift @prices, $p; }
+
+		eval { $p = $obj->look_down(_tag => 'tbody', id => 'kindle_meta_binding_winner')->look_down(_tag => 'span', class => 'price'); };
+		if (!$@){ unshift @prices, $p; }
+
+		eval { $p = $obj->look_down(_tag => 'tbody', id => 'paperback_meta_binding_winner')->look_down(_tag => 'td', class => 'price'); };
+		if (!$@){ unshift @prices, $p; }
+
+		eval { $p = $obj->look_down(_tag => 'tbody', id => 'paperback_meta_binding_winner')->look_down(_tag => 'td', class => 'tmm_olpLinks'); };
+		if (!$@){ unshift @prices, $p; }
+
+		#TODO:
+		#break those^ method chains into a step above and then second look_down in a for loop here
+		#figure out what I was talking about in that last line and then do it
 
 		for (@prices){ #it'll go through them (backwards, thanks to unshift), and we'll end up with the last defined price (kindle, I hope)
 			$price = $_ if decode_entities($_ =~ /[\x{A3}\$]/);
