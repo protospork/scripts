@@ -22,7 +22,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 
 
-$VERSION = "2.7.0";
+$VERSION = "2.7.2";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -41,7 +41,7 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Encoding' => 'gzip,deflate',
 	'Accept-Language' => 'en-us,en;q=0.5'
 );
-my ($lastcfgcheck,$animulastgrab,$rose) = (0,time,0);
+my ($lastcfgcheck,$animulastgrab,$rose) = (0,time,[0,1]);
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
 my %lastimg; #keep track of the most recent image linked in each channel, for pronoun use
 my $tries;
@@ -76,6 +76,12 @@ sub event_privmsg {
 	loadconfig() if time - $lastcfgcheck > 86400;
 	return if grep lc $target eq lc $_, (@offchans);
 
+	#has .rose timed out yet?
+	if (time - $rose->[1] > 1800){
+		$rose->[0] = 0;
+		$rose->[1] = 1;
+	}
+
 	my @terms;
 	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
 		@terms = split /\s+/, $1;
@@ -97,7 +103,7 @@ sub event_privmsg {
 		} else {
 			return;
 		}
-	} elsif (defined $rose && $text =~ /^$rose$/){
+	} elsif (time - $rose->[1] < 1800 && $text =~ /^$rose->[0]$/){ #1/2 hour is still probably too long a timeout
 		$rosescores{$target}{$nick}++;
 		tied(%rosescores)->save;
 		return_rose_scores($target, $nick, $rose, $server);
@@ -128,7 +134,8 @@ sub event_privmsg {
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
-		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)]; }
+		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
+		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -158,7 +165,59 @@ sub imgops {
 	}
 	return $query;
 }
+tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
+my %drinks; #tying this to disk really doesn't seem worthwhile
+sub drinkify { #UNIRONICALLY WRITTEN WHILE DRINKING
+	my $nick = shift;
+	my $terms = join ' ', @_[1..$#_];
 
+
+	$terms = ucfirst $terms if $terms eq lc $terms;
+
+	if (! $terms || length $terms < 3){ #<1 would probs work I don't know
+		if (exists $lastfms{$nick}){
+			$terms = $lastfms{$nick}
+		} else {
+			$terms = $nick;
+			$lastfms{$nick} = $nick;
+		}
+		$terms = pull_lastfm($terms, 'artist');
+	}
+
+	my $artist = $terms;
+	$terms = ('http://drinkify.org/'.(uri_escape_utf8($terms)));
+	print $terms;
+
+	if ($drinks{$terms}){
+		if ($drinks{$terms} ne 'nope'){
+			return $drinks{$terms};
+		} else {
+			return;
+		}
+	} else {
+		my $req = $ua->get($terms);
+		if (! $req->is_success){
+			print 'drinkify: '.$req->code.' uhoh';
+			$drinks{$terms} = 'nope';
+			return;
+		}
+
+		my $page = HTML::TreeBuilder->new_from_content($req->decoded_content);
+		my $booze = $page->look_down(_tag => 'ul', class => 'recipe')->as_HTML; #sometimes it's a nested list and man, fuck it
+		$booze =~ s{<ul class="recipe">|</ul>}{}g;
+		$booze =~ s{(?:</li>)?\s*<li>}{; }g;
+		$booze =~ s/\s+/ /g;
+		$booze =~ s/^;\s+//g;
+		$booze = decode_entities($booze);
+
+		my $recipe = $page->look_down(_tag => "p", class => 'instructions')->as_trimmed_text;
+		$recipe =~ s/\n/; /g; $recipe =~ s/\s+/ /g;
+		$recipe = decode_entities($recipe);
+
+		$drinks{$terms} = "\x{03}03$artist:[ \x{03}07\x{02}$booze\x{02}:\x{03}03 $recipe ]\x{03}01,01<$terms>";
+		return $drinks{$terms};
+	}
+}
 sub isup {
 	my $url;
 	print $_[-1];
@@ -343,45 +402,64 @@ sub waaai {
 }
 
 
-tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
 sub lastfm {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
 	shift; #dump the trigger
 	$text = shift;
-	my $location;
+	my $account;
 	if (! $text || $text eq ''){
 		if (exists $lastfms{$nick}){
-			$location = $lastfms{$nick}
+			$account = $lastfms{$nick}
 		} else {
-			$location = $nick;
+			$account = $nick;
 			$lastfms{$nick} = $nick;
 			# return;
 		}
 	} else {
-		$location = $text;
+		$account = $text;
 	}
-	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$location.'/recenttracks.rss');
 
-	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
+	my $title = pull_lastfm($account, 'all');
+	if (! $title || $title eq 'no account'){
 		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
 		return;
 	} else {
-		$lastfms{$nick} = $location;
-		tied(%lastfms)->save;
+		return 'http://last.fm/user/'.$account.' last played '.$title;
+	}
+}
+sub pull_lastfm { #this is used for &lastfm and for &drinkify
+	my $account = lc shift;
+	my $mode = shift;
+	my $title;
 
-		my $chunk = (split /<item>/, $results->content)[1];
-		return 'uh oh' unless $chunk;
-		#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
-		my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
+	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$account.'/recenttracks.rss');
 
-		#honestly I have no idea
-		$title = encode_entities($title);
-		$title =~ s/&ndash;/-/g;
-		$title = decode_entities($title);
-		$title =~ s/&amp;/&/g;
+	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
+		return "no account";
+	}
 
-		return 'http://last.fm/user/'.$location.' last played '.$title;
+	tied(%lastfms)->save;
+
+	my $chunk = (split /<item>/, $results->decoded_content)[1];
+	return 'uh oh' unless $chunk;
+	#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
+	my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
+
+	#honestly I have no idea
+	# $title = encode_entities($title);
+	# $title =~ s/&ndash;/-/g;
+	# $title = decode_entities($title);
+	# $title =~ s/&amp;/&/g;
+
+	print "lastfm: $title" if $debug;
+
+	if ($mode eq 'artist'){
+		my @info = split /&ndash;|&#2013;|\x{2013}/, $title;
+		# $artist =~ s/ (?:&ndash;|&#2013;|\x{2013}) .+$//;
+		return substr($info[0], 0, -1); #kill trailing space
+	} else {
+		return $title;
 	}
 }
 
@@ -678,15 +756,16 @@ my @prev3 = ('heads','tails','heads');
 sub dice {
 	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
-		$rose = 0;
+		$rose->[0] = 0;
 		my @throws = roll(5,6);
 		for (@throws){
 			$_ == 3
-				? $rose += 2
+				? $rose->[0] += 2
 				: $_ == 5
-					? $rose += 4
-					: $rose += 0;
+					? $rose->[0] += 4
+					: $rose->[0] += 0;
 		}
+		$rose->[1] = time;
 		return join ' ', @throws;
 	} elsif ($flavor eq 'flip'){
 		my $toss = int(rand(30)+1);	#&roll seems to be unreliable for tiny numbers. not that this isn't.
