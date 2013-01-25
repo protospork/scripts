@@ -26,7 +26,7 @@
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],undef], #2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		undef], #2277],
 	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		undef], #2257],
-	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"BokuTomo", 	[undef],		undef], #2270], #boku ha/wa tomodachi ga sukunai
+	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"Haganai",	 	[undef],		undef], #2270], #boku ha/wa tomodachi ga sukunai
 	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		undef],#2275], Ben-to airs first on TVA, which isn't listed on syoboi
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
 	'kyousogiga'		=>	["Anime", ['commie'],		undef,			[undef],		undef], #I dunno really
@@ -109,14 +109,15 @@
 	'robotics;notes'	=> ["Anime", [qw[commie whynot]],			'R;N',		[undef],		undef],
 #winter 2012/13
 	'mangirl'			=>	["Anime", [qw'commie horriblesubs'],'Mangirl',	[undef],		undef], #fri/sat
-	'maoyuu maou yuusha'=>	["Anime", [undef],				'Maoyuu',		[undef],		undef], #HS FFF Hadena, friday/saturday
-	'shuraba'			=>	["Anime", [qw'rori commie'],	'OreShura',		[undef],		undef], #<Ore no Kanojo to Osananajimi ga Shuraba Sugiru>, saturday night
+	'maoyuu maou yuusha'=>	["Anime", [qw'fff commie horriblesubs'],'Maoyuu',		[undef],		undef], #HS FFF Hadena, friday/saturday
+	'shuraba'			=>	["Anime", [qw'rori commie'],	'OreShura',		[undef],		undef], #<Ore no Kanojo to Osananajimi ga Shuraba Sugiru>, saturday night; HS is calling it oreshura
 	'bakumatsu gijinden roman'=>	["Anime", [undef],		'Roman',		[undef],		undef], #lupin knockoff featuring monkey punch
 	'senyuu'			=>	["Anime", [undef],				'Senyuu',		[undef],		undef],
-	'tamako market'		=>	["Anime", [undef],				'Tamako',		[undef],		undef],
-	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],	'Nekomono',	[undef],		undef],
+	'tamako market'		=>	["Anime", [qw'mazui commie'],	'Tamako',		[undef],		undef],
+	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],'Nekomono',	[undef],		undef],
 	'minami-ke'			=>	["Anime", [undef],				'Minamike',		[undef],		undef],
-	'vividred'			=>	["Anime", [undef],				'Vividred',		[undef],		undef],
+	'vividred'			=>	["Anime", [qw'commie horriblesubs'],'Vividred',	[undef],		undef],
+	'Gj-bu'				=>	["Anime", [qw'anime-koi'],		'GJbu',			[undef],		undef],
 );
 
 @blacklist = qw(
