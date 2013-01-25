@@ -68,7 +68,7 @@ if ($albumname =~ /^(Photo Albums?|Album)$/){
 }
 # this line is for the JS-enabled pages, put it back in if /noscript disappears
 #my @imagehashes = ($page->decoded_content =~ /<div id="([a-zA-Z0-9]{5})" class="post">/ig);
-my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5})">/ig);
+my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5,7})">/ig); #7 may not be enough 2013/1/18
 print ((1 + $#imagehashes).' images ');
 length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
