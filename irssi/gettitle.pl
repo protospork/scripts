@@ -3,6 +3,7 @@ use Irssi::Irc;
 use LWP::UserAgent;
 use HTML::Entities;
 use HTML::TreeBuilder;
+use HTML::ExtractMeta;
 use URI::Escape;
 use File::Path qw'make_path';
 use Tie::YAML;
@@ -17,7 +18,8 @@ use vars qw(
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey  %shocksites
-	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $VERSION %IRSSI
+	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver @uselessdescs
+	@notruncate $VERSION %IRSSI
 );
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
@@ -151,7 +153,7 @@ sub pubmsg {
 	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	# wat
 
 	#if someone's a spammer
-	if ($title eq $lasttitle && $target eq $lastchan && time - $lastsend < 120){ return; }
+	if ($title eq $lasttitle && $target eq $lastchan && $target ne $controlchan && time - $lastsend < 120){ return; }
 
 	#error fallback titles, index pages, etc
 	return if grep $title =~ $_, (@defaulttitles);
@@ -227,6 +229,7 @@ sub moreshenanigans {
 
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
 	$title =~ s/\bwww\.//i;
+	$title =~ s/:\s*$//;
 
 	for my $rx (@cutthesephrases){
 		$title =~ s/$rx\s*//i;
@@ -253,7 +256,11 @@ sub moreshenanigans {
 	$title =~ s/^BBC( News)?/\00300BBC\017/i;
 
 	#truncate
-	if(length($title) > $maxlength && $title !~ /^http/ && $url !~ /twitter\.com/){
+	if (
+		length($title) > $maxlength &&
+		$title !~ /^http/ && #don't clip URLs
+		! grep $url =~ /$_/, @notruncate
+	){
 		my $maxless = $maxlength - 10;
 		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
 		$title .= "..."; # \x{2026} makes a single-width ellipsis
@@ -263,6 +270,8 @@ sub moreshenanigans {
 }
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
+
+	return "=\\" if grep $url =~ /\Q$_\E/i, (@ignoresites); #god damnit, google maps
 
 	my $req = $ua->head($url);
 	if (!$req->is_success){
@@ -308,7 +317,7 @@ sub get_title {
 	my ($url) = @_;
 	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme|isitup|4chan\S+res/i){
 		unless (time - $titlecache{$url}{'time'} > 28800){ #is eight hours a sane expiry? I have no idea!
-			print '(cached)' if $debugmode == 1;
+			print '(cached)' if $debugmode;
 			return $titlecache{$url}{'url'};
 		}
 	}
@@ -319,10 +328,14 @@ sub get_title {
 		return "shit's broke";
 	}
 
+	return "shit's broke" if $page->content_type =~ /image/; #fuck if I know
+	my $meta = HTML::ExtractMeta->new(html => $page->decoded_content);
+
 	#now, anything that requires digging in source/APIs for a better link or more info
 	given ($url){
 		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
-			return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
+			#return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
+			return $meta->get_image_url();
 		}
 		when (m!tinypic.com/(?:r/|view\.php)!){
 			if  ($page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|i){
@@ -339,13 +352,27 @@ sub get_title {
 		when (m!store\.steampowered!){ return steam($page); }
 		when (m!4chan\S+/res/!){ return fourchan($page); }
 		when (/instagram\.com/){
-			if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
-				print $1 if $debugmode;
-				return $1;
-			}
+			# if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
+			# 	print $1 if $debugmode;
+			# 	return $1;
+			# }
+			return $meta->get_image_url();
 		}
 		default {
-			if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
+			# if ($page->decoded_content =~ m#meta\s+(?:name|property)\s*=\s*(?:og|twitter):title#i){
+				# return opengraph($page);
+			if ($meta->get_title()){
+				my $out = $meta->get_title();
+				if (! grep $url =~ /$_/i, @uselessdescs){
+					$out .= ': '.$meta->get_description();
+				}
+
+				# length $out > $maxlength
+				# ? return $meta->get_title()
+				# : return $out;
+				return $out;
+			} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
+				print "%3THIS SHOULDN'T BE HAPPENING";
 				my $title = $1;
 				decode_entities($title);
 
@@ -358,6 +385,19 @@ sub get_title {
 			}
 		}
 	}
+}
+sub opengraph { #INCOMPLETE AND REDUNDANT DO NOT USE
+	my $page = shift;
+	my $hell;
+	eval { $hell = HTML::TreeBuilder->new_from_content($page->decoded_content); };
+	if ($@ || ! $hell || ! ref $hell || ! $hell->can("look_down")){ return 'opengraph fail: '.$page->status_line.' '.$page->content_type.' '.length($page->content); }
+
+	my ($title,$summ,$out);
+	eval { $title = $hell->look_down(sub{ $_[0]->attr("_tag") eq 'meta' && ($_[0]->attr('name') eq 'twitter:title' || $_[0]->('property') =~ /(twitter|og):title/);}); };
+	if ($@ || ! $title || ! ref $hell){ return 'opengraph title parse fail'; }
+	$title->attr("content") ? $out = $title->attr("content") : $out = $title->attr("value"); #same thing, content's a compat fallback
+
+	return $out;
 }
 sub twitter {
 	my $page = shift;
@@ -396,7 +436,7 @@ sub youtube {
 	if ($junk->{'data'}{'duration'}){
 		$length .=
 		(sprintf "%02d", ($junk->{'data'}{'duration'} / 3600)).':'. #h
-		(sprintf "%02d", ($junk->{'data'}{'duration'} % 60)).':'. #m
+		(sprintf "%02d", (($junk->{'data'}{'duration'} / 60) % 60)).':'. #m
 		(sprintf "%02d", ($junk->{'data'}{'duration'} % 60)); #s
 	} else {
 		$length = 'Live';
