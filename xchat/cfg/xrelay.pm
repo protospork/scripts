@@ -126,6 +126,7 @@ animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
+Farfie
 ); #regex special characters should NOT be escaped
 @moreblacklist = (
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn",

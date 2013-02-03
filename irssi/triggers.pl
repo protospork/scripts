@@ -448,9 +448,9 @@ sub pull_lastfm { #this is used for &lastfm and for &drinkify
 
 	#honestly I have no idea
 	# $title = encode_entities($title);
-	# $title =~ s/&ndash;/-/g;
-	# $title = decode_entities($title);
-	# $title =~ s/&amp;/&/g;
+	$title = decode_entities($title);
+	$title =~ s/\x{2013}|&ndash;/-/g;
+	$title =~ s/&amp;/&/g;
 
 	print "lastfm: $title" if $debug;
 
