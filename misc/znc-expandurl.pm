@@ -3,6 +3,7 @@
 
 use LWP;
 use Modern::Perl; #replace this with `use strict; use warnings;` if you don't have cpan access
+use HTML::ExtractMeta; #new
 use URI;
 package expandurl;
 use base 'ZNC::Module';
@@ -18,6 +19,7 @@ my @abouttext =	("This module quietly looks up shortened URLs and replaces them 
 				
 my $debug = 0; #these two do need to be globals
 my @last50;
+my $ua = LWP::UserAgent->new( max_size => 450); 
 
 sub description {
     "Deshortens short URLs"
@@ -26,7 +28,6 @@ sub OnChanMsg {
     my $self = shift;
     my ($nick, $chan, $msg) = @_;
 	my $outmask = $nick->GetNick.'!'.$nick->GetIdent.'@'.$nick->GetHost;	
-	my $ua = LWP::UserAgent->new( max_size => 450); 
 	
 	$chan = $chan->GetName; #does a channel object even have any other methods?
 	
@@ -40,26 +41,33 @@ sub OnChanMsg {
 		if (!$req->is_success){
 			$self->PutModule($url.': HTTP '.$req->code) if $debug;
 		}
-		my ($orig_url,$second_last);
-		for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
-			if ($_->header('Location') =~ m[nytimes.com/glogin|unsupportedbrowser]i){ 
-			# NYT paywall redirects you according to some arcane logic that changes every week.
-			# so the final hop (if you've been paywalled) is worthless and extremely long.
-			# I don't look forward to adding special cases for 35253423 sites
-				last;
-			} else {
-				$second_last = $orig_url;
-				$orig_url = $_->header('Location');
+		
+		my $meta = HTML::ExtractMeta->new(html => $req->decoded_content);
+		my $orig_url = $meta->get_url(); #nice and all, but doesn't work enough of the time
+		
+		if (!$orig_url){
+			my ($orig_url,$second_last);
+			for ($req->redirects){ #iterate over the redirect chain, but only keep the final one
+				if ($_->header('Location') =~ m[nytimes.com/glogin|unsupportedbrowser]i){ 
+				# NYT paywall redirects you according to some arcane logic that changes every week.
+				# so the final hop (if you've been paywalled) is worthless and extremely long.
+				# I don't look forward to adding special cases for 35253423 sites
+					last;
+				} else {
+					$second_last = $orig_url;
+					$orig_url = $_->header('Location');
+				}
+			}
+			if ($orig_url =~ m{^(?:\.\.)?/}){ #sometimes relative links with .., generally just ^/ (absolute)
+				# grab the domain from last hop and stick it here.
+				$orig_url = URI->new_abs($orig_url, $second_last)->canonical;
+			}
+			if (! $orig_url){
+				$self->PutModule("$url is actual url") if $debug;
+				return $ZNC::CONTINUE;
 			}
 		}
-		if ($orig_url =~ m{^(?:\.\.)?/}){ #sometimes relative links with .., generally just ^/ (absolute)
-			#grab the domain from last hop and stick it here.
-			$orig_url = URI->new_abs($orig_url, $second_last)->canonical;
-		}
-		if (! $orig_url){
-			$self->PutModule("$url is actual url") if $debug;
-			return $ZNC::CONTINUE;
-		}
+		
 		if (length $orig_url > 140){ 
 			$self->PutModule("$orig_url is too long: ".(length $orig_url)."ch") if $debug;
 			#-strip all queries (they tend to help so I'd rather leave them if possible)
