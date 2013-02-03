@@ -1,3 +1,4 @@
 THESE SCRIPTS ARE ALL PRETTY UNUSABLE RIGHT NOW, ESPECIALLY THE IRSSI ONES. I MAKE NO GUARANTEES, ETC.
 
-I figure if I force myself to get at least one actual commit per day, eventually these scripts will stop sucking and I'll stop forgetting things about perl.
+I can't be bothered to keep separate test/stable branches, so just assume everything is broken.  
+Maybe I'll try to mention when a commit is especially usable or atrocious. Or not.
