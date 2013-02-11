@@ -111,13 +111,15 @@
 	'mangirl'			=>	["Anime", [qw'commie horriblesubs'],'Mangirl',	[undef],		undef], #fri/sat
 	'maoyuu maou yuusha'=>	["Anime", [qw'fff commie horriblesubs'],'Maoyuu',		[undef],		undef], #HS FFF Hadena, friday/saturday
 	'shuraba'			=>	["Anime", [qw'rori commie'],	'OreShura',		[undef],		undef], #<Ore no Kanojo to Osananajimi ga Shuraba Sugiru>, saturday night; HS is calling it oreshura
-	'bakumatsu gijinden roman'=>	["Anime", [undef],		'Roman',		[undef],		undef], #lupin knockoff featuring monkey punch
+#	'bakumatsu gijinden roman'=>	["Anime", [undef],		'Roman',		[undef],		undef], #lupin knockoff featuring monkey punch
 	'senyuu'			=>	["Anime", [undef],				'Senyuu',		[undef],		undef],
 	'tamako market'		=>	["Anime", [qw'mazui commie'],	'Tamako',		[undef],		undef],
 	'nekomonogatari'	=>	["Anime", [qw'commie utw mazui'],'Nekomono',	[undef],		undef],
 	'minami-ke'			=>	["Anime", [undef],				'Minamike',		[undef],		undef],
 	'vividred'			=>	["Anime", [qw'commie horriblesubs'],'Vividred',	[undef],		undef],
 	'Gj-bu'				=>	["Anime", [qw'anime-koi'],		'GJbu',			[undef],		undef],
+	'dokidoki! precure'	=>	["Anime", [qw"commie doremi"],	'Precure',		[undef],		undef],
+	'mondaiji'			=>	["Anime", [qw'commie horriblesubs'],'Monday',	[undef],		undef],
 );
 
 @blacklist = qw(

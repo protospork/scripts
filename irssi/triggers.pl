@@ -698,9 +698,9 @@ sub conversion { #this doens't really work except for money
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':<';
 		}
-	} elsif ($out eq 'MSP'){
+	} elsif ($in =~ /MSP$/ || uc $out eq 'MSP'){
 		my $num; ($num,$in) = ($in =~ /([\d.]+)\s*(\D+)/);
-		if ($in =~ /USD$/){
+		if ($in eq 'USD' && uc $out eq 'MSP'){
 			my $base = ($num/4.99);
 			if ($base < 1){
 				return ((sprintf "%d", (($base)*400)).'MSP, but you\'d need to buy at least 400 for $4.99');
@@ -714,6 +714,14 @@ sub conversion { #this doens't really work except for money
 					: return $num.$in.' is ideally '.$ideal.'MSP, but here in reality you\'ll pay '.$realcost.'USD for '.$real.'MSP';
 			}
 			return ':<';
+		} elsif ($in eq 'MSP' && uc $out eq 'USD'){
+			my $block = $num/400;
+			my $real = int $block;
+			if ($real < $block){
+				$real++;
+			}
+			$real *= 4.99;
+			return $num."MSP = ".(sprintf "%.02f", $real)."USD";
 		} else {
 			return ':<';
 		}
