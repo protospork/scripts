@@ -18,7 +18,7 @@ use vars qw(
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey  %shocksites
-	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver @uselessdescs
+	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver
 	@notruncate $VERSION %IRSSI
 );
 
@@ -359,45 +359,21 @@ sub get_title {
 			return $meta->get_image_url();
 		}
 		default {
-			# if ($page->decoded_content =~ m#meta\s+(?:name|property)\s*=\s*(?:og|twitter):title#i){
-				# return opengraph($page);
+			my $out;
 			if ($meta->get_title()){
-				my $out = $meta->get_title();
-				if (! grep $url =~ /$_/i, @uselessdescs){
-					$out .= ': '.$meta->get_description();
-				}
-
-				# length $out > $maxlength
-				# ? return $meta->get_title()
-				# : return $out;
-				return $out;
+				$out = $meta->get_title();
 			} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				print "%3THIS SHOULDN'T BE HAPPENING";
-				my $title = $1;
-				decode_entities($title);
-
-				$title =~ s/\s+/ /g;
-				$title =~ s/^\s|\s$//;
-
-				return $title;
-			} else {
-				return "shit\'s broke" unless $page !~ /<title>/; # wha
+				$out = $1;
 			}
+			decode_entities($out);
+
+			$out =~ s/\s+/ /g;
+			$out =~ s/^\s|\s$//;
+
+			return $out;
 		}
 	}
-}
-sub opengraph { #INCOMPLETE AND REDUNDANT DO NOT USE
-	my $page = shift;
-	my $hell;
-	eval { $hell = HTML::TreeBuilder->new_from_content($page->decoded_content); };
-	if ($@ || ! $hell || ! ref $hell || ! $hell->can("look_down")){ return 'opengraph fail: '.$page->status_line.' '.$page->content_type.' '.length($page->content); }
-
-	my ($title,$summ,$out);
-	eval { $title = $hell->look_down(sub{ $_[0]->attr("_tag") eq 'meta' && ($_[0]->attr('name') eq 'twitter:title' || $_[0]->('property') =~ /(twitter|og):title/);}); };
-	if ($@ || ! $title || ! ref $hell){ return 'opengraph title parse fail'; }
-	$title->attr("content") ? $out = $title->attr("content") : $out = $title->attr("value"); #same thing, content's a compat fallback
-
-	return $out;
 }
 sub twitter {
 	my $page = shift;
