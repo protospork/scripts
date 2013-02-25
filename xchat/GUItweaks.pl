@@ -152,6 +152,8 @@ __END__
 <%Tar> "irssi v0.8.12"
 <%Tar> also "Purple IRC"
 
+-Shou- VERSION WeeChat 0.4.0 (Feb  4 2013)
+
 -shiroi|yaiba- VERSION Konversation 1.4 (C) 2002-2011 by the Konversation team
 
 -denpa- VERSION HydraIRC v0.3.165 (12/December/2008) by Dominic Clifton aka Hydra - #HydraIRC on EFNet

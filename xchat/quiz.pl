@@ -45,23 +45,23 @@ if ($local){
 my $listening = [[0,0],0]; #not really sure initializing it fully-structured matters
 my $round = 0;
 
-sub unload { 
-	prnt "quiz unloaded"; 
+sub unload {
+	prnt "quiz unloaded";
 }
 sub inevitable_failure {
 	my $deets;
-	($deets->{'nick'}, $deets->{'msg'}) = ($_[0][0], $_[0][1]); 
+	($deets->{'nick'}, $deets->{'msg'}) = ($_[0][0], $_[0][1]);
 	($deets->{'chan'},$deets->{'srvr'}) = (get_info('channel'),get_info('server'));
-	
+
 	#strip any errant color codes
 	my $mynick = get_info('nick');
 	$mynick =~ s/^[^ -~][\d,]{1,5}//;
 	$deets->{'nick'} =~ s/^[^ -~][\d,]{1,5}//;
-	
+
 	#answer needs some processing to minimize pedantry
 	my $msg = lc $deets->{'msg'};
-	$msg =~ s/ //g;	
-	
+	$msg =~ s/ //g;
+
 	#chat
 	if (!$listening->[0] && $msg !~ /$cmd/){ return EAT_NONE; }
 	#wrong channel
@@ -70,8 +70,10 @@ sub inevitable_failure {
 	if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; }
 	#make sure we're supposed to play with others
 	if ($mynick !~ $deets->{'nick'} && $local){ return EAT_NONE; }
-	
-	#if there's a question out, see if it was just answered	
+	#make sure a question doesn't answer itself
+	if ($mynick =~ $deets->{"nick"} && $msg =~ /^Q/){ return EAT_NONE; }
+
+	#if there's a question out, see if it was just answered
 	if ($msg =~ /${cmd}help/){
 		spam_help($deets);
 	} elsif ($msg =~ /${cmd}scores/){
@@ -83,9 +85,9 @@ sub inevitable_failure {
 			command "timer 1 $command ".$listening->[0][1];
 			new_q($deets);
 		} elsif ($msg =~ $listening->[0][1]){
-			
+
 			command "timer 1 $command ".$deets->{'nick'}." is correct.";
-			
+
 			$score{$deets->{'chan'}}{$deets->{'nick'}}++;
 			$round--;
 			if ($round > 0){
@@ -99,19 +101,19 @@ sub inevitable_failure {
 	} elsif ($msg =~ /${cmd}begin(\d+)?([kh])?/){
 		my ($num);
 		if ($1){ $num = $1; } #round length
-		else { $num = 5; }	
+		else { $num = 5; }
 		if ($2){ $mode = $2; } #charset (katakana, hiragana, both)
 		else { $mode = 'b'; }
 		$num += 0; #to force it to stop being a string
 		if ($num > 99){ $num = 99; } #don't be a dick.
 		new_round($deets, $num, $mode);
 	}
-	
+
 	return EAT_NONE;
 }
 sub dump_scores {
 	my @out;
-	
+
 	for my $ply (keys %{$score{$_[0]->{'chan'}}}){
 		push @out, (sprintf "%02d", $score{$_[0]->{'chan'}}{$ply}).': '.$ply;
 	}
@@ -125,7 +127,7 @@ sub dump_scores {
 }
 sub new_q {
 	$listening->[0] = choice();
-	command "timer 3 $command Q".$round.": ".$listening->[0][0]." (".$listening->[0][2].")";# [".$listening->[0][1]."]";	
+	command "timer 3 $command Q".$round.": ".$listening->[0][0]." (".$listening->[0][2].")";# [".$listening->[0][1]."]";
 }
 sub choice {
 	my $re;
@@ -147,10 +149,10 @@ sub choice {
 sub new_round {
 	$listening->[0] = [0,0];
 	$listening->[1] = $_[0]{'chan'};
-	
+
 	$round = $_[1];
 	$mode = $_[2];
-	
+
 	new_q($_[0]);
 }
 sub round_done {
@@ -161,7 +163,7 @@ sub round_done {
 	$listening = [[0,0],0];
 }
 sub spam_help {
-	my $helpmsg = 
+	my $helpmsg =
 		"'\x{02}begin [#]\x{02}': Start a new round. ".
 		"'\x{02}end\x{02}': End the current round. ".
 		"'\x{02}skip\x{02}': Skip the current question. ".
@@ -182,26 +184,26 @@ sub kanafix {
 	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
 		$string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([dzjkstcpfmrn])/){ $1.$ch; } else { $ch; }!eg; #not sure if that else will ever come up
 	}
-	
+
 	$string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg; #(mainly) katakana vowel extender
-	
+
 	my $ti;
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
 		$string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg;
 	}
-	
+
 	my $sol = lc(unidecode($string));
-	
+
 	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
 	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
 		$sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
 		$sol =~ s/siy(?=[aou])/sh/g;
 		$sol =~ s/tiy(?=[aou])/ch/g;
 		$sol =~ s/ziy(?=[aou])/j/g;
-	
-	} 
-	
+
+	}
+
 	#unidecode disagrees with my books on these
 	$sol =~ s/si/shi/g;
 	$sol =~ s/tu/tsu/g;
@@ -210,9 +212,9 @@ sub kanafix {
 	$sol =~ s/zi/ji/g;
 	$sol =~ s/du/zu/g; #tsu with dakuten. rare
 	if ($katakana){ $sol =~ s/ze/je/g; } #katakana extension for foreign words
-	
+
 	$sol =~ s/tch/cch/g; #remnant of the sokuon thing - chi didn't exist yet so it doubled ti
-	
+
 	return $sol;
 }
 
