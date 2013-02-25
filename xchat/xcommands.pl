@@ -106,6 +106,30 @@ sub timer { #just a countdown timer
 	return EAT_XCHAT;
 }
 
+hook_command("beepflood_words", \&asshole);
+hook_command("beepflood_chars", \&asshole);
+sub asshole {
+	my @phrase;
+	if ($_[0][0] =~ /words$/i){
+		@phrase = split /\s+/, $_[1][1];
+	} else {
+		@phrase = split //, $_[1][1];
+	}
+
+	my @beep;
+	my $pace = .5;
+	my $quant = scalar @phrase;
+	while ($quant > 0){
+		push @beep, "\007";
+		$quant--;
+	}
+	my $www = .1;
+	for(@beep){
+		command("timer $www say $phrase[$www/$pace]$_");
+		$www += $pace;
+	}
+	return EAT_XCHAT;
+}
 hook_command('twit', \&twitter);
 sub twitter { #this locks the whole client and isn't particularly useful
 	command('say https://twitter.com'.(HTML::TreeBuilder->new_from_content($ua->get('https://twitter.com/intent/user?screen_name='.$_[0][1])->decoded_content)->look_down(_tag => 'a', class => 'tweet-timestamp')->extract_links->[0][0]));
