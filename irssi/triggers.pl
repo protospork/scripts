@@ -125,6 +125,7 @@ sub event_privmsg {
 		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
+		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
 		when (/^gis/i){				$terms[0] = '!gis'; $return = ddg($target, @terms); }
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
