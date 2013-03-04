@@ -62,11 +62,12 @@ sub magic_happens {
 	if ($red && $hilights){ highlighter($nick,$message); }
 
 	return EAT_NONE if $channel =~ /tosho-api|newsflash/;
+	return EAT_NONE if $message =~ /^\[(\d\d:){2}\d\d\]/; #znc playback
 
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû\x{18})$/){
+	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû(?:\x{18}|[^ -~]))$/){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');
 		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
