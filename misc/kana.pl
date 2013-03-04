@@ -46,9 +46,9 @@ sub find_dict {
 
 sub menu {
 	my $dict = $_[0];
-	
+
 #	print colored ("NOTE: ALL CHOICES CURRENTLY JUST POINT TO HIRAGANA\n", 'red'); #no longer true \o/
-	
+
 	##define menu
 	my (@menuL, @menuR);
 	#left column
@@ -77,10 +77,10 @@ sub menu {
 	##take choice
 	print colored ("Choose a Number ", 'cyan');
 	chomp (my $choice = <STDIN>);
-	if ($choice !~ /^[0-9]+$/){ 
-		print colored ('I asked for a number between 1 and 5. This isn\'t hard.', 'red'); 
+	if ($choice !~ /^[0-9]+$/){
+		print colored ('I asked for a number between 1 and 5. This isn\'t hard.', 'red');
 		print "\n";
-		return menu(@_); 
+		return menu(@_);
 	}
 	##submenu?
 	if ($choice == 2 || $choice == 3){
@@ -115,7 +115,7 @@ sub menu {
 sub nonsense { #this thing doesn't handle digraphs right, whoops
 	my @gana = (12353..12431, 12434, 12435);
 	#these are the vowels and N, I think it makes sense to weight them a bit more
-	push @gana, (12353, 12356, 12357, 12360, 12362, 12435); 
+	push @gana, (12353, 12356, 12357, 12360, 12362, 12435);
 	#push @gana, (12432, 12433, 12436); #wi, we, and vu - but they're useless IRL
 	map { $_ = chr $_ } @gana;
 
@@ -131,13 +131,13 @@ sub nonsense { #this thing doesn't handle digraphs right, whoops
 		while ($len){ $len--; $string .= $gana[int rand $#gana]; }
 		say colored ($string, 'cyan');
 		chomp(my $in = <STDIN>);
-		
+
 		#extra space for single-char sounds helps keeping track of where you are
-		$in =~ s/ //g; 
+		$in =~ s/ //g;
 		$in = lc $in;
-		
+
 		$string = kanafix $string;
-		
+
 		if ($in ~~ $string){
 			$right++;
 			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
@@ -158,53 +158,53 @@ sub readdict {
 	print colored ($script, 'cyan on_blue');
 	print "\n";
 	my $re = $mode->{$script};
-	
+
 	say 'menu choice '.$_[1] if $debugmode;
-	
+
 	my $adage;
 	if ($_[1] =~ /[123]2/){
 		$adage++;
 		print colored ('Adage mode enabled.', 'cyan on_blue');
 		print "\n";
 	}
-	
+
 	#build the dictionary
 	while (<$file>){
 		my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 		next unless defined $term;
-		if ($term =~ $re || $def =~ /[,(](?:obsc?|Buddh|comp|geom|gram|ling|math|physics)[,)]/i){ 
-			next; 
+		if ($term =~ $re || $def =~ /[,(](?:obsc?|Buddh|comp|geom|gram|ling|math|physics)[,)]/i){
+			next;
 		} elsif ($adage && $def =~ /\(exp\)/){
 			$entries{$term} = $def
 		} elsif ($adage){
 			next;
 		} else { #vanilla mode
-			$entries{$term} = $def; 
+			$entries{$term} = $def;
 		}
 	}
 	if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
-	
+
 	print colored ("Round Length? ", 'green');
 	my $num = 0 + <STDIN>;
 	if ($debugmode){ say colored ($num.' words then.', 'green'); }
-	
-	
+
+
 	my ($right, $wrong, @gana) = (0, 0, keys %entries);
 	while ($num){
 		my ($string) = ($gana[int rand $#gana]);
 		say colored ($string.' {'.$entries{$string}.'}', 'cyan');
 		chomp(my $in = <STDIN>);
 		$in = lc $in;
-		
+
 		#extra space for single-char sounds helps keeping track of where you are
-		$in =~ s/ //g; 
-		
+		$in =~ s/ //g;
+
 		my $sol = kanafix($string);
-		
+
 		say 'you said '.$in if $debugmode;
 		say 'I think  '.$sol if $debugmode;
-		
-		
+
+
 		if ($in ~~ $sol){
 			$right++;
 			say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
@@ -218,58 +218,58 @@ sub readdict {
 # sub hiragana {
 	# open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
 	# my %entries;
-# 
-# 
+#
+#
 	# print colored ('Hiragana', 'cyan on_blue');
 	# print "\n";
-	# 
+	#
 	# say 'menu choice '.$_[1] if $debugmode;
-	# 
+	#
 	# my $adage;
 	# if ($_[1] == 22){
 		# $adage++;
 		# print colored ('Adage mode enabled.', 'cyan on_blue');
 		# print "\n";
 	# }
-	# 
+	#
 	# #build the dictionary
 	# while (<$file>){
 		# my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 # #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
 		# next unless defined $term;
-		# if ($term =~ /[^\p{Hiragana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
-			# next; 
+		# if ($term =~ /[^\p{Hiragana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){
+			# next;
 		# } elsif ($adage && $def =~ /\(exp\)/){
 			# $entries{$term} = $def
 		# } elsif ($adage){
 			# next;
 		# } elsif (! $adage){ #vanilla mode
-			# $entries{$term} = $def; 
+			# $entries{$term} = $def;
 		# }
 	# }
 	# if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
-	# 
+	#
 	# print colored ("Round Length? ", 'green');
 	# my $num = 0 + <STDIN>;
 	# if ($debugmode){ say colored ($num.' words then.', 'green'); }
-	# 
-	# 
+	#
+	#
 	# my ($right, $wrong, @gana) = (0, 0, keys %entries);
 	# while ($num){
 		# my ($string) = ($gana[int rand $#gana]);
 		# say colored ($string.' {'.$entries{$string}.'}', 'cyan');
 		# chomp(my $in = <STDIN>);
 		# $in = lc $in;
-		# 
+		#
 		# #extra space for single-char sounds helps keeping track of where you are
-		# $in =~ s/ //g; 
-		# 
+		# $in =~ s/ //g;
+		#
 		# my $sol = kanafix($string);
-		# 
+		#
 		# say 'you said '.$in if $debugmode;
 		# say 'I think  '.$sol if $debugmode;
-		# 
-		# 
+		#
+		#
 		# if ($in ~~ $sol){
 			# $right++;
 			# say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
@@ -283,59 +283,59 @@ sub readdict {
 # sub katakana {
 	# open my $file, '<:encoding(euc-jp)', $_[0] || die $!;
 	# my %entries;
-# 
-# 
+#
+#
 	# print colored ('Katakana', 'cyan on_blue');
 	# print colored (' WORK IN PROGRESS. I don\'t even fucking know katakana.', 'red on_black');
 	# print "\n";
-	# 
+	#
 	# say 'menu choice '.$_[1] if $debugmode;
-	# 
+	#
 	# my $adage;
 	# if ($_[1] == 32){
 		# $adage++;
 		# print colored ('Adage mode enabled.', 'cyan on_blue');
 		# print "\n";
 	# }
-	# 
+	#
 	# #build the dictionary
 	# while (<$file>){
 		# my ($term, $def) = ($_ =~ m!^.+?\[([^;]+?)(?:;[^\]]+)*\]\s+/(.+?)(?:/\(2\).+)?/$!);
 # #		if ($debugmode && defined $term){ say $term; } #slows down the load and is obviously spammy
 		# next unless defined $term;
-		# if ($term =~ /[^\p{Katakana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){ 
-			# next; 
+		# if ($term =~ /[^\p{Katakana}\x{30FC}]/ || $def =~ /\((?:obsc?|Buddh|comp|geom|gram|ling|math|physics)\)/i){
+			# next;
 		# } elsif ($adage && $def =~ /\(exp\)/){
 			# $entries{$term} = $def
 		# } elsif ($adage){
 			# next;
 		# } elsif (! $adage){ #vanilla mode
-			# $entries{$term} = $def; 
+			# $entries{$term} = $def;
 		# }
 	# }
 	# if ($debugmode){ say ((scalar keys %entries).' words in dictionary.'); }
-	# 
+	#
 	# print colored ("Round Length? ", 'green');
 	# my $num = 0 + <STDIN>;
 	# if ($debugmode){ say colored ($num.' words then.', 'green'); }
-	# 
-	# 
+	#
+	#
 	# my ($right, $wrong, @kana) = (0, 0, keys %entries);
 	# while ($num){
 		# my ($string) = ($kana[int rand $#kana]);
 		# say colored ($string.' {'.$entries{$string}.'}', 'cyan');
 		# chomp(my $in = <STDIN>);
 		# $in = lc $in;
-		# 
+		#
 		# #extra space for single-char sounds helps keeping track of where you are
-		# $in =~ s/ //g; 
-		# 
+		# $in =~ s/ //g;
+		#
 		# my $sol = kanafix($string);
-		# 
+		#
 		# say 'you said '.$in if $debugmode;
 		# say 'I think  '.$sol if $debugmode;
-		# 
-		# 
+		#
+		#
 		# if ($in ~~ $sol){
 			# $right++;
 			# say colored ('yep ('.$right.' right|'.$wrong.' wrong)', 'green');
@@ -353,44 +353,44 @@ sub kanafix {
 	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
 		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([dzjkstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
 	}
-	
+
 	if ($string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg){ warn 'regex' if $debugmode; } #(mainly) katakana vowel extender
-	
+
 	my $ti;
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
 		if ($string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
 	}
-	
+
 	my $sol = lc(unidecode($string));
-	
+
 	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
 	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
 		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ warn 'regex' if $debugmode; }
 		if ($sol =~ s/siy(?=[aou])/sh/g){ warn 'regex' if $debugmode; }
 		if ($sol =~ s/tiy(?=[aou])/ch/g){ warn 'regex' if $debugmode; }
 		if ($sol =~ s/ziy(?=[aou])/j/g){ warn 'regex' if $debugmode; }
-	
+
 	#make sure that sokuon was actually dealt with
-	} 
+	}
 	if ($string =~ /[\x{3063}\x{30c3}]/){
 		warn "sokuon wasn't removed: ".$string;
 	}
 	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){
 		warn "katakana digraphs are still broken: ".$string;
 	}
-	
+
 	#unidecode disagrees with my books on these
 	if ($sol =~ s/si/shi/g){ warn 'regex' if $debugmode; }
 	if ($sol =~ s/tu/tsu/g){ warn 'regex' if $debugmode; }
 	if (! $ti){ if ($sol =~ s/ti/chi/g){ warn 'regex' if $debugmode; } } #otherwise makes ティ end up wrong
-	if ($sol =~ s/(?<=[aeiou])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu ##isn't actually being called wtf
+	if ($sol =~ s/(?<![sc])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu ##isn't actually being called wtf
 	if ($sol =~ s/zi/ji/g){ warn 'regex' if $debugmode; }
 	if ($sol =~ s/du/zu/g){ warn 'regex' if $debugmode; } #tsu with dakuten. rare
 	if ($katakana){ if ($sol =~ s/ze/je/g){ warn 'regex' if $debugmode; } } #katakana extension for foreign words
-	
+
 	if ($sol =~ s/tch/cch/g){ warn 'regex' if $debugmode; } #remnant of the sokuon thing - chi didn't exist yet so it doubled ti
-	
+
 	return $sol;
 }
 __END__
@@ -427,6 +427,16 @@ __END__
 
 =head2 UHOHs
 
+2013-03-03 20:32
+
+C<<
+
+<+nihongobot> Q98: じゅんにほんふう ((n,adj-no) classical Japanese style)
+<@sm> junnihonfuu
+<@sm> junnihonhuu
+
+>>
+
 2012-01-05 08:14
 
 C<<
@@ -460,7 +470,7 @@ regex ln212
 regex ln213
 you said risshinshusse
 I think  risshinshutsuse
-no, it's risshinshutsuse 
+no, it's risshinshutsuse
 
 >>
 
