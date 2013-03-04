@@ -117,7 +117,7 @@ sub event_privmsg {
 	}
 
 	given ($terms[0]){
-		when (/^flip$|^ro(ll|se)$/i){	$return = dice(@terms); }
+		when (/^flip$|^ro(se)$/i){	$return = dice(@terms); } #.roll temporarily removed until I figure out what the fuck
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
 		when (/^identify$/i){		$return = ident($server); }
