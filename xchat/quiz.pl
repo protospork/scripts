@@ -43,6 +43,7 @@ if ($local){
 
 
 my $listening = [[0,0],0]; #not really sure initializing it fully-structured matters
+my $lines_since_q = 0;
 my $round = 0;
 
 sub unload {
@@ -81,8 +82,9 @@ sub inevitable_failure {
 	} elsif ($listening->[0][0]){
 		if ($msg =~ /${cmd}end/){
 			round_done($deets);
-		} elsif ($msg =~ /${cmd}skip/){
-			command "timer 1 $command ".$listening->[0][1];
+		} elsif ($msg =~ /${cmd}skip/ || ($lines_since_q > 50 && $msg !~ $listening->[0][1])){
+			#skip the question, either because it's been to long or because we were asked to
+			command "timer 1 $command ".$listening->[0][0]." is ".$listening->[0][1].", you idiots.";
 			new_q($deets);
 		} elsif ($msg =~ $listening->[0][1]){
 
@@ -96,6 +98,7 @@ sub inevitable_failure {
 				round_done($deets);
 			}
 		} else {
+			$lines_since_q++;
 			return EAT_NONE;
 		}
 	} elsif ($msg =~ /${cmd}begin(\d+)?([kh])?/){
@@ -127,6 +130,7 @@ sub dump_scores {
 }
 sub new_q {
 	$listening->[0] = choice();
+	$lines_since_q = 0;
 	command "timer 3 $command Q".$round.": ".$listening->[0][0]." (".$listening->[0][2].")";# [".$listening->[0][1]."]";
 }
 sub choice {
@@ -208,7 +212,7 @@ sub kanafix {
 	$sol =~ s/si/shi/g;
 	$sol =~ s/tu/tsu/g;
 	if (! $ti){ $sol =~ s/ti/chi/g; } #otherwise makes ?? end up wrong
-	$sol =~ s/(?<=[aeiou])hu|^hu/fu/g; #was probably breaking chu/shu ##isn't actually being called wtf
+	$sol =~ s/(?<![sc])hu|^hu/fu/g; #was probably breaking chu/shu ##isn't actually being called wtf
 	$sol =~ s/zi/ji/g;
 	$sol =~ s/du/zu/g; #tsu with dakuten. rare
 	if ($katakana){ $sol =~ s/ze/je/g; } #katakana extension for foreign words
