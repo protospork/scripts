@@ -117,7 +117,7 @@ sub event_privmsg {
 	}
 
 	given ($terms[0]){
-		when (/^flip$|^ro(se)$/i){	$return = dice(@terms); } #.roll temporarily removed until I figure out what the fuck
+		when (/^flip$|^ro(se|ll)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
 		when (/^identify$/i){		$return = ident($server); }
@@ -761,7 +761,6 @@ sub utfdecode { #why
 	return $x if utf8::decode($x);
 	return $y;
 }
-my @prev3 = ('heads','tails','heads');
 sub dice {
 	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
@@ -777,35 +776,32 @@ sub dice {
 		$rose->[1] = time;
 		return join ' ', @throws;
 	} elsif ($flavor eq 'flip'){
-		my $toss = int(rand(30)+1);	#&roll seems to be unreliable for tiny numbers. not that this isn't.
-		if (($toss % 2) == 1){
+		my ($toss) = (roll(1,6)); #6 sides? whatever
+		if (($toss % 2)){
 			$toss = 'heads';
 		} else {
 			$toss = 'tails';
 		}
 
-		#can't remember why I'm doing this @prev3 shit
-		if ($toss eq $prev3[0] && $toss eq $prev3[1]){
-			push @prev3, $toss;
-			$toss .= ' '.$repeat[int(rand($#repeat))];
-		} else {
-			push @prev3, $toss;
-		}
-		shift @prev3;	#throw away the oldest toss
-
 		return $toss;
 	} elsif ($flavor eq 'roll'){
 		my @xdy = split /d/i, $_[1];
+		s/\D// for @xdy;
+
+		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] <= 1;
+		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 99;
+		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[0] > 99;
+
 		my @throws = roll(@xdy);
 		my $total;
+
 		for (@throws){
 			$total += $_;
 		}
-		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] <= 1;
-		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 300;
-		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[0] > 300;
-		return $throws[0] if $xdy[0] == 1;
-		if ($xdy[0] <= $maxdicedisplayed){
+
+		if ($xdy[0] == 1){
+			return $throws[0];
+		} elsif ($xdy[0] <= $maxdicedisplayed){
 			return (join ' + ', @throws)." = $total";
 		} else {
 			return $total;
@@ -833,7 +829,7 @@ sub ident {
 	$server->command("msg nickserv identify ".$botpass);
 }
 sub return_rose_scores {
-	$_[-1]->command("msg $_[0] $_[1] is correct: $_[2]");
+	$_[-1]->command("msg $_[0] $_[1] is correct: ".$_[2][0]);
 	my @out;
 
 	for (keys %{$rosescores{$_[0]}}){
@@ -842,7 +838,7 @@ sub return_rose_scores {
 	@out = reverse sort @out;
 	my $t;
 	$#out > 5 ? $t = 5 : $t = $#out;
-	$_[-1]->command("msg $_[0] ".(join ' ', @out[0..$t]));
+	$_[-1]->command("msg $_[0] ".(join '; ', @out[0..$t]));
 	return;
 }
 
