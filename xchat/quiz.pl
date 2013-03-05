@@ -10,8 +10,6 @@ my @acceptable_chans = ('#fridge', '#tac', '#anime', '#wat');
 my $cmd = qr/^;/; #trigger character
 my $local = 0;
 #todo:
-#-leave in base chars but obv add the rest of the alphabet
-#-and katakana
 #---find a way to avoid hardcoding all the fucking glyphs (pull words from edict, split // into hash?)
 
 #-the replies to others' messages don't need timers
@@ -196,6 +194,10 @@ sub kanafix {
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
 		$string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg;
 	}
+	if ($string =~ /[\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}]/){ #hiragana has these too apparently
+		$ti++ if $string =~ /\x{3066}\x{3043}/;
+		if ($string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
+	}
 
 	my $sol = lc(unidecode($string));
 
@@ -211,8 +213,8 @@ sub kanafix {
 	#unidecode disagrees with my books on these
 	$sol =~ s/si/shi/g;
 	$sol =~ s/tu/tsu/g;
-	if (! $ti){ $sol =~ s/ti/chi/g; } #otherwise makes ?? end up wrong
-	$sol =~ s/(?<![sc])hu|^hu/fu/g; #was probably breaking chu/shu ##isn't actually being called wtf
+	if (! $ti){ $sol =~ s/ti/chi/g; } #otherwise makes ティ end up wrong
+	$sol =~ s/(?<![sc])hu|^hu/fu/g; #was probably breaking chu/shu ##isn't actually being called? wtf
 	$sol =~ s/zi/ji/g;
 	$sol =~ s/du/zu/g; #tsu with dakuten. rare
 	if ($katakana){ $sol =~ s/ze/je/g; } #katakana extension for foreign words

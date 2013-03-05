@@ -361,6 +361,10 @@ sub kanafix {
 		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
 		if ($string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
 	}
+	if ($string =~ /[\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}]/){ #hiragana has these too apparently
+		$ti++ if $string =~ /\x{3066}\x{3043}/;
+		if ($string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
+	}
 
 	my $sol = lc(unidecode($string));
 
@@ -427,10 +431,30 @@ __END__
 
 =head2 UHOHs
 
-2013-03-03 20:32
+2013-03-04
+
+C<<
+#FIXED maybe
+<+nihongobot> Q87: ふぃんらんど ((n) (uk) Finland)
+<+Ruru> > iiss
+<+Ruru> finrando
+<+protospork> I have never seen a tiny ii in hiragana before
+<+protospork> fuinrando
+<+nihongobot> protospork is correct.
+
+>>
 
 C<<
 
+<+nihongobot> Q26: パラフィンし ((n) paraffin paper)
+<+nihongobot> parahinshi
+
+>>
+
+2013-03-03 20:32
+
+C<<
+#FIXED almost definitely
 <+nihongobot> Q98: じゅんにほんふう ((n,adj-no) classical Japanese style)
 <@sm> junnihonfuu
 <@sm> junnihonhuu
@@ -440,28 +464,17 @@ C<<
 2012-01-05 08:14
 
 C<<
-
+#??
 えんはいなものあじなもの {(exp) inscrutable and interesting are the ways people are brought together}
 enhainamonoojinamono
 no, it's enhainamonoazinamono
 
 >>
 
-C<<
-
-こうふくをもとめて {(exp) in search (pursuit) of happiness}
-koufukuwomutomete
-regex ln215
-you said koufukuwomutomete
-I think  koufukuwomotomete
-no, it's koufukuwomotomete
-
->>
-
 2011-01-06 09:32
 
 C<<
-
+#FIXED, must be
 りっしんしゅっせ {(n,vs) success in life}
 risshinshusse
 regex ln193
