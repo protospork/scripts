@@ -116,10 +116,12 @@ sub dump_scores {
 	my @out;
 
 	for my $ply (keys %{$score{$_[0]->{'chan'}}}){
-		push @out, (sprintf "%02d", $score{$_[0]->{'chan'}}{$ply}).': '.$ply;
+		# push @out, (sprintf "%02d", $score{$_[0]->{'chan'}}{$ply}).': '.$ply;
+		push @out, $score{$_[0]{'chan'}}{$ply}.': '.$ply;
 	}
 	if (@out){
-		command "timer 1 $command ".(join ' ', reverse sort @out);
+		no warnings 'numeric'; #it doesn't like number-sorting strings ##no, this isn't global
+		command "timer 1 $command ".(join '; ', reverse sort { $a <=> $b } @out);
 	} else {
 		command "echo uhoh";
 	}
@@ -196,9 +198,8 @@ sub kanafix {
 	}
 	if ($string =~ /[\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}]/){ #hiragana has these too apparently
 		$ti++ if $string =~ /\x{3066}\x{3043}/;
-		if ($string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
+		$string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg;
 	}
-
 	my $sol = lc(unidecode($string));
 
 	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?

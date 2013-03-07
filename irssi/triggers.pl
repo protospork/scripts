@@ -835,7 +835,8 @@ sub return_rose_scores {
 	for (keys %{$rosescores{$_[0]}}){
 		push @out, ((sprintf "%02d", $rosescores{$_[0]}{$_}).' - '.$_);
 	}
-	@out = reverse sort @out;
+	no warnings 'numeric';
+	@out = reverse sort { $a <=> $b } @out;
 	my $t;
 	$#out > 5 ? $t = 5 : $t = $#out;
 	$_[-1]->command("msg $_[0] ".(join '; ', @out[0..$t]));
