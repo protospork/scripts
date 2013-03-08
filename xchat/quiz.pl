@@ -69,22 +69,22 @@ sub inevitable_failure {
 	if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; }
 	#make sure we're supposed to play with others
 	if ($mynick !~ $deets->{'nick'} && $local){ return EAT_NONE; }
-	#make sure a question doesn't answer itself
-	if ($mynick =~ $deets->{"nick"} && $msg =~ /^Q/){ return EAT_NONE; }
+	#make sure a question doesn't answer itself #p sure this is fixed, leaving it for now as a reminder
+	# if ($mynick =~ $deets->{"nick"} && $msg =~ /^Q/){ return EAT_NONE; }
 
 	#if there's a question out, see if it was just answered
-	if ($msg =~ /${cmd}help/){
+	if ($msg =~ /^${cmd}help/){
 		spam_help($deets);
-	} elsif ($msg =~ /${cmd}scores/){
+	} elsif ($msg =~ /^${cmd}scores/){
 		dump_scores($deets);
 	} elsif ($listening->[0][0]){
-		if ($msg =~ /${cmd}end/){
+		if ($msg =~ /^${cmd}end/){
 			round_done($deets);
-		} elsif ($msg =~ /${cmd}skip/ || ($lines_since_q > 50 && $msg !~ $listening->[0][1])){
+		} elsif ($msg =~ /^${cmd}skip/ || ($lines_since_q > 50 && $msg !~ $listening->[0][1])){
 			#skip the question, either because it's been to long or because we were asked to
 			command "timer 1 $command ".$listening->[0][0]." is ".$listening->[0][1].", you idiots.";
 			new_q($deets);
-		} elsif ($msg =~ $listening->[0][1]){
+		} elsif ($msg =~ /^$listening->[0][1]/){
 
 			command "timer 1 $command ".$deets->{'nick'}." is correct.";
 
@@ -99,7 +99,7 @@ sub inevitable_failure {
 			$lines_since_q++;
 			return EAT_NONE;
 		}
-	} elsif ($msg =~ /${cmd}begin(\d+)?([kh])?/){
+	} elsif ($msg =~ /^${cmd}begin(\d+)?([kh])?/){
 		my ($num);
 		if ($1){ $num = $1; } #round length
 		else { $num = 5; }
@@ -116,22 +116,26 @@ sub dump_scores {
 	my @out;
 
 	for my $ply (keys %{$score{$_[0]->{'chan'}}}){
-		# push @out, (sprintf "%02d", $score{$_[0]->{'chan'}}{$ply}).': '.$ply;
 		push @out, $score{$_[0]{'chan'}}{$ply}.': '.$ply;
 	}
+
 	if (@out){
-		no warnings 'numeric'; #it doesn't like number-sorting strings ##no, this isn't global
-		command "timer 1 $command ".(join '; ', reverse sort { $a <=> $b } @out);
+		no warnings qw'uninitialized numeric'; #it doesn't like number-sorting strings ##no, these aren't global
+		@out = reverse sort { $a <=> $b } @out;
+		my $c = "timer 1 $command ".(join '; ', @out[0..7]); #only show top n scorers
+		$c =~ s/(;\s*)+$//g;
+		command $c;
 	} else {
 		command "echo uhoh";
 	}
+
 	tied(%score)->save;
 	return;
 }
 sub new_q {
 	$listening->[0] = choice();
 	$lines_since_q = 0;
-	command "timer 3 $command Q".$round.": ".$listening->[0][0]." (".$listening->[0][2].")";# [".$listening->[0][1]."]";
+	command "timer 3 $command Q".$round.": ".$listening->[0][0]." (".$listening->[0][2].")";
 }
 sub choice {
 	my $re;
