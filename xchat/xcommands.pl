@@ -138,8 +138,15 @@ sub twitter { #this locks the whole client and isn't particularly useful
 hook_command('hex', sub{prnt($_[0][1].' is '.(sprintf "%x", $_[0][1])); return EAT_XCHAT; }); #translate a number from decimal to hex
 
 #converts ascii strings to wideface japanese characters
-hook_command('smallcaps', sub{my ($st,$st2) = ($_[1][1],''); $st =~ tr/A-Z/a-z/; for (split //, $st){ $_ = chr((ord $_) + 65216) unless $_ !~ /[a-z]/; $_ = chr((ord $_) + 65248) unless $_ !~ /[0-9~\[\]:;'"<>}{|\\\/_,?!@#$%^&*()\-+=*]/; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
-hook_command('romaji', sub{my ($st,$st2) = ($_[1][1],''); for (split //, $st){ $_ = chr((ord $_) + 65248) unless /\s|\./; $st2 .= $_; } command('say '.$st2); return EAT_XCHAT;});
+hook_command('romaji', sub{
+	my ($st,$st2) = ($_[1][1],'');
+	for (split //, $st){
+		$_ = chr((ord $_) + 65248) unless /\s|\./;
+		$st2 .= $_;
+	}
+	command('say '.$st2);
+	return EAT_XCHAT;
+});
 
 #translits kana/kanji to romaji
 hook_command('translit', \&tlit);
@@ -148,21 +155,10 @@ sub tlit {
 	my $raw = $_[1][1];
 	my $line = unidecode($raw);
 
-	my %ranges;
-	for (split //, $raw){
-		if (/[\p{Hiragana}]/){	$ranges{'Hiragana'}++; }
-		elsif (/[\p{Katakana}]/){	$ranges{'Katakana'}++; }
-		elsif (/[\p{Han}]/){		$ranges{'Han'}++; }
-		elsif (/[\p{Ascii}]/){ $ranges{'Ascii'}++; }
-		else { $ranges{'other'}++ }
-	}
-	my @content;
-	push @content, ($_.': '.$ranges{$_}) for sort keys %ranges;
-
 	$raw = "\x0321".$raw."\x0F";
 	length $raw < 13 	#13 length includes those four formatting chars
-		? prnt($raw."\t".$line.' ['.(join ', ', @content).']')
-		: prnt($raw.' :: '.$line.' ['.(join ', ', @content).']');
+	? prnt($raw."\t".$line)
+	: prnt($raw.' :: '.$line);
 
 	return EAT_XCHAT;
 }
