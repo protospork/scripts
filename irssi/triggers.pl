@@ -166,28 +166,18 @@ sub imgops {
 	}
 	return $query;
 }
-tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
 my %drinks; #tying this to disk really doesn't seem worthwhile
 sub drinkify { #UNIRONICALLY WRITTEN WHILE DRINKING
 	my $nick = shift;
-	my $terms = join ' ', @_[1..$#_];
-
-
-	$terms = ucfirst $terms if $terms eq lc $terms;
+	my $terms = join ' ', map { $_ = ucfirst $_ } @_[1..$#_];
 
 	if (! $terms || length $terms < 3){ #<1 would probs work I don't know
-		if (exists $lastfms{$nick}){
-			$terms = $lastfms{$nick}
-		} else {
-			$terms = $nick;
-			$lastfms{$nick} = $nick;
-		}
-		$terms = pull_lastfm($terms, 'artist');
+		return;
 	}
 
 	my $artist = $terms;
 	$terms = ('http://drinkify.org/'.(uri_escape_utf8($terms)));
-	print $terms;
+	print $terms if $debug;
 
 	if ($drinks{$terms}){
 		if ($drinks{$terms} ne 'nope'){
@@ -402,7 +392,7 @@ sub waaai {
 	}
 }
 
-
+tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
 sub lastfm {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
@@ -419,31 +409,16 @@ sub lastfm {
 		}
 	} else {
 		$account = $text;
+		$lastfms{$nick} = $text;
 	}
-
-	my $title = pull_lastfm($account, 'all');
-	if (! $title || $title eq 'no account'){
-		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
-		return;
-	} else {
-		return 'http://last.fm/user/'.$account.' last played '.$title;
-	}
-}
-sub pull_lastfm { #this is used for &lastfm and for &drinkify
-	my $account = lc shift;
-	my $mode = shift;
-	my $title;
 
 	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$account.'/recenttracks.rss');
-
 	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
 		return "no account";
 	}
-
-	tied(%lastfms)->save;
-
 	my $chunk = (split /<item>/, $results->decoded_content)[1];
 	return 'uh oh' unless $chunk;
+
 	#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
 	my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
 
@@ -453,17 +428,14 @@ sub pull_lastfm { #this is used for &lastfm and for &drinkify
 	$title =~ s/\x{2013}|&ndash;/-/g;
 	$title =~ s/&amp;/&/g;
 
-	print "lastfm: $title" if $debug;
-
-	if ($mode eq 'artist'){
-		my @info = split /&ndash;|&#2013;|\x{2013}/, $title;
-		# $artist =~ s/ (?:&ndash;|&#2013;|\x{2013}) .+$//;
-		return substr($info[0], 0, -1); #kill trailing space
+	if (! $title || $title eq 'no account'){
+		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
+		return;
 	} else {
-		return $title;
+		tied(%lastfms)->save;
+		return 'http://last.fm/user/'.$account.' last played '.$title;
 	}
 }
-
 sub moviedb {
 	my ($server, $target) = (shift, shift);
 	my $call = shift;
