@@ -1,5 +1,5 @@
 ﻿use Modern::Perl;
-use Text::Unidecode;
+use Lingua::JA::Kana;
 use Term::ANSIColor;
 use utf8;
 
@@ -347,55 +347,20 @@ sub readdict {
 	# }
 # }
 sub kanafix {
-	my $string = $_[0];
-	my $katakana;
-	if ($string =~ /[\p{Katakana}]/){ $katakana++; } #not sure if there are mixed phrases
-	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
-		if ($string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([dzjkstcpfmrn])/){ $1.$ch; } else { $ch; }!eg){ warn 'regex' if $debugmode; }
-	}
+	my $roma = kana2romaji($_[0]);
 
-	if ($string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg){ warn 'regex' if $debugmode; } #(mainly) katakana vowel extender
+    #FOR THE NEW QUIZ PARSER, THE Y IN THE FIRST TWO RULES IS OPTIONAL
+    $roma =~ s/(?<=j)ix[uy]//g; #it romanizes じょ as jixyo, etc.
+    $roma =~ s/(?<=ch)ixy//g;
+    $roma =~ s/(?<=[hfbpkgnmr])ix//g; #and you want to keep the y for most of them
 
-	my $ti;
-	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
-		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
-		if ($string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
-	}
-	if ($string =~ /[\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}]/){ #hiragana has these too apparently
-		$ti++ if $string =~ /\x{3066}\x{3043}/;
-		if ($string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg){ warn 'regex' if $debugmode; }
-	}
+    $roma =~ s/(?<=[td])ex//g;
 
-	my $sol = lc(unidecode($string));
+    $roma =~ s/(?<=v)ux//g; #all V sounds except vu use vowel extensions
 
-	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
-	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
-		if ($sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g){ warn 'regex' if $debugmode; }
-		if ($sol =~ s/siy(?=[aou])/sh/g){ warn 'regex' if $debugmode; }
-		if ($sol =~ s/tiy(?=[aou])/ch/g){ warn 'regex' if $debugmode; }
-		if ($sol =~ s/ziy(?=[aou])/j/g){ warn 'regex' if $debugmode; }
+    $roma =~ s/dh(?=[ui])/dz/g; #ちぢ つづ
 
-	#make sure that sokuon was actually dealt with
-	}
-	if ($string =~ /[\x{3063}\x{30c3}]/){
-		warn "sokuon wasn't removed: ".$string;
-	}
-	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){
-		warn "katakana digraphs are still broken: ".$string;
-	}
-
-	#unidecode disagrees with my books on these
-	if ($sol =~ s/si/shi/g){ warn 'regex' if $debugmode; }
-	if ($sol =~ s/tu/tsu/g){ warn 'regex' if $debugmode; }
-	if (! $ti){ if ($sol =~ s/ti/chi/g){ warn 'regex' if $debugmode; } } #otherwise makes ティ end up wrong
-	if ($sol =~ s/(?<![sc])hu|^hu/fu/g){ warn 'regex' if $debugmode; } #was probably breaking chu/shu ##isn't actually being called wtf
-	if ($sol =~ s/zi/ji/g){ warn 'regex' if $debugmode; }
-	if ($sol =~ s/du/zu/g){ warn 'regex' if $debugmode; } #tsu with dakuten. rare
-	if ($katakana){ if ($sol =~ s/ze/je/g){ warn 'regex' if $debugmode; } } #katakana extension for foreign words
-
-	if ($sol =~ s/tch/cch/g){ warn 'regex' if $debugmode; } #remnant of the sokuon thing - chi didn't exist yet so it doubled ti
-
-	return $sol;
+    return $roma;
 }
 __END__
 
@@ -419,7 +384,7 @@ __END__
 
 =item 3:
 
-		type C<cpan -i Modern::Perl Text::Unidecode Term::ANSIColor> into your terminal/puttycyg
+		type C<cpan -i Modern::Perl Lingua::JA::Kana Term::ANSIColor> into your terminal/puttycyg
 		and follow those instructions
 
 =item 4:
@@ -430,6 +395,51 @@ __END__
 =back
 
 =head2 UHOHs
+
+2013-03-14
+
+C<<
+<nihongobot> Q97: ハンボッ ((n) hanbok (traditional Korean dress))
+<Ruru> hanbo
+<Ruru> what the fuck is a small tsu doing there
+<Ruru>  zettai_ryouiki
+<zettai_ryouiki> I don't even
+<Ruru> fix dis
+<zettai_ryouiki> hanbokku
+<zettai_ryouiki> hm
+<Ruru> hanbotsu
+<Ruru> ;skip
+<nihongobot> ハンボッ is hanboッ, you idiots.
+>>
+
+ALL BELOW FIXED 2013-03-12
+
+2013-03-12
+
+C<<
+<+nihongobot> Q1: シーディーロム ((n) compact disk read-only memory/CD-ROM)
+<+Ruru> I need to practice more kata
+<+zettai_ryouiki> shiidiiromu
+<+zettai_ryouiki> shiidiiiromu
+<+Ruru> shiidiiromu
+<+zettai_ryouiki> shiideiiromu
+<+Ruru> shiidiiromu
+<+zettai_ryouiki> ;skip
+<+nihongobot> シーディーロム is shiidziiromu, you idiots.
+
+>>
+
+C<<
+#"fixed"
+<+nihongobot> Q20: もらいぢ ((ok) (n) having one's baby nursed by another woman/wet-nursing/breast milk received from another woman)
+<+Ruru> moraizi
+<+Ruru> moraidzi
+<+Ruru> ;skip
+<+nihongobot> もらいぢ is moraidi, you idiots.
+
+ちぢ
+つづ
+>>
 
 2013-03-04
 

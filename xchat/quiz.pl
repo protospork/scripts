@@ -1,20 +1,18 @@
 use Modern::Perl;
 use Xchat qw':all';
-use Text::Unidecode;
+use Lingua::JA::Kana;
 use utf8;
 use File::Slurp;
 use Tie::YAML;
 use YAML qw'LoadFile';
 
-my @acceptable_chans = ('#fridge', '#tac', '#anime', '#wat');
+my @acceptable_chans = ('#fridge', '#tac', '#anime', '#wat', '#nihongobot');
 my $cmd = qr/^;/; #trigger character
 my $local = 0;
 #todo:
-#---find a way to avoid hardcoding all the fucking glyphs (pull words from edict, split // into hash?)
-
 #-the replies to others' messages don't need timers
-
 #-make the script work in PM
+#-highlight katakana and hiragana in different colors
 
 tie my %score, 'Tie::YAML', 'score.po' || unload();
 
@@ -23,6 +21,7 @@ register('nihongo quiz', time, "what is wrong with me", \&unload);
 hook_print('Channel Message', \&inevitable_failure);
 hook_print('Your Message', \&inevitable_failure);
 
+command("charset utf8"); #sick of this shit
 prnt "quiz loaded";
 my $entries = LoadFile("X:/My Dropbox/Public/GIT/scripts/misc/kana_library.po") || prnt 'library load fail: '.$!;
 
@@ -30,7 +29,7 @@ my $mode = 'b';
 #my %entries; #terms & answers from edict
 #we can't just pull straight from %entries - no way to pull randomly from a hash
 my @library = keys %$entries;
-map { $_ = [$_, kanafix($_), $entries->{$_}] } @library;
+map { $_ = [$_, kana_to_roma($_), $entries->{$_}] } @library;
 prnt (($#library + 1).' words in dictionary.');
 
 #talk to yourself, or others?
@@ -66,11 +65,9 @@ sub inevitable_failure {
 	#wrong channel
 	unless (grep $deets->{'chan'} eq $_, (@acceptable_chans)){ return EAT_NONE; }
 	#for now, we'll only run one quiz at a time. multiples means overhauling score/round tracking
-	if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; }
+	# if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; } #moved down
 	#make sure we're supposed to play with others
 	if ($mynick !~ $deets->{'nick'} && $local){ return EAT_NONE; }
-	#make sure a question doesn't answer itself #p sure this is fixed, leaving it for now as a reminder
-	# if ($mynick =~ $deets->{"nick"} && $msg =~ /^Q/){ return EAT_NONE; }
 
 	#if there's a question out, see if it was just answered
 	if ($msg =~ /^${cmd}help/){
@@ -100,6 +97,10 @@ sub inevitable_failure {
 			return EAT_NONE;
 		}
 	} elsif ($msg =~ /^${cmd}begin(\d+)?([kh])?/){
+		if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){
+			command("$command already playing on ".$listening->[1]);
+			return EAT_NONE;
+		}
 		my ($num);
 		if ($1){ $num = $1; } #round length
 		else { $num = 5; }
@@ -184,48 +185,19 @@ sub load_dict {
 	prnt ((scalar keys %$entries).' terms in dictionary.');
 	return %$entries;
 }
-#because unidecode is wrong more than it isn't
-sub kanafix {
-	my $string = $_[0];
-	my $katakana; #hiragana is the default state
-	if ($string =~ /[\p{Katakana}]/){ $katakana++; } #hope there aren't mixed phrases
-	if ($string =~ /[\x{3063}\x{30c3}]/){ #sokuon (little tsu)
-		$string =~ s![\x{3063}\x{30c3}](.)!my $ch = $1; if(unidecode($ch) =~ /([dzjkstcpfmrn])/){ $1.$ch; } else { $ch; }!eg; #not sure if that else will ever come up
-	}
+sub kana_to_roma {
+	my $roma = kana2romaji($_[0]);
 
-	$string =~ s!(.)\x{30FC}!my $ch = $1; if(unidecode($ch) =~ /([aeiou])/){ $ch.$1; } else { $ch; }!eg; #(mainly) katakana vowel extender
+    #FOR THE NEW QUIZ PARSER, THE Y IN THE FIRST TWO RULES IS OPTIONAL
+    $roma =~ s/(?<=j)ix[uy]//g; #it romanizes じょ as jixyo, etc.
+    $roma =~ s/(?<=ch)ixy//g;
+    $roma =~ s/(?<=[hfbpkgnmr])ix//g; #and you want to keep the y for most of them
 
-	my $ti;
-	if ($string =~ /[\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}]/){ #katakana's extended ranges
-		$ti++ if $string =~ /\x{30c6}\x{30a3}/;
-		$string =~ s!(.)([\x{30a1}\x{30a3}\x{30a5}\x{30a7}\x{30a9}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg;
-	}
-	if ($string =~ /[\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}]/){ #hiragana has these too apparently
-		$ti++ if $string =~ /\x{3066}\x{3043}/;
-		$string =~ s!(.)([\x{3041}\x{3043}\x{3045}\x{3047}\x{3049}])!my ($ch1,$ch2) = (unidecode $1,unidecode $2); $ch1 =~ s/.$/$ch2/; $ch1 =~ s/^(k|g)/$1w/; $ch1!eg;
-	}
-	my $sol = lc(unidecode($string));
+    $roma =~ s/(?<=[td])ex//g;
 
-	#DIGRAPHS (even if this works, it won't flag wrong answers correctly) #hm?
-	if ($string =~ /[\x{3083}\x{3085}\x{3087}\x{30e3}\x{30e5}\x{30e7}]/){ #yoon
-		$sol =~ s/(?<=[knhmrgbp])i(?=y[aou])//g;
-		$sol =~ s/siy(?=[aou])/sh/g;
-		$sol =~ s/tiy(?=[aou])/ch/g;
-		$sol =~ s/ziy(?=[aou])/j/g;
+    $roma =~ s/(?<=v)ux//g; #all V sounds except vu use vowel extensions
 
-	}
+    $roma =~ s/dh(?=[ui])/dz/g; #ちぢ つづ
 
-	#unidecode disagrees with my books on these
-	$sol =~ s/si/shi/g;
-	$sol =~ s/tu/tsu/g;
-	if (! $ti){ $sol =~ s/ti/chi/g; } #otherwise makes ティ end up wrong
-	$sol =~ s/(?<![sc])hu|^hu/fu/g; #was probably breaking chu/shu ##isn't actually being called? wtf
-	$sol =~ s/zi/ji/g;
-	$sol =~ s/du/zu/g; #tsu with dakuten. rare
-	if ($katakana){ $sol =~ s/ze/je/g; } #katakana extension for foreign words
-
-	$sol =~ s/tch/cch/g; #remnant of the sokuon thing - chi didn't exist yet so it doubled ti
-
-	return $sol;
+    return $roma;
 }
-
