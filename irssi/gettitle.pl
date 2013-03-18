@@ -203,7 +203,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		$url->query_form(undef);
 	} elsif ($url =~ m{https?://(?:www\.)?amazon\.(\S{2,5})/(?:[a-zA-Z0-9-]+)?/[dg]p(?:/product)?/([A-Z0-9]{10})}){
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
-	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/res/\d+)$}){
+	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/res/\d+)(?:#\S+?)?$}){
 		$url = 'http://api.4chan.org/'.$1.'.json';
 	}
 
