@@ -13,7 +13,8 @@ use File::Path qw'make_path';
 #use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
-				@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
+			$lfm_key $lfm_secret);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -134,7 +135,7 @@ sub event_privmsg {
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
-		when (/^lastfm/i){			$return = lastfm($server, $nick, @terms); }
+		when (/^l(?:ast)?fm/i){		$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		default { return; }
@@ -404,36 +405,58 @@ sub lastfm {
 			$account = $lastfms{$nick}
 		} else {
 			$account = $nick;
-			$lastfms{$nick} = $nick;
-			# return;
 		}
 	} else {
 		$account = $text;
-		$lastfms{$nick} = $text;
 	}
 
-	my $results = $ua->get('http://ws.audioscrobbler.com/1.0/user/'.$account.'/recenttracks.rss');
-	if (! $results->is_success || $results->content eq 'No user exists with this name.') {
-		return "no account";
-	}
-	my $chunk = (split /<item>/, $results->decoded_content)[1];
-	return 'uh oh' unless $chunk;
-
-	#can't use the lastfm API without a key and that's a bitch. I suppose I could load an xml parser, but fuck you
-	my ($title, $date) = ($chunk =~ m{<title>([^<]+)</title>.+?<pubDate>\w{3,4}, \d+ \w{3,4} \d{4} ((?:\d\d:){2}\d\d) \+0000}is);
-
-	#honestly I have no idea
-	# $title = encode_entities($title);
-	$title = decode_entities($title);
-	$title =~ s/\x{2013}|&ndash;/-/g;
-	$title =~ s/&amp;/&/g;
+	my $title = lastfm_api($account);
 
 	if (! $title || $title eq 'no account'){
 		$server->command("notice $nick Shit's broke. Are you sure that was a valid last.fm username?");
 		return;
 	} else {
+		$lastfms{$nick} = $account;
 		tied(%lastfms)->save;
-		return 'http://last.fm/user/'.$account.' last played '.$title;
+		return $title;
+	}
+}
+sub lastfm_api {
+	my $user = shift;
+	my $url = 'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&limit=1';
+	$url .= '&user='.$user.'&api_key='.$lfm_key;
+
+	my $req = $ua->get($url);
+	return "uh oh" unless $req->is_success;
+
+	my $json;
+	eval { $json = JSON->new->utf8->decode($req->decoded_content); };
+	if ($@){ return "uh oh - ".$req->status_line; }
+
+	my $return;
+	if ($json->{'message'} && $json->{'message'} =~ /no user/i){
+		return "no account";
+	} elsif ($json->{'recenttracks'}){
+		my $recent;
+		eval { $recent = $json->{'recenttracks'}{'track'}[0]; };
+		if (! $recent || $@){
+			eval { $recent = $json->{'recenttracks'}{'track'}; };
+			if ($@){ return 'fuck'; }
+		}
+
+		$return = 'http://last.fm/user/'.$user;
+		if ($recent->{'@attr'}{'nowplaying'}){
+			$return .= ' is listening to ';
+		} else {
+			$return .= ' last played ';
+		}
+
+		$return .= $recent->{'artist'}{'#text'} || 'oops!';
+		$return .= ' - '.($recent->{'name'} || 'oops!');
+
+		return $return;
+	} else {
+		return 'oh no';
 	}
 }
 sub moviedb {
@@ -654,7 +677,10 @@ sub conversion { #this doens't really work except for money
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
 		return $prices->status_line unless $prices->is_success;
 
-		my $junk = $json->decode($prices->decoded_content) || return 'uhoh';
+		my $junk;
+		eval { $junk = JSON->new->utf8->decode($prices->decoded_content); };
+		if ($@){ return 'BTC - uh-oh ('.$prices->status_line.')'.' '.$prices->content_type; }
+
 		my $num; ($num,$in) = ($in =~ /(\d+)\s*(\D+)/);
 		if (uc $in eq 'BTC'){
 			my $multi = ($junk->{$out}->{'24h'} || $junk->{$out}->{'7d'} || $junk->{$out}->{'30d'})
