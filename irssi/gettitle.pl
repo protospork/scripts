@@ -387,6 +387,12 @@ sub twitter {
 	for (@{$junk->{'entities'}{'urls'}}){
 		my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
 		$new = $old unless $new;
+
+		#unwrap urls for real
+		if ($new =~ $url_shorteners){
+			$new = unwrap_shortener($new);
+		}
+
 		$text =~ s/$old/$new/gi;
 	}
 
