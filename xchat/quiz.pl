@@ -65,7 +65,7 @@ sub inevitable_failure {
 	#wrong channel
 	unless (grep $deets->{'chan'} eq $_, (@acceptable_chans)){ return EAT_NONE; }
 	#for now, we'll only run one quiz at a time. multiples means overhauling score/round tracking
-	# if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; } #moved down
+	if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){ return EAT_NONE; }
 	#make sure we're supposed to play with others
 	if ($mynick !~ $deets->{'nick'} && $local){ return EAT_NONE; }
 
@@ -97,10 +97,6 @@ sub inevitable_failure {
 			return EAT_NONE;
 		}
 	} elsif ($msg =~ /^${cmd}begin(\d+)?([kh])?/){
-		if ($listening->[1] && $listening->[1] ne $deets->{'chan'}){
-			command("$command already playing on ".$listening->[1]);
-			return EAT_NONE;
-		}
 		my ($num);
 		if ($1){ $num = $1; } #round length
 		else { $num = 5; }
