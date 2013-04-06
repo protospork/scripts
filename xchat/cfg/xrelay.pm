@@ -97,7 +97,7 @@
 	'little busters'	=>	["Anime", [qw'utw mazui'],				'Busters',	[undef],		undef],
 	'girls und panzer'	=>	["Anime", [undef],						'Tanks',	[undef],		undef],
 	'aoi sekai no chuushin de'	=>	["Anime", [undef],				undef,		[undef],		undef],
-	"\x{300c}K\x{300d}"=> ["Anime", ['commie'],						'[K]',		[undef],		undef], #lol.
+	"\x{300c}K\x{300d}"	=> ["Anime", ['commie'],					'[K]',		[undef],		undef], #lol.
 	'hayate'			=> ["Anime", ['commie'],					'Hayate',	[undef],		undef],
 	'haitai nanafa'		=> ["Anime", [undef],						'Nanafa',	[undef],		undef],
 	'chuunibyou'		=> ["Anime", [qw'URW gg'],					'Chuunibyou',[undef],		undef],
@@ -120,6 +120,20 @@
 	'Gj-bu'				=>	["Anime", [qw'anime-koi'],		'GJbu',			[undef],		undef],
 	'dokidoki! precure'	=>	["Anime", [qw"commie doremi"],	'Precure',		[undef],		undef],
 	'mondaiji'			=>	["Anime", [qw'commie horriblesubs'],'Monday',	[undef],		undef],
+#spring 2013
+	'hataraku maou'		=>	["Anime", [undef],				'Hataraku'],
+	karneval			=>	["Anime", [undef],				'Karneval',		[undef],		undef],
+	'seishun love come'	=>	["Anime", [undef],				undef,			[undef],		undef],
+	'photokano'			=>	["Anime", ['utw'],				'PhotoKano'],
+	'devil survivor'	=>	["Anime", [qw'horrible commie'],'Survivor',		[undef],		undef],
+	'aku no hana'		=>	["Anime", [undef],				'Hana',			[undef],		undef],
+	'ore no imouto'		=>	["Anime", [undef],				'OreImo',		[undef],		undef],
+	'zettai bouei leviathan'=>	["Anime", [undef],			'Leviathan',	[undef],		undef],
+	'shingeki no kyoujin'=>	["Anime", [undef],				'Shingeki',		[undef],		undef],
+	'yamato 2199'		=>	["Anime", [undef],				'Yamato',		[undef],		undef],
+	'arata kangatari'	=>	["Anime", [undef],				'Arata',		[undef],		undef],
+	railgun				=>	["Anime", [undef],				'Railgun',		[undef],		undef],
+
 );
 
 @blacklist = qw(

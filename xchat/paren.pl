@@ -104,7 +104,7 @@ sub magic_happens {
 	}
 
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
-	$message =~ s/\b:C\b/:(/g; #also keitoshi
+	$message =~ s/\b:C\b/:(/ig; #also keitoshi
 	$message =~ s/(\s?)(http\S+?)\((.+?)\)(.*)\s?/$1$2\%28$3\%29$4/g; #urls with parentheses in them
 	$message =~ s/[\x{201c}\x{201d}]/"/g; #god knows whether this actually works
 
