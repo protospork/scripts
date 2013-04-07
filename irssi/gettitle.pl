@@ -153,12 +153,17 @@ sub pubmsg {
 	if ($url =~ /\w+(?:-|\%20|_|\+)(\w+)(?:-|\%20|_|\+)(\w+)/i && $title =~ /$1.*$2/i && $title !~ /deviantart\.com/){ return; }	# wat
 
 	#if someone's a spammer
+	#I don't get it, wasn't this already tracked in &sendresponse?
 	if ($title eq $lasttitle && $target eq $lastchan && $target ne $controlchan && time - $lastsend < 120){ return; }
 
 	#error fallback titles, index pages, etc
 	return if grep $title =~ $_, (@defaulttitles);
 
-	$title = moreshenanigans($title,$nick,$target,$url);
+	$title = moreshenanigans($title,$nick,$target,$url,$server);
+
+	#send the pic if you rehosted it
+	if ($title =~ /i\.imgur\.com/ && grep $target eq $_, (@mirrorchans)){ $notitle = 0; }
+
 	if (defined $title && $title !~ /^1$|shit's broke/ && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am terrible
 }
 
@@ -179,7 +184,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# bare image links, possibly produced by that last block
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
-		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i || $url =~ /s3\.amazonaws\.com/i){
+		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i){
 			$return = imgur($url,$chan,$data,$server,$nick);
 			return ($return,$url);
 		}
@@ -225,8 +230,9 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 #edit titles in ways I can't do with the config file
 sub moreshenanigans {
-	my ($title,$ass,$target,$url) = @_;
+	my ($title,$ass,$target,$url,$server) = @_;
 
+	if ($title =~ /photobucket/){ $title = imgur($title,$target,$title,$server,$ass); }
 	if ($title =~ /let me google that for you/i){ $title = 'FUCK YOU '.uc($ass); }
 	$title =~ s/\bwww\.//i;
 	$title =~ s/:\s*$//;
@@ -237,7 +243,7 @@ sub moreshenanigans {
 
 	for (keys %{$censorchans{$target}}){
 		my $repl = $censorchans{$target}->{$_};
-		if ($title =~ ucfirst $_){ #this block could be replaced by one big regex, but this has to run on 5.10. Also I'm scared.
+		if ($title =~ ucfirst $_){
 			$repl = join ' ', map { ucfirst $_ } split / /, $repl;
 		} elsif ($title =~ uc $_){
 			$repl = uc $repl;
@@ -333,6 +339,11 @@ sub get_title {
 
 	#now, anything that requires digging in source/APIs for a better link or more info
 	given ($url){
+		when (m!photobucket!){
+			# return "stop linking photobucket, you cunt";
+			return $meta->get_image_url();
+			#will be rehosted in &moreshenanigans
+		}
 		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
 			#return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
 			return $meta->get_image_url();
@@ -623,32 +634,40 @@ sub imgur {
 
 	#make sure it's okay to do this here
 	my ($stop,$go) = (0,0);
-	$stop = 1 if grep $nick =~ /$_/i, (@nomirrornicks);
-	for (@mirrorchans){
-		$go = 1 if $chan =~ /$_/i;
+	if (grep $nick =~ /$_/i, (@nomirrornicks)){
+		$stop = 1;
+
+		#on second thought, pb is annoying for everybody
+		if ($url =~ /photobucket/){
+			$stop = 0;
+		}
+	}
+	if (grep $chan =~ /$_/i, (@mirrorchans)){
+		$go = 1;
 	}
 	if ($stop == 1 || $go == 0){
-		print $chan.' isn\'t in mirrorchans so I\'m switching to check size' if $debugmode == 1;
+		print $chan.' isn\'t in mirrorchans, switching to check size' if $debugmode == 1;
 		return check_image_size($url,$nick,$chan,$server);
 	}
 
-	my $urlqueries = $url->clone( );
-	$url->query(undef);
-
-	$msg = ' '.$msg;
+	$msg = ' '.$msg; #??
 
 	#OH GOD YOU FORGOT TO CHECK FOR DUPES
-	if ($url =~ /s3\.amazonaws\S+\?\S+/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this
-		$mirrored{$url}->[5]++;
+	if ($url =~ /photobucket/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this
+		$mirrored{$url}->[5]++; #repost counter
+
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017";
+
+		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Stop using photobucket, you cunt.\017";
 	} elsif (defined $mirrored{$url}){
 		$mirrored{$url}->[5]++;
+
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
+
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017";
 	}
 
@@ -657,15 +676,19 @@ sub imgur {
 		print "c8_imgur_key not set";
 		return;
 	}
-	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => ($url || $urlqueries), 'caption' => ($url || $urlqueries)]) || print "I can't work out why it would die here";
+	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url, 'caption' => $url])
+	|| print "I can't work out why it would die here";
 	#okay what broke
 	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
 	#nothing broke? weird.
-	my $hash = decode_json($resp->content) || print 'OH NO THERE ISNT ANY CONTENT';
+
+	my $hash;
+	eval { $hash = decode_json($resp->content) };
+	if ($@){ print 'OH NO THERE ISNT ANY CONTENT'; }
+
 	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
 	#push all this junk into %mirrored
 	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
-	$mirrored{$urlqueries} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
 	tied(%mirrored)->save;
 	print	$mirrored{$url}->[0].', '.$mirrored{$url}->[1].', '.$mirrored{$url}->[2].', '.$mirrored{$url}->[3].', '.
 			$mirrored{$url}->[4].', '.$mirrored{$url}->[5].', '.$mirrored{$url}->[6] || print 'empty mirror return values';
@@ -674,8 +697,15 @@ sub imgur {
 	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
 	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
+
 	$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$mirrored{$url}[-1]).' ('.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB)') if $image_chan;
-	return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB';
+
+	my $return = $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB';
+	if ($url =~ /photobucket/){
+		$return .= " || \00304Stop using photobucket, you cunt.\017";
+	}
+
+	return $return;
 }
 sub filler_title {
 	my $req = $ua->get('http://www.jocchan.com/stuff/IGeNerator/');
