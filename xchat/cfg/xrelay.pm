@@ -123,7 +123,7 @@
 #spring 2013
 	'hataraku maou'		=>	["Anime", [undef],				'Hataraku'],
 	karneval			=>	["Anime", [undef],				'Karneval',		[undef],		undef],
-	'seishun love come'	=>	["Anime", [undef],				undef,			[undef],		undef],
+	'seishun love come'	=>	["Anime", [undef],				'Love',			[undef],		undef],
 	'photokano'			=>	["Anime", ['utw'],				'PhotoKano'],
 	'devil survivor'	=>	["Anime", [qw'horrible commie'],'Survivor',		[undef],		undef],
 	'aku no hana'		=>	["Anime", [undef],				'Hana',			[undef],		undef],
@@ -133,7 +133,7 @@
 	'yamato 2199'		=>	["Anime", [undef],				'Yamato',		[undef],		undef],
 	'arata kangatari'	=>	["Anime", [undef],				'Arata',		[undef],		undef],
 	railgun				=>	["Anime", [undef],				'Railgun',		[undef],		undef],
-
+	'Shingeki no Kyojin'=>	["Anime", [undef],				'Shingeki'], #gg
 );
 
 @blacklist = qw(

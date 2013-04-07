@@ -724,6 +724,10 @@ sub conversion { #this doens't really work except for money
 		} else {
 			return ':<';
 		}
+	} elsif ($out !~ /[a-z]+/i){
+		#math
+		$in .= $_ for @_;
+		undef $out;
 	}
 
 
