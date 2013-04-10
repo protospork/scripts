@@ -162,9 +162,18 @@ sub pubmsg {
 	$title = moreshenanigans($title,$nick,$target,$url,$server);
 
 	#send the pic if you rehosted it
-	if ($title =~ /i\.imgur\.com/ && grep $target eq $_, (@mirrorchans)){ $notitle = 0; }
+	if ($title =~ /i\.imgur\.com/ && grep $target eq $_, (@mirrorchans)){
+		$notitle = 0;
+	} elsif ($url =~ /api\.twitter\.com/){
+		$notitle = 0;
+		$notitle++ if $target ~~ @offtwitter;
+	}
 
-	if (defined $title && $title !~ /^1$|shit's broke/ && ! $notitle){ sendresponse($title,$target,$server,$url); }	#I have no idea what is doing the 1 thing dear christ I am terrible
+	if (defined $title
+	&& $title !~ /^1$|shit's broke/ #I have no idea what is doing the 1 thing
+	&& ! $notitle){
+		sendresponse($title,$target,$server,$url);
+	}
 }
 
 sub shenaniganry {	#reformats the URLs or perhaps bitches about them
