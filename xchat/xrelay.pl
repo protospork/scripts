@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use utf8;
 use Xchat ':all';
-use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai );
+use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai $debug);
 use URI;
 use JSON;
 use LWP;
@@ -67,6 +67,7 @@ sub whoosh {
 		}
 		my $spam = 'bs say '.$spamchan.' '.$output;
 
+		debug_say("Checking $name against general blacklist");
 		for (@blacklist){
 			if ($name =~ /\Q$_\E|HorribleSubs.+\[1080p/i){ #hardcoding is bad but so is my blacklist engine
 				return EAT_NONE;
@@ -86,13 +87,14 @@ sub whoosh {
 			my ($cfg_cat, $cfg_groups, $cfg_stitle, $cfg_blacklist) = @$value;
 			#scalar, arrayref, scalar, arrayref
 
-			$cat =~ s/Batch/Anime-Batch/; #lets $cat match /Anime/, so full batches get announced
+			$cat =~ s/\bBatch/Anime-Batch/; #lets $cat match /Anime/, so full batches get announced
 
 			next unless $cat =~ /\Q$cfg_cat\E/i;
 			next unless $name =~ /\Q$cfg_title\E/i;
 
 			#make sure it's an acceptable group if we have a whitelist
 			my ($okgroup, $other) = (0, 0);
+			debug_say("Checking group on $name");
 			if (defined($cfg_groups)){
 				$okgroup = 1
 					if grep $name =~ /\[.*\Q$_\E.*\]/i, (@$cfg_groups);
@@ -104,10 +106,11 @@ sub whoosh {
 
 			#I suspect this is broken hardcore, but that's the least of my problems right now
 			if (defined($cfg_blacklist)){
+				debug_say("Checking $name against individual blacklist");
 				for (@$cfg_blacklist){
 					last if !defined $_;
 
-					my ($grp, $term) = (split /:/, $_, 2)
+					my ($grp, $term) = (split /:/, $_, 2) ##references exist for a reason asshole
 						|| prnt "There's an uhoh in the blacklisting section";
 					my $wl = $term =~ s/^\^//;
 
@@ -192,21 +195,27 @@ sub newtopic {
 	$newep =~ s/^0(\d)/$1/;
 	$newep =~ s/\.$//;
 
+	debug_say("&newtopic triggered for $short");
 	set_context($anime, $destsrvr);
 	my $topic = get_info('topic');
 	if ($topic !~ /$short/i){
 		prnt("\x0320ERROR\x0F\tTitle not found in topic: ".$short, $ctrlchan, $destsrvr);
 	} else {
 		$topic =~ /$short (\d+)/i; #was (\d\d?), broke three digit epnos
-		return unless defined($1);
+		if (! defined($1)){
+			debug_say("Title not found in topic, despite being in topic");
+			return;
+		}
 
 		if ($1 >= $newep || $newep == 720 || $newep == 1080){
+			debug_say("Old episode or actually a resolution");
 			return;
 		} else {
+			debug_say("Attempting to change topic.");
 			$topic =~ s/$short (\d+)/$short $newep/i;
-			if ($newep - $1 > 1){ command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr); }
+			if ($newep - $1 != 1){ command("notice ".$ctrlchan." Topic was: ".$topic, $ctrlchan, $destsrvr); }
 #			command('cs topic '.$anime.' '.$topic, $anime, $destsrvr); #adelais is broken
-			command('topic '.$topic, $anime, $destsrvr);
+			command('topic '.$anime.' '.$topic, $anime, $destsrvr);
 		}
 	}
 }
@@ -226,9 +235,16 @@ sub dumpcache {
 	return EAT_XCHAT;
 }
 
+sub debug_say {
+	return 0 unless $debug;
+	prnt($_[0], $ctrlchan, $destsrvr);
+	return 1;
+}
+
 sub reformat_info {
 	my ($name, $comment, $URL, $cat, $size) = @_;
 
+	debug_say("Rewriting info for $name");
 	$name =~ s/_(?!ST\])/ /g;        #Replace underscore with space, except for the one in GX_ST
 	$name =~ s/\.(?!\w{3}$|264)/ /g; #Replace dots with spaces
 	$name =~ s/\x{200B}//g;          #200B is zero-width space

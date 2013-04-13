@@ -121,10 +121,11 @@
 	'dokidoki! precure'	=>	["Anime", [qw"commie doremi"],	'Precure',		[undef],		undef],
 	'mondaiji'			=>	["Anime", [qw'commie horriblesubs'],'Monday',	[undef],		undef],
 #spring 2013
-	'hataraku maou'		=>	["Anime", [undef],				'Hataraku'],
-	karneval			=>	["Anime", [undef],				'Karneval',		[undef],		undef],
-	'seishun love come'	=>	["Anime", [undef],				'Love',			[undef],		undef],
+	'hataraku maou-sama!'=>	["Anime", [qw'commie fff'],		'Maou'],
+	karneval			=>	["Anime", ['anime-koi'],		'Karneval'],
+	'seishun love come'	=>	["Anime", [qw'commie whynot fff'],'Love'],
 	'photokano'			=>	["Anime", ['utw'],				'PhotoKano'],
+	'date a live'		=>	["Anime", [undef],				"a Live"], #fff
 	'devil survivor'	=>	["Anime", [qw'horrible commie'],'Survivor',		[undef],		undef],
 	'aku no hana'		=>	["Anime", [undef],				'Hana',			[undef],		undef],
 	'ore no imouto'		=>	["Anime", [undef],				'OreImo',		[undef],		undef],
@@ -132,8 +133,13 @@
 	'shingeki no kyoujin'=>	["Anime", [undef],				'Shingeki',		[undef],		undef],
 	'yamato 2199'		=>	["Anime", [undef],				'Yamato',		[undef],		undef],
 	'arata kangatari'	=>	["Anime", [undef],				'Arata',		[undef],		undef],
-	railgun				=>	["Anime", [undef],				'Railgun',		[undef],		undef],
-	'Shingeki no Kyojin'=>	["Anime", [undef],				'Shingeki'], #gg
+	railgun				=>	["Anime", [undef],				'Railgun'], #utw-mazui
+	'Shingeki no Kyojin'=>	["Anime", [qw'gg commie'],		'Shingeki'],
+	Gargantia			=>	["Anime", [undef],				'Gargantia'], #utw-vivid
+	yuyushiki			=>	["Anime", [undef],				'Yuyushiki'], #commie/hs
+	aiura				=>	["Anime", [qw'commie horrible'],'Aiura'],
+	valvrave			=>	["Anime", [undef],				'Valvrave'], #gg
+	muromi				=>	["Anime", ['vivid'],			'Muromi'],
 );
 
 @blacklist = qw(
@@ -161,3 +167,5 @@ $Csize	= "04";
 $Curl	= "14";
 $Ccomnt	= "11,01";
 $Chntai	= "05,10";
+
+$debug = 0;
