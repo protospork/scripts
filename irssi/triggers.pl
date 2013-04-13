@@ -111,7 +111,7 @@ sub event_privmsg {
 		$rose = undef;
 		return;
 	} else {
-		if (my @r = ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b/g)){
+		if (my @r = ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b|\b(http\S+puu\.sh\S)/g)){
 			$lastimg{$target} = $r[-1];
 		}
 		return;
