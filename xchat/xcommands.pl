@@ -20,9 +20,6 @@ hook_command('MPC', \&now_playing);
 sub now_playing {
 	my $text = $ua->get('http://localhost:13579/status.html')->decoded_content;
 	$text =~ s/^OnStatus\(|\)$//g;
-#	$text = [split /,\s*/, $text];
-#	s/^'|'$//g for (@$text);
-#	$text = [m{(?:(\d+)|"([^"]+)")(?:,|$)}g];
 	my ($quote, $t1,$last, @out);
 	for my $ch (split //, $text){
 		given ($ch){
@@ -52,6 +49,8 @@ sub now_playing {
 	}
 	push @out, $t1;
 	$text = [@out];
+
+	$text->[0] =~ s/\\//g; #couldn't figure out how to strip these earlier
 
 	if ($^O eq 'MSWin32'){ #not that MPC runs on linux
 		$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
