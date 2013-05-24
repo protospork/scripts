@@ -3,12 +3,15 @@ use LWP::Simple;
 use File::Path qw(make_path);
 use HTML::TreeBuilder;
 use Text::Unidecode;
+use File::Slurp;
 
 #protip: echo perl thisscript.pl %* > imgur.bat
 
 #todo:	can't trigger pages past 1
 #		can't into named albums
 #		doesn't do anything about bad downloads
+#	# - merge w/visxp
+#		# - add xhamster
 
 #todo: use content_length to check whether you've grabbed the whole file and retry if not
 
@@ -28,7 +31,7 @@ $ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)'); #ie6 on xp
 if ($album =~ m{/a/}){
 #	$album =~ s{/\d$|#\w*$}{};	#remove anchors to get down to the root of the album
 #	$album .= "/all" unless $album =~ m{/all$}i;	#now go back to the index page
-	$album =~ s![/#](\d$|all)!!; 
+	$album =~ s![/#](\d$|all)!!;
 	$album .= '/noscript' unless $album =~ /noscript$/; #noscript (IE-compatible) page doesn't do the fancy JS next-page loading
 } else {
 #	die 'the named albums\' `browse` buttons point to a conventional url';
@@ -52,14 +55,14 @@ if ($wingit){
 	if ($ARGV[0] =~ /^-/){
 		if ($albumname =~ /^((?:Photo )?Albums?)$/){
 			$albumname = $album;
-			$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;	
+			$albumname =~ s{^.+com/(?:a/)?([^\s/]+)(?:/all|/noscript)?}{$1}i;
 		}
 	} else {
 		$albumname = $ARGV[0];
 	}
 }
-$albumname =~ s!([\p{Hiragana}\p{Katakana}\p{Han}])!unidecode($1)!ge; #romanize moonrunes. may need to widen this in the future
-	
+$albumname =~ s!([\p{Hiragana}\p{Katakana}\p{Han}])!unidecode($1)!ge; #romanize moonrunes. why am I romanizing moonrunes? unicode bug?
+
 #if it's still got a shit name, force user to notice
 if ($albumname =~ /^(Photo Albums?|Album)$/){
 	say "Please name this album.";
@@ -72,25 +75,39 @@ my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]
 print ((1 + $#imagehashes).' images ');
 length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
+dump_to_txt($albumname, @imagehashes);
 
 sub downloadalbum {
 	#for some reason mkdir doesn't work.
-	make_path($albumname);	
-	
+	make_path($albumname);
+
 	chdir($albumname);
 	my @files = glob "*";	#dupe detection database
 	my ($counter, $dupe) = (0, 0);
-	for (@imagehashes){ 
+	for (@imagehashes){
 		$counter += 1;
 		my $newfilename = ((sprintf "%03d", $counter) . "_" . $_ . ".jpg");
-		for(@files){ 
+		for(@files){
 			next if $_ ne $newfilename;
 			$dupe = 1;
 		}
 		if ($dupe == 1){ print("$_ :: Duplicate\n"); $dupe = 0; next; }
-		my $img = $ua->mirror("http://i.imgur.com/" . $_ . ".jpg", $newfilename); 
-		
+		my $img = $ua->mirror("http://i.imgur.com/" . $_ . ".jpg", $newfilename);
+
 		say($_.' :: '.$newfilename.' :: '.$img->code.' :: '.(sprintf "%.02d", ($img->content_length / 1024)).' kB');
 	}
+}
+sub dump_to_txt { #todo: dump real album url in here regardless of custom names
+    my ($albumname, @urls) = @_;
+
+    @urls = map { $_ = 'http://i.imgur.com/'.$_.'.jpg' } @urls;
+
+    # make_path($albumname);
+    # chdir($albumname);
+
+    write_file('files.txt', (join "\n", @urls))
+    || die $!;
+
+    return $albumname;
 }
 say $albumname;
