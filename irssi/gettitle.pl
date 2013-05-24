@@ -207,8 +207,12 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $chan eq $_, (@offtwitter)){ return; }
-	} elsif ($url =~ m[(?:www\.)?youtu(?:\.be/|be\.com/(?:watch\S+v=|embed/))([\w-]{11})]i){
+	} elsif ($url =~ m[(?:www\.)?(?:youtu(?:\.be/|be\.com|listenonrepeat\.com)/(?:watch\S+v=|embed/))([\w-]{11})]i){
+		#youtube API v2 (current stable, doesn't offer any degree of resolution info)
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
+
+		# $url = 'http://gdata.youtube.com/feeds/api/videos/'.$1
+			# .'?alt=json&fields=title,yt:hd,media:group(media:content(@duration))';
 	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
 		my %que = $url->query_form;
 		return unless $url =~ /item=\S+/i;
@@ -230,6 +234,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		$sec =~ s!^/z!!; #/z/hash pages seem to crash the script
 		$url->path($sec);
 		undef $sec;
+	} elsif ($url =~ m!gyazo!){
+		$return = "gyazo is terrible stop it"
 	}
 
 
@@ -283,6 +289,7 @@ sub moreshenanigans {
 
 	$title;
 }
+#FUCK IT, FILL THIS METHOD WITH EVALS
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
 
@@ -318,8 +325,11 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	if (length $orig_url < 200){
 		return $orig_url;
 	} else {
-		$orig_url->query(undef);
-		$orig_url->query_form(undef);
+		# <@zettai_ryouiki> so I can't actually use URI.pm to shorten links because long links actually crash URI.pm
+		# $orig_url->query(undef);
+		# $orig_url->query_form(undef);
+		$orig_url =~ s/\?\S+$//;
+
 		if (length($orig_url) < 200){
 			return $orig_url;
 		} else {
@@ -425,28 +435,38 @@ sub twitter {
 sub youtube {
 	my $page = shift;
 	my $junk;
-	eval { $junk = JSON->new->utf8->decode($page->decoded_content); };
+	eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #->{'entry'}; };
 	if ($@){ return 'YouTube - uh-oh ('.$page->status_line.')'.' '.$page->content_type; }
 
-	my $title;
+	my $title = "\00301,00You\00300,04Tube\017 - ";
 	if ($junk->{'data'}{'title'}){
-		$title = "\00301,00You\00300,04Tube\017 - ".$junk->{'data'}{'title'};
+		$title .= $junk->{'data'}{'title'};
+	# if ($junk->{"title"}{'$t'}){
+	# 	$title .= $junk->{"title"}{'$t'};
 	} else {
-		$title = "\00301,00You\00300,04Tube\017 -".filler_title();
+		$title .= filler_title();
 	}
-	my $length;
-	if ($junk->{'data'}{'duration'}){
+	my ($length, $rawlen);
+	eval { $rawlen = $junk->{'data'}{'duration'}; };
+	# eval { $rawlen = $junk->{'media$group'}{'media$content'}[0]{'duration'}; };
+	if ($@){ return '[screams internally]'; }
+
+	if ($rawlen){
 		$length .=
-		(sprintf "%02d", ($junk->{'data'}{'duration'} / 3600)).':'. #h
-		(sprintf "%02d", (($junk->{'data'}{'duration'} / 60) % 60)).':'. #m
-		(sprintf "%02d", ($junk->{'data'}{'duration'} % 60)); #s
+		(sprintf "%02d", ($rawlen / 3600)).':'. #h
+		(sprintf "%02d", (($rawlen / 60) % 60)).':'. #m
+		(sprintf "%02d", ($rawlen % 60)); #s
 	} else {
 		$length = 'Live';
 	}
 	$length =~ s/^(00:)//;
 	$length =~ s/(.+)/ [$1]/;
 
-	return (decode_entities($title)).$length;
+	my $hd = '';
+	eval { $hd = '[HD]' if exists $junk->{'yt$hd'}; };
+	if ($@){ return '[screams internally]'; }
+
+	return (decode_entities($title)).$length.$hd;
 }
 sub deviantart {
 	my $page = shift;
