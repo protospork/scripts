@@ -111,8 +111,8 @@ sub event_privmsg {
 		$rose = undef;
 		return;
 	} else {
-		if (my @r = ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b|\b(http\S+puu\.sh\S)/g)){
-			$lastimg{$target} = $r[-1];
+		if ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b/g){
+			$lastimg{$target} = $1;
 		}
 		return;
 	}
@@ -127,7 +127,10 @@ sub event_privmsg {
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
 		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
-		when (/^gis/i){				$terms[0] = '!gis'; $return = ddg($target, @terms); }
+		when (/^(gis?|nyaa|t(pb|t)|kat|cpan|m[da]n|pcgw|mcwiki|uesp)/i){
+			$terms[0] = '!'.$terms[0];
+			$return = ddg($target, @terms);
+		}
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
@@ -151,6 +154,7 @@ sub event_privmsg {
 		}
 	}
 	else {
+		if (int rand 1000 <= 2){ $return =~ s/ /\x{07}/; } # I'm sorry I had to
 		$server->command('msg '.$target.' '.$return);
 	}
 }
@@ -423,7 +427,7 @@ sub lastfm {
 }
 sub lastfm_api {
 	my $user = shift;
-	my $url = 'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&limit=1';
+	my $url = 'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&limit=1&extended=1';
 	$url .= '&user='.$user.'&api_key='.$lfm_key;
 
 	my $req = $ua->get($url);
@@ -444,15 +448,37 @@ sub lastfm_api {
 			if ($@){ return 'fuck'; }
 		}
 
-		$return = 'http://last.fm/user/'.$user;
-		if ($recent->{'@attr'}{'nowplaying'}){
+		my $loved = 0;
+		eval { $loved = $recent->{'loved'}; };
+		if ($loved){
+			$return = "\x{03}13,01http://last.fm/user/".$user;
+		} else {
+			$return = 'http://last.fm/user/'.$user;
+		}
+
+		my $np = 0;
+		eval { $np = $recent->{'@attr'}{'nowplaying'}; };
+		if ($np){
 			$return .= ' is listening to ';
 		} else {
 			$return .= ' last played ';
 		}
 
-		$return .= $recent->{'artist'}{'#text'} || 'oops!';
-		$return .= ' - '.($recent->{'name'} || 'oops!');
+		my ($artist,$song) = ('oops!', 'oops!');
+		eval {
+			$artist = $recent->{'artist'}{'name'};
+			$song = $recent->{'name'};
+		};
+		if ($@){
+			return 'no account'; #how did you get this far? what the hell is happening?
+		}
+
+		$return .=  $artist;
+		if ($loved){
+			$return .= " \x{2665} ".$song;
+		} else {
+			$return .= ' - '.$song;
+		}
 
 		return $return;
 	} else {
@@ -633,8 +659,9 @@ sub choose {
 		return ':| '.$meanthings[(int rand scalar @meanthings)-1];
 	}
 
-	#hehe
-	# return 'Nah' if int rand 100 <= 4;
+	if (scalar @choices == 2 && int rand 100 <= 4){
+		return 'both';
+	}
 
 	my $return = $choices[(int rand ($#choices + 1))-1];
 	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
@@ -731,8 +758,8 @@ sub conversion { #this doens't really work except for money
 	}
 
 
-	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8($in);
-	$construct .= '=?'.uri_escape_utf8($out) if defined $out;
+	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8(lc $in);
+	$construct .= '=?'.uri_escape_utf8(lc $out) if defined $out;
 
 	print $construct if $debug;
 
@@ -888,21 +915,29 @@ sub weather {
 		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
-		$weather =~ s/Drizzle/[Snoop Dogg joke]/;
+		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 10 <= 1;
 
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
-		if ($wind !~ / 0$/){
+
+		my @out;
+		if ($wind !~ m/ 0$/){
 			if ($ftemp < 40 && $windchill !~ /N.A/){
-				return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
-						" - $weather | Windchill $windchill\xB0F | Wind $wind MPH";
+				push @out,	("\002$town, $state\002 ($timestamp): ",
+						" - $weather | Windchill $windchill\xB0F | Wind $wind MPH");
 			} else {
-				return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
-						" - $weather | $hum Humidity | Wind $wind MPH";
+				push @out,	("\002$town, $state\002 ($timestamp): ",
+						" - $weather | $hum Humidity | Wind $wind MPH");
 			}
 		} else {
-			return	"\002$town, $state\002 ($timestamp): $ftemp\xB0F/$ctemp\xB0C".
-					" - $weather | $hum Humidity | Barometer: $bar";
+			push @out,	("\002$town, $state\002 ($timestamp): ",
+					" - $weather | $hum Humidity | Barometer: $bar");
+		}
+
+		if ($array[22] =~ m/^K/){ #america
+			return $out[0]."$ftemp\xB0F/$ctemp\xB0C".$out[1];
+		} else {
+			return $out[0]."$ctemp\xB0C/$ftemp\xB0F".$out[1];
 		}
 	}
 }
