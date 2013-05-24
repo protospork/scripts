@@ -61,7 +61,7 @@ sub fmt {
 			if ($_[1]){ #xchat or silverex or something
 				$raw = int((50 + rand(45)) / 10);
 			} else {	#hexchat
-				$raw = int((80 + rand(13)) / 10);
+				$raw = int((80 + rand(20)) / 10);
 			}
 			$raw = "2.".(sprintf "%.01f", $raw);
 			
@@ -181,6 +181,8 @@ __END__
 -Fuyuki^Hyourin- VERSION PChat 1.4 Windows 6.1 [x86/2.92GHz]
 -torchlight- VERSION HexChat 2.9.4 / Linux 3.5.0-17-generic [x86_64/1.20GHz/SMP]
 -blarp- VERSION ZNC 0.205 - http://znc.in
+
+<%Lucifer7> [16:24:25] -homeero- VERSION IRC Explorer v1.1.4
 
 =bots
 

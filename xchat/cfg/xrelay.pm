@@ -125,21 +125,22 @@
 	karneval			=>	["Anime", ['anime-koi'],		'Karneval'],
 	'seishun love come'	=>	["Anime", [qw'commie whynot fff'],'Love'],
 	'photokano'			=>	["Anime", ['utw'],				'PhotoKano'],
-	'date a live'		=>	["Anime", [undef],				"a Live"], #fff
+	'date a live'		=>	["Anime", [undef],				"a Live",		["FFF:v0"]], #fff
 	'devil survivor'	=>	["Anime", [qw'horrible commie'],'Survivor',		[undef],		undef],
-	'aku no hana'		=>	["Anime", [undef],				'Hana',			[undef],		undef],
+	'aku no hana'		=>	["Anime", ['gg'],				'Hana',			[undef],		undef],
 	'ore no imouto'		=>	["Anime", [undef],				'OreImo',		[undef],		undef],
 	'zettai bouei leviathan'=>	["Anime", [undef],			'Leviathan',	[undef],		undef],
-	'shingeki no kyoujin'=>	["Anime", [undef],				'Shingeki',		[undef],		undef],
+	'shingeki no kyoujin'=>	["Anime", [qw'commie gg horrible'],	'Shingeki',	[undef],		undef],
 	'yamato 2199'		=>	["Anime", [undef],				'Yamato',		[undef],		undef],
 	'arata kangatari'	=>	["Anime", [undef],				'Arata',		[undef],		undef],
 	railgun				=>	["Anime", [undef],				'Railgun'], #utw-mazui
-	'Shingeki no Kyojin'=>	["Anime", [qw'gg commie'],		'Shingeki'],
+	'Shingeki no Kyojin'=>	["Anime", [qw'gg coalguys commie'],	'Shingeki'],
 	Gargantia			=>	["Anime", [undef],				'Gargantia'], #utw-vivid
 	yuyushiki			=>	["Anime", [undef],				'Yuyushiki'], #commie/hs
 	aiura				=>	["Anime", [qw'commie horrible'],'Aiura'],
-	valvrave			=>	["Anime", [undef],				'Valvrave'], #gg
+	valvrave			=>	["Anime", [qw'gg horrible'],	'Valvrave'], #gg
 	muromi				=>	["Anime", ['vivid'],			'Muromi'],
+	'hentai ouji'		=>	["Anime", [qw'gg rori commie'],	'Ouji'],
 );
 
 @blacklist = qw(
@@ -148,7 +149,7 @@ animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
-Farfie
+Farfie Aniplex-rip
 ); #regex special characters should NOT be escaped
 @moreblacklist = (
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn",
