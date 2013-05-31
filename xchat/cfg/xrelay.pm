@@ -140,7 +140,7 @@
 	aiura				=>	["Anime", [qw'commie horrible'],'Aiura'],
 	valvrave			=>	["Anime", [qw'gg horrible'],	'Valvrave'], #gg
 	muromi				=>	["Anime", ['vivid'],			'Muromi'],
-	'hentai ouji'		=>	["Anime", [qw'gg rori commie'],	'Ouji'],
+	'hentai ouji'		=>	["Anime", [qw'gg rori commie'],	'Henneko'],
 );
 
 @blacklist = qw(

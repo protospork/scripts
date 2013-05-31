@@ -127,7 +127,7 @@ sub event_privmsg {
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
 		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
-		when (/^(gis?|nyaa|t(pb|t)|kat|cpan|m[da]n|pcgw|mcwiki|uesp)/i){
+		when (/^(gis?|nyaa|t(pb|t)|kat|cpan|m[da]n|pcgw|mcwiki|uesp|bulba)/i){ #maybe move this to config
 			$terms[0] = '!'.$terms[0];
 			$return = ddg($target, @terms);
 		}
@@ -386,7 +386,7 @@ sub ddg {
 	return $orig_url;
 }
 sub waaai {
-	my $req = $ua->get('http://waa.ai/api.php?url='.$_[0]);
+	my $req = $ua->get('http://waa.ai/api.php?url='.uri_escape_utf8($_[0]));
 	if ($req->is_success && length $req->decoded_content < 24){
 		print $_[0] if $debug;
 		print "Shortened to ".$req->decoded_content if $debug;
