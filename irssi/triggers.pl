@@ -14,7 +14,7 @@ use File::Path qw'make_path';
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$lfm_key $lfm_secret);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			$promoted_bangs $lfm_key $lfm_secret);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -127,7 +127,7 @@ sub event_privmsg {
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
 		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
-		when (/^(gis?|nyaa|t(pb|t)|kat|cpan|m[da]n|pcgw|mcwiki|uesp|bulba)/i){ #maybe move this to config
+		when ($promoted_bangs){
 			$terms[0] = '!'.$terms[0];
 			$return = ddg($target, @terms);
 		}
