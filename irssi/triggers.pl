@@ -915,7 +915,7 @@ sub weather {
 		my ($timestamp,$ctemp) = ($array[0],'');
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
-		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 10 <= 1;
+		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
 
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
@@ -934,7 +934,7 @@ sub weather {
 					" - $weather | $hum Humidity | Barometer: $bar");
 		}
 
-		if ($array[22] =~ m/^K/){ #america
+		if ($array[22] =~ m/^[KP]/){ #america
 			return $out[0]."$ftemp\xB0F/$ctemp\xB0C".$out[1];
 		} else {
 			return $out[0]."$ctemp\xB0C/$ftemp\xB0F".$out[1];
