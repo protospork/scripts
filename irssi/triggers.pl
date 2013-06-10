@@ -10,11 +10,12 @@ use vars qw($VERSION %IRSSI);
 use JSON;
 use Tie::YAML;
 use File::Path qw'make_path';
+use WWW::WolframAlpha;
 #use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$promoted_bangs $lfm_key $lfm_secret);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			$promoted_bangs $lfm_key $lfm_secret $wa_appid);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -23,7 +24,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 
 
-$VERSION = "2.7.2";
+$VERSION = "2.8.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -35,7 +36,6 @@ $VERSION = "2.7.2";
 my $json = JSON->new->utf8;
 my $ua = LWP::UserAgent->new(
 	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox 17.0',
-#	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.7) Gecko/20100101 Firefox/10.0.7',
 	max_size => 50000,
 	timeout => 10,
 	protocols_allowed => ['http', 'https'],
@@ -138,9 +138,10 @@ sub event_privmsg {
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
-		when (/^l(?:ast)?fm/i){		$return = lastfm($server, $nick, @terms); }
+		when (/^l(?:ast)?fm$/i){		$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
+		when (/^time$/i){			$return = wa(@terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -385,6 +386,28 @@ sub ddg {
 
 	return $orig_url;
 }
+
+sub wa { #wolfram alpha, for now just used for .time
+	my $wa = WWW::WolframAlpha->new(appid => $wa_appid);
+	my $input = (join ' ', @_[1..$#_]);
+	print $input.' =>';
+	my $q = $wa->query(
+		input => 'time in '.$input,
+		format => 'plaintext',
+		podindex => 2
+	);
+
+	if ($q->success){
+		for my $pod (@{$q->pods}){ #there are some boilerplate pods
+			my $out = @{$pod->subpods}[0]->plaintext || next;
+			print $out;
+			return $out;
+		}
+	} elsif ($wa->error){
+		return $wa->errmsg;
+	}
+}
+
 sub waaai {
 	my $req = $ua->get('http://waa.ai/api.php?url='.uri_escape_utf8($_[0]));
 	if ($req->is_success && length $req->decoded_content < 24){
@@ -816,6 +839,9 @@ sub dice {
 	} elsif ($flavor eq 'roll'){
 		my @xdy = split /d/i, $_[1];
 		s/\D// for @xdy;
+		if (! $xdy[1]){ #assume it's a d6
+			$xdy[1] = 6;
+		}
 
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] <= 1;
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 99;
