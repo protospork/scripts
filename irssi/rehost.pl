@@ -12,7 +12,7 @@ use utf8;
 use vars qw'$VERSION %IRSSI';
 use POSIX qw'strftime';
 
-$VERSION = "0.2.0";
+$VERSION = "0.1.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -75,25 +75,37 @@ sub pubmsg {
         return;
     } elsif ($req_data[0] eq 'exists'){
         print "exists: ".$req_data[1];
-        return;
+        # return;
     }
 
     #bookkeeping
-    $mirrored{$url} = {
-        'path' => $req_data[1],
-        'nick' => $nick,
-        'chan' => $target,
-        'size' => $req_data[2],
-        'code' => $req_data[3],
-        'time' => time,
-    };
-    $mirrored{$url}{'short'} = waaai($public_pref.$mirrored{$url}{'path'});
-
+    if (ref $mirrored{$url}){
+        #only update count
+        $mirrored{$url}{'pcnt'}++;
+    } else {
+        $mirrored{$url} = {
+            'path' => $req_data[1],
+            'nick' => $nick,
+            'chan' => $target,
+            'size' => $req_data[2],
+            'code' => $req_data[3],
+            'time' => time,
+            'pcnt' => 1,
+        };
+        $mirrored{$url}{'short'} = waaai($public_pref.$mirrored{$url}{'path'});
+    }
     tied(%mirrored)->save;
 
-    # my @page_gen_data = upload_index($url);
+    #records
+    my $logged = "msg botserv say #fridge ".$target." || ".$public_pref.$mirrored{$url}{'path'}.
+        " / ".$mirrored{$url}{'short'};
+    $logged .= " || \00304Posted ".$mirrored{$url}{'pcnt'}." times.\017" if $mirrored{$url}{'pcnt'} > 1;
+    $server->command($logged);
 
-    my $return = $mirrored{$url}{'short'}.' || '.(sprintf "%.0f", ($mirrored{$url}{'size'}/1024)).'KB';
+    #todo: slap the 'repost' nag in here
+    my $return = $mirrored{$url}{'short'}.' || '.
+        (sprintf "%.0f", (($mirrored{$url}{'size'} || -s $archive_dir.$mirrored{$url}{'path'})/1024)).'KB';
+        #for some reason I can't pull 'size' for reposts
     $server->command("msg $target $return");
 
     return;
