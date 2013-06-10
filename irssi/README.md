@@ -1,8 +1,15 @@
 ##c8's functions as of 06/Nov/12  
   
 ###searches  
-`.ddg` - duckduckgo (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
+`.ddg` - [duckduckgo](http://duckduckgo.com) (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
 `.!bang` - shorthand for `.ddg !bang`  
+Some popular bangs are promoted to work without the !, notably:  
+ - `.gis [url]` - search an image on google images  
+ - `.bulba` - search Bulbapedia  
+ - `.pcgw` - PCGamingWiki  
+ - `.mcwiki` - Minecraft Wiki  
+ - `.uesp` - UESP Wiki  
+ - `.steam` - Steam store  
 `.gs` - duckduckgo search result page  
 `.g` - google (feeling lucky)  
 `.yt` - youtube  
@@ -13,11 +20,11 @@
 `.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image  
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
-`.gis [url]` - search an image on google images  
 `.isup [url]` - see if a website is really down  
 <strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
-`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions (currently broken except for basic math/currency)  
-`.ai(rtime)` - search upcoming anime or just display some
+`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions  
+`.ai(rtime)` - [search upcoming anime or just display some](http://www.mahou.org/Showtime/)  
+`.time` - returns the current time in a place (Uses [Wolfram Alpha](http://www.wolframalpha.com/))
   
 ###misc triggers  
 `.flip` - flip a coin  
