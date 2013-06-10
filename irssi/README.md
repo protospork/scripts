@@ -10,6 +10,7 @@ Some popular bangs are promoted to work without the !, notably:
  - `.mcwiki` - Minecraft Wiki  
  - `.uesp` - UESP Wiki  
  - `.steam` - Steam store  
+
 `.gs` - duckduckgo search result page  
 `.g` - google (feeling lucky)  
 `.yt` - youtube  
