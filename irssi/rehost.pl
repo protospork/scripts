@@ -21,7 +21,7 @@ $VERSION = "0.1.1";
 );
 
 my $archive_dir = "/www/img";
-my $public_pref = "http://proto.maidlab.jp/img";
+my $public_pref = "http://proto.tea.jp/img";
 
 #build the directory for the index if necessary
 unless (-e $archive_dir){
