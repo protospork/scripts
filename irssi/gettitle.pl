@@ -10,6 +10,7 @@ use Tie::YAML;
 use JSON;
 use URI;
 use Modern::Perl;
+use File::Slurp;
 #use warnings; #there are a lot of ininitialized value warnings I can't be bothered fixing
 no warnings qw'uninitialized';
 use utf8;
@@ -164,7 +165,7 @@ sub pubmsg {
 	#send the pic if you rehosted it
 	if ($title =~ /i\.imgur\.com/ && grep $target eq $_, (@mirrorchans)){
 		$notitle = 0;
-	} elsif ($url =~ /api\.twitter\.com/){
+	} elsif ($url =~ /twitter\.com/){
 		$notitle = 0;
 		$notitle++ if $target ~~ @offtwitter;
 	}
@@ -205,7 +206,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# API transforms
 	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
-		$url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
+		# $url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
 		if (grep $chan eq $_, (@offtwitter)){ return; }
 	} elsif ($url =~ m[(?:www\.)?(?:youtu(?:\.be/|be\.com|listenonrepeat\.com)/(?:watch\S+v=|embed/))([\w-]{11})]i){
 		#youtube API v2 (current stable, doesn't offer any degree of resolution info)
@@ -289,7 +290,6 @@ sub moreshenanigans {
 
 	$title;
 }
-#FUCK IT, FILL THIS METHOD WITH EVALS
 sub unwrap_shortener { # http://expandurl.appspot.com/#api
 	my ($url) = @_;
 
@@ -374,12 +374,12 @@ sub get_title {
 				return $title;
 			}
 		}
-		when (/api\.twitter\.com/){ return twitter($page); }
+		when (/twitter\.com/){ return twitter($page, $url); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return amazon($page); }
-		when (m!store\.steampowered!){ return steam($page); }
+		when (m!store\.steampowered\.com/app!){ return steam($page); }
 		when (m!4chan\S+/res/!){ return fourchan($page); }
 		when (/instagram\.com/){
 			# if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
@@ -407,30 +407,53 @@ sub get_title {
 }
 sub twitter {
 	my $page = shift;
+	my $url = shift;
 	my $junk;
-	eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #never done this before
-	if ($@){ return $page->status_line.' (twitter\'s api is broken again)'.' '.$page->content_type; }
+	# API RETIRED, GO FUCK YOURSELF WITH AN OUTH CERTIFICATE
+	# eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #never done this before
+	# if ($@){ return $page->status_line.' (twitter\'s api is broken again)'.' '.$page->content_type; }
 
-	my $text = $junk->{'text'};
-	$text =~ s/\n/ /g;
-	#expand t.co links.
-	for (@{$junk->{'entities'}{'urls'}}){
-		my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
-		$new = $old unless $new;
+	# my $text = $junk->{'text'};
+	# $text =~ s/\n/ /g;
+	# #expand t.co links.
+	# for (@{$junk->{'entities'}{'urls'}}){
+	# 	my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
+	# 	$new = $old unless $new;
 
-		#unwrap urls for real
-		if ($new =~ $url_shorteners){
-			$new = unwrap_shortener($new);
-		}
+	# 	#unwrap urls for real
+	# 	if ($new =~ $url_shorteners){
+	# 		$new = unwrap_shortener($new);
+	# 	}
 
-		$text =~ s/$old/$new/gi;
-	}
+	# 	$text =~ s/$old/$new/gi;
+	# }
 
-	my $person = xcc($junk->{'user'}{'screen_name'});
+	# my $person = xcc($junk->{'user'}{'screen_name'});
 
-	my $title = $person.' '.$text;
-	$title = '<protected account>' if $title eq '<> ';
-	return decode_entities($title);
+	# my $title = $person.' '.$text;
+	# $title = '<protected account>' if $title eq '<> ';
+	# return decode_entities($title);
+
+	# write_file($ENV{HOME}.'/.irssi/twitterwtf.txt', {binmode => ':utf8'}, $page->decoded_content);
+
+	eval { $junk = HTML::TreeBuilder->new_from_content($page->decoded_content); };
+	if ($@ || ! $junk || ! ref $junk || ! $junk->can('look_down')){ return 'Twitter is extra broken today ('.$page->status_line.' '.$page->content_type.' '.length($page->content).')'; }
+
+	my ($text,$name);
+	eval { $text = $junk->look_down(_tag => 'p', class => qr/tweet-text/); };
+	if ($@ || ! $text){ return $page->code.' How Would I Know'; }
+
+	$text = $text->as_trimmed_text;
+	$text =~ s/\n|<br(?: \/)?>/ /g;
+	$text =~ s/\xA0//g;
+
+	$text =~ s&\bpic\.twitter&http://pic.twitter&g;
+	$text =~ s&(http\S+)&unwrap_shortener($1)&gie;
+
+	$name = $url;
+	$name =~ s{^.+\.com/|/status.+$}{}g;
+
+	return decode_entities(xcc($name).' '.$text);
 }
 sub youtube {
 	my $page = shift;
@@ -583,9 +606,14 @@ sub steam {
 	} else {
 		my $discount = $obj->look_down(_tag => 'div', 'class' => 'discount_pct');
 		if ($discount){
-			$discount = decode_entities($obj->look_down(_tag => 'div', 'class' => 'discount_original_price')->as_trimmed_text.' '.$discount->as_trimmed_text.' => ');
+			eval { $discount = decode_entities($obj->look_down(_tag => 'div', class => 'game_purchase_action')
+				->look_down(_tag => 'div', 'class' => 'discount_original_price')->as_trimmed_text.' '
+				.$discount->as_trimmed_text.' => '); };
+			if ($@ || !$discount){
+				$discount = '';
+			}
 		} else {
-			$discount = 'No Sale || ';
+			$discount = '';
 		}
 		my $price = $obj->look_down(_tag => 'div', 'itemprop' => 'price');
 		if ($price){
