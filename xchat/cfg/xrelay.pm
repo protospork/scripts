@@ -33,7 +33,7 @@
 #winter 2011/2012
 	pirates				=>	["Anime", [qw!horriblesubs commie!],'Pirates',	[undef],	undef], #2370], #26 eps [randomc]
 	'basket army'		=>  ["Anime", [undef],			'Basketarmy',	[undef],		undef], #busou chuugakusei basketarmy
-	"high school dxd"	=>  ["Anime", [qw!subdesu afftw!],'DxD',		[undef],		undef], #2366],	#12 eps [randomc]
+	"high school dxd"	=>  ["Anime", [undef],			'DxD',			[undef],		undef], #2366],	#12 eps [randomc]
 	nisemonogatari		=>	["Anime", [qw!commie horriblesubs!],'Nisemono',	[undef],	undef],#2396], #13 eps [randomc] ##horriblesubs rips and releases the simulcasts before they're done airing. TV may be a dinosaur
 	matteru				=>	["Anime", [qw'commie coalguys'],'Ano Natsu',[undef],		undef], #2368], #ano natsu de matteru #12eps [randomc]
 	'high school boys'	=>  ["Anime", ['sage'],			'Boys',			[undef],		undef], #2386],	#daily lives of high school boys / Danshi Koukousei no Nichijou \x{7537}\x{5b50}\x{9ad8}\x{6821}\x{751f}\x{306e}\x{65e5}\x{5e38}
@@ -141,6 +141,31 @@
 	valvrave			=>	["Anime", [qw'gg horrible'],	'Valvrave'], #gg
 	muromi				=>	["Anime", ['vivid'],			'Muromi'],
 	'hentai ouji'		=>	["Anime", [qw'gg rori commie'],	'Henneko'],
+#summer 2013
+	'Tsukaiyou'			=>	["Anime", [undef],				'Dog'],	#Inu to Hasami wa Tsukaiyou
+	'free!'				=>	["Anime", [undef],				'Free'], ##whynot hs commie
+	'C3-Bu'				=>	["Anime", [undef],				'C3bu'], #Stella Jogakuin Koutouka C3-Bu ##commie koi
+	'Danganronpa'		=>	["Anime", [undef],				'Dango'], #Danganronpa Kibou no Gakuen to Zetsubou no Koukousei The Animation ##13eps ##utw
+	'Rozen Maiden'		=>	["Anime", [undef],				'Rozen'], #hs aidoru uya
+	'Love Lab'			=>	["Anime", [undef],				'Love Lab'],
+	'Kiroku'			=>	["Anime", [undef],				'KKK'], #Kitakubu Katsudou Kiroku ##12eps ********************************* #hs
+	Service				=>	["Anime", [undef], 				'SxS'], #Servant x Service ******************************************* #hs commie
+	mosaic				=>	["Anime", [undef],				'Mosaic'], #Kiniro Mosaic ##12eps
+	Taiyou				=>	["Anime", [undef],				'GenEi'], #Genei wo Kakeru Taiyou **************************************************** ##underwater horrible
+	'ro-kyu-bu'			=>	["Anime"; [undef],				'RKB'], #rokyubu ##doremi
+	'Prisma Illya'		=>	["Anime", [undef],				'Ilya'], #Fate/kaleid liner Prisma Illya ****************************************** ##utw
+	Monogatari 			=>	["Anime", [undef],				'Monogatari'], #Monogatari ##2-cour
+	genshiken			=>	["Anime", [undef],				'Genshiken'], #Genshiken Nidaime
+	'Nichiyoubi'		=>	["Anime", [undef],				'Nichiyoubi'], #Kami-sama no Inai Nichiyoubi ##vivid
+	'Fantasista Doll'	=>	["Anime", [undef],				'Dolls'],
+	'Uchouten Kazoku'	=>	["Anime", [undef],				'Uchouten'],
+	'Blood Lad'			=>	["Anime", [undef],				'Twilight'], #10eps
+	'Watamote'			=>	["Anime", [undef],				'Watamote'],
+	'Omaera ga Warui!'	=>	["Anime", [undef],				'Watamote'],
+	'Gin no Saji'		=>	["Anime", [undef],				'Saji'], #11eps *************************************************************
+	'Neptun'			=>	["Anime", [undef],				'Neptunia'], #Choujigen Game Neptune The Animation / neptunia
+	'GATCHAMAN Crowds'	=>	["Anime", [undef],				'Gatchaman'], #12eps *************************************
+	'Kimi no Iru Machi'	=>	["Anime", [undef],				'KnIM'], #****************************
 );
 
 @blacklist = qw(

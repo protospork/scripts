@@ -67,7 +67,13 @@ sub magic_happens {
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	if ($badcracks && $message =~ /^(Under SEH Team$|\x{41c}\x{44b}|Ìû(?:\x{18}|[^ -~]))$/){
+	if ($badcracks && $message =~
+	m<
+		^(Under\sSEH\sTeam
+		|\x{41c}\x{44b}
+		|\x{cc}\x{fb}(?:\x{18}|[^ -~])
+		|\x{bd}\x{13}\x{77}\x{10}\x{fc}\x{18})$
+	>x){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');
 		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
