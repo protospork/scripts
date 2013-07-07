@@ -388,16 +388,20 @@ sub ddg {
 }
 
 sub wa { #wolfram alpha, for now just used for .time
+# for manually testing new features:
+# http://api.wolframalpha.com/v2/query?format=plaintext&input=time%20in%20singapore&appid=
+# http://products.wolframalpha.com/api/documentation.html
 	my $wa = WWW::WolframAlpha->new(appid => $wa_appid);
 	my $input = (join ' ', @_[1..$#_]);
 	print $input.' =>';
+	if ($input =~ /^\s*$/){ return time; } #return unix time given no options
 	my $q = $wa->query(
 		input => 'time in '.$input,
 		format => 'plaintext',
 		podindex => 2
 	);
 
-	if ($q->success){
+	if ($q->success && $q->datatypes =~ /CalendarEvent/){
 		for my $pod (@{$q->pods}){ #there are some boilerplate pods
 			my $out = @{$pod->subpods}[0]->plaintext || next;
 			print $out;
@@ -405,6 +409,8 @@ sub wa { #wolfram alpha, for now just used for .time
 		}
 	} elsif ($wa->error){
 		return $wa->errmsg;
+	} else {
+		return $dunno[int rand $#dunno];
 	}
 }
 
