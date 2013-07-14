@@ -143,7 +143,7 @@
 	'hentai ouji'		=>	["Anime", [qw'gg rori commie'],	'Henneko'],
 #summer 2013
 	'Tsukaiyou'			=>	["Anime", [undef],				'Dog'],	#Inu to Hasami wa Tsukaiyou
-	'free!'				=>	["Anime", [undef],				'Free'], ##whynot hs commie
+	'free!'				=>	["Anime", [qw'whynot horrible commie'],	'Free'], ##whynot hs commie
 	'C3-Bu'				=>	["Anime", [undef],				'C3bu'], #Stella Jogakuin Koutouka C3-Bu ##commie koi
 	'Danganronpa'		=>	["Anime", [undef],				'Dango'], #Danganronpa Kibou no Gakuen to Zetsubou no Koukousei The Animation ##13eps ##utw
 	'Rozen Maiden'		=>	["Anime", [undef],				'Rozen'], #hs aidoru uya
@@ -151,20 +151,21 @@
 	'Kiroku'			=>	["Anime", [undef],				'KKK'], #Kitakubu Katsudou Kiroku ##12eps ********************************* #hs
 	Service				=>	["Anime", [undef], 				'SxS'], #Servant x Service ******************************************* #hs commie
 	mosaic				=>	["Anime", [undef],				'Mosaic'], #Kiniro Mosaic ##12eps
-	Taiyou				=>	["Anime", [undef],				'GenEi'], #Genei wo Kakeru Taiyou **************************************************** ##underwater horrible
-	'ro-kyu-bu'			=>	["Anime"; [undef],				'RKB'], #rokyubu ##doremi
-	'Prisma Illya'		=>	["Anime", [undef],				'Ilya'], #Fate/kaleid liner Prisma Illya ****************************************** ##utw
+	Taiyou				=>	["Anime", [qw'underwater horrible'],	'ei'], #Genei wo Kakeru Taiyou **************************************************** ##underwater horrible
+	'ro-kyu-bu'			=>	["Anime", [undef],				'RKB'], #rokyubu ##doremi
+	'Prisma Ilya'		=>	["Anime", [undef],				'Ilya'], #Fate/kaleid liner Prisma Illya ****************************************** ##utw
 	Monogatari 			=>	["Anime", [undef],				'Monogatari'], #Monogatari ##2-cour
 	genshiken			=>	["Anime", [undef],				'Genshiken'], #Genshiken Nidaime
-	'Nichiyoubi'		=>	["Anime", [undef],				'Nichiyoubi'], #Kami-sama no Inai Nichiyoubi ##vivid
+	'Nichiyoubi'		=>	["Anime", [undef],				'Nichiyoubi'], #Kami-sama no Inai Nichiyoubi ##vivid, hatsuyuki
 	'Fantasista Doll'	=>	["Anime", [undef],				'Dolls'],
 	'Uchouten Kazoku'	=>	["Anime", [undef],				'Uchouten'],
 	'Blood Lad'			=>	["Anime", [undef],				'Twilight'], #10eps
 	'Watamote'			=>	["Anime", [undef],				'Watamote'],
-	'Omaera ga Warui!'	=>	["Anime", [undef],				'Watamote'],
-	'Gin no Saji'		=>	["Anime", [undef],				'Saji'], #11eps *************************************************************
+	'Omaera ga Warui!'	=>	["Anime", [undef],				'Watamote'], #commie
+	'Gin no Saji'		=>	["Anime", [undef],				'Spoon'], #11eps ************************************************************* ##HS
+	'Silver Spoon'		=>	["Anime", [undef],				'Spoon'], ##commie whynot
 	'Neptun'			=>	["Anime", [undef],				'Neptunia'], #Choujigen Game Neptune The Animation / neptunia
-	'GATCHAMAN Crowds'	=>	["Anime", [undef],				'Gatchaman'], #12eps *************************************
+	'GATCHAMAN Crowds'	=>	["Anime", [undef],				'Gatcha'], #12eps *************************************
 	'Kimi no Iru Machi'	=>	["Anime", [undef],				'KnIM'], #****************************
 );
 

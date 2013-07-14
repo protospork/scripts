@@ -53,6 +53,7 @@ sub whoosh {
 		($name, $comment, $URL, $cat, $size) = reformat_info($name, $comment, $URL, $cat, $size);
 
 		do $cfgpath;	#load the config
+		if ($@){ prnt("$@\x07", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! %config){ prnt("Relay can't load config\x07file", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! @blacklist){ prnt("Relay can't load\x07blacklist", $ctrlchan, $destsrvr); return EAT_NONE; }
 		if (! $Ccomnt){ prnt("Relay can't load\x07colorscheme", $ctrlchan, $destsrvr); return EAT_NONE; }
