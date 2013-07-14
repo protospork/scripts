@@ -44,7 +44,7 @@ my $ua = LWP::UserAgent->new(
 );
 my ($lastcfgcheck,$animulastgrab,$rose) = (0,time,[0,1]);
 my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/triggers.pm';
-my %lastimg; #keep track of the most recent image linked in each channel, for pronoun use
+my %last; #keep track of the most recent image linked in each channel, for pronoun use
 my $tries;
 
 sub loadconfig {
@@ -110,10 +110,14 @@ sub event_privmsg {
 		return_rose_scores($target, $nick, $rose, $server);
 		$rose = undef;
 		return;
-	} else {
-		if ($text =~ /\b(http\S+[jpengif]{3,4})(?:\?\S+)?\b/g){
-			$lastimg{$target} = $1;
+	} elsif ($text =~ /\b(http\S+)\b/ig){
+		if ($1 =~ /[jpengif]{3,4}(?:\?\S+)?\b/){
+			$last{$target}{'img'} = $1;
+		} else {
+			$last{$target}{'link'} = $1;
 		}
+		return;
+	} else {
 		return;
 	}
 
@@ -141,6 +145,7 @@ sub event_privmsg {
 		when (/^l(?:ast)?fm$/i){		$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
+		when (/^shorten$/i){		$return = waaai($last{$target}{'link'}); }
 		when (/^time$/i){			$return = wa(@terms); }
 		default { return; }
 	}
@@ -165,7 +170,7 @@ sub imgops {
 	if ($_[2]){
 		$query .= $_[2];
 	} else {
-		$query .= $lastimg{$_[0]};
+		$query .= $last{$_[0]}{'img'};
 	}
 	if (length $query > 80){
 		$query = waaai($query);
@@ -328,7 +333,7 @@ sub ddg {
 	if (@_){ #it wouldn't let me use the shorthand for some reason
 		@terms = @_;
 	} else {
-		@terms = ($lastimg{$target});
+		@terms = ($last{$target}{'img'});
 	}
 
 	if ($trigger =~ /^!/){ #whoops put trigger back if it's part of the query
