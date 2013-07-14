@@ -76,8 +76,8 @@ sub magic_happens {
 	>x){
 		$nick =~ s/^\x03\d\d?//;
 		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');
-		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
-		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://www.hexchat.org/");
+		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://hexchat.github.io/");
+		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://hexchat.github.io/");
 		return EAT_NONE;
 	}
 
