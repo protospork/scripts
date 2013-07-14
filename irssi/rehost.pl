@@ -97,7 +97,7 @@ sub pubmsg {
     tied(%mirrored)->save;
 
     #records
-    my $logged = "msg botserv say #fridge ".$target." || ".$public_pref.$mirrored{$url}{'path'}.
+    my $logged = "msg botserv say #wat ".$target." || ".$public_pref.$mirrored{$url}{'path'}.
         " / ".$mirrored{$url}{'short'};
     $logged .= " || \00304Posted ".$mirrored{$url}{'pcnt'}." times.\017" if $mirrored{$url}{'pcnt'} > 1;
     $server->command($logged);
