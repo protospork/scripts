@@ -50,13 +50,10 @@ sub now_playing {
 	push @out, $t1;
 	$text = [@out];
 
-	$text->[0] =~ s/\\//g; #couldn't figure out how to strip these earlier
+	$text->[0] =~ s/\\//g;
 
-	if ($^O eq 'MSWin32'){ #not that MPC runs on linux
-		$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
-	} else {
-		$text->[-1] = sprintf "%.2f", ((stat($text->[-1]))[7] / 1048576); #unicode breaks stat on win32
-	}
+	# would pulling size from http://localhost:13579/info.html be saner than a filesystem call?
+	$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
 	if ($text->[5] =~ s/^00://){
 		$text->[3] =~ s/^00://;
 	}
@@ -129,25 +126,7 @@ sub asshole {
 	}
 	return EAT_XCHAT;
 }
-hook_command('twit', \&twitter);
-sub twitter { #this locks the whole client and isn't particularly useful
-	command('say https://twitter.com'.(HTML::TreeBuilder->new_from_content($ua->get('https://twitter.com/intent/user?screen_name='.$_[0][1])->decoded_content)->look_down(_tag => 'a', class => 'tweet-timestamp')->extract_links->[0][0]));
-	return EAT_XCHAT;
-}
-hook_command('hex', sub{prnt($_[0][1].' is '.(sprintf "%x", $_[0][1])); return EAT_XCHAT; }); #translate a number from decimal to hex
-
-#converts ascii strings to wideface japanese characters
-hook_command('romaji', sub{
-	my ($st,$st2) = ($_[1][1],'');
-	for (split //, $st){
-		$_ = chr((ord $_) + 65248) unless /\s|\./;
-		$st2 .= $_;
-	}
-	command('say '.$st2);
-	return EAT_XCHAT;
-});
-
-#translits kana/kanji to romaji
+#translits runes to romaji
 hook_command('translit', \&tlit);
 hook_command('tlit', \&tlit);
 sub tlit {
@@ -161,6 +140,17 @@ sub tlit {
 
 	return EAT_XCHAT;
 }
+
+#converts ascii strings to wideface japanese characters
+hook_command('romaji', sub{
+	my ($st,$st2) = ($_[1][1],'');
+	for (split //, $st){
+		$_ = chr((ord $_) + 65248) unless /\s|\./;
+		$st2 .= $_;
+	}
+	command('say '.$st2);
+	return EAT_XCHAT;
+});
 
 hook_command('rot13', \&rot13);
 sub rot13 {

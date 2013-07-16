@@ -153,7 +153,7 @@
 	mosaic				=>	["Anime", [undef],				'Mosaic'], #Kiniro Mosaic ##12eps
 	Taiyou				=>	["Anime", [qw'underwater horrible'],	'ei'], #Genei wo Kakeru Taiyou **************************************************** ##underwater horrible
 	'ro-kyu-bu'			=>	["Anime", [undef],				'RKB'], #rokyubu ##doremi
-	'Prisma Ilya'		=>	["Anime", [undef],				'Ilya'], #Fate/kaleid liner Prisma Illya ****************************************** ##utw
+	'Prisma Ilya'		=>	["Anime", ['UTW'],				'Ilya',		["UTW:v0"]], #Fate/kaleid liner Prisma Illya ****************************************** ##utw
 	Monogatari 			=>	["Anime", [undef],				'Monogatari'], #Monogatari ##2-cour
 	genshiken			=>	["Anime", [undef],				'Genshiken'], #Genshiken Nidaime
 	'Nichiyoubi'		=>	["Anime", [undef],				'Nichiyoubi'], #Kami-sama no Inai Nichiyoubi ##vivid, hatsuyuki
