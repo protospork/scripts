@@ -25,6 +25,21 @@ use vars qw(
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
+
+
+# <@cullen> 23:13:07 <&hawk> http://dl.dropboxusercontent.com/u/416702/vlcsnap-00020.png
+# <@cullen> no seriously what movie is that
+# <-- BreadOfWonder!UserName@adelais-5e300aed.livnmi.sbcglobal.net has quit (Ping timeout: 181 seconds)
+# <@SFLegend> http://www.rutland-times.co.uk/news/local/suspected-smoke-over-colsterworth-turns-out-to-be-a-cloud-1-5434228
+# --> BreadOfWonder (UserName@adelais-5e300aed.livnmi.sbcglobal.net) has joined #18+
+# <-- Wintermote!4645a298@adelais-d3f96ed8.mibbit.com has quit (Quit: http://www.mibbit.com ajax IRC Client)
+# --> Wintermote (4645a298@adelais-d3f96ed8.mibbit.com) has joined #18+
+# <-- DominoEffect!DominoEffec@e126b4.3ad95f.a59e76.0fd6b1 has quit (Ping timeout: 181 seconds)
+# <@penguins> .gis
+# <c8h10n4o2> http://images.google.com/searchbyimage?image_url=
+
+
+
 $VERSION = "0.2.0";
 %IRSSI = (
     authors => 'protospork',
@@ -54,7 +69,8 @@ Irssi::signal_add_last('message private', 'pubmsg');
 Irssi::command_bind('gettitle_conf_reload', \&loadconfig);
 
 my $ua = LWP::UserAgent->new(
-	agent => 'Mozilla/5.0 (X11; U; Linux; i686; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13',
+	# agent => 'Mozilla/5.0 (X11; U; Linux; i686; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13',
+	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0',
 	max_size => 500000,
 	timeout => 13,
 	protocols_allowed => ['http', 'https'],
@@ -448,7 +464,7 @@ sub twitter {
 	$text =~ s/\xA0//g;
 
 	$text =~ s&\bpic\.twitter&http://pic.twitter&g;
-	$text =~ s&(http\S+)&unwrap_shortener($1)&gie;
+	# $text =~ s&(http\S+)&unwrap_shortener($1)&gie;
 
 	$name = $url;
 	$name =~ s{^.+\.com/|/status.+$}{}g;
@@ -578,7 +594,7 @@ sub amazon {
 			$price = $_ if decode_entities($_ =~ /[\x{A3}\$]/);
 		}
 
-		$price //= 'free';
+		$price //= 'oh no';
 	} else {
 		return "something done broke";
 	}
