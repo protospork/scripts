@@ -25,7 +25,8 @@ my $ua = LWP::UserAgent->new();
 	# 'rv:1.9.0.13; does anyone ever read this string?) '.
 	# 'Gecko/2009073022 Firefox/3.0.13'
 # );
-$ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)'); #ie6 on xp
+# $ua->agent('Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)'); #ie6 on xp
+$ua->agent('Mozilla/5.0 (X11; U; Linux; i686; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13');
 
 #"properly" $album should be a URI object
 if ($album =~ m{/a/}){
@@ -46,7 +47,6 @@ say $album;
 my $page = $ua->get($album) or die "$!";
 die $page->status_line unless $page->is_success; ##todo: dump headers and see wtf is making imgur 403 LWP
 
-#why did I use treebuilder for so little?
 my $albumname = HTML::TreeBuilder->new_from_content($page->decoded_content)->look_down(_tag => 'title')->as_text;
 $albumname =~ s/^\s*(.+?) - Imgur.*$/$1/;
 
@@ -71,7 +71,7 @@ if ($albumname =~ /^(Photo Albums?|Album)$/){
 }
 # this line is for the JS-enabled pages, put it back in if /noscript disappears
 #my @imagehashes = ($page->decoded_content =~ /<div id="([a-zA-Z0-9]{5})" class="post">/ig);
-my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5,7})">/ig); #7 may not be enough 2013/1/18
+my @imagehashes = ($page->decoded_content =~ /<div class="image" id="([[:alnum:]]{5,8})">/ig); #7 may not be enough 2013/1/18
 print ((1 + $#imagehashes).' images ');
 length $albumname > 120 ? die 'broken albumname parse' : say $albumname;
 downloadalbum();
