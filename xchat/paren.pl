@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Xchat qw( :all );
 use v5.10;
-my $ver = 1.110;
+my $ver = 1.111;
 register('parentheses', $ver, "does a lot more than fix parentheses in URLs", \&unload);
 hook_print("Channel Message", \&everything, {priority => PRI_LOW});
 hook_print("Channel Msg Hilight", \&hilight, {priority => PRI_LOW});
@@ -75,7 +75,7 @@ sub magic_happens {
 		|\x{bd}\x{13}\x{77}\x{10}\x{fc}\x{18})$
 	>x){
 		$nick =~ s/^\x03\d\d?//;
-		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.adelais.net');
+		prnt("\x0326,20".$net.':'.$channel." \x03".xccolor($nick).',26<'.$nick.">\x07\x0301,26".$message, '#fridge', 'irc.galador.org');
 		command("msg $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://hexchat.github.io/");
 		command("notice $nick Your shitty XChat crack is spamming us.\x07Install the free build from http://hexchat.github.io/");
 		return EAT_NONE;
@@ -218,7 +218,8 @@ sub highlighter {
 	my ($whom,$text) = @_;
 	my $dest = get_info('channel');
 	my $serv = get_info('server');
-	my ($server,$homechan) = ('irc.adelais.net','#fridge');
+	if ($dest =~ /twitter/ && $text =~ /^\[\d{4}/){ return; } #twitter past mentions
+	my ($server,$homechan) = ('irc.galador.org','#fridge');
 	prnt("\x03".xccolor($whom).$whom."\x0F\t".$text." (\x0304".$dest."\x0F, \x0304".$serv."\x0F)", $homechan, $server);
 	return;
 }

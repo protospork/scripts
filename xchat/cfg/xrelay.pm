@@ -164,7 +164,7 @@
 	'Omaera ga Warui!'	=>	["Anime", [undef],				'Watamote'], #commie
 	'Gin no Saji'		=>	["Anime", [undef],				'Spoon'], #11eps ************************************************************* ##HS
 	'Silver Spoon'		=>	["Anime", [undef],				'Spoon'], ##commie whynot
-	'Neptun'			=>	["Anime", [undef],				'Neptunia'], #Choujigen Game Neptune The Animation / neptunia
+	'Neptun'			=>	["Anime", [qw'commie horrible'],'Neptunia'], #Choujigen Game Neptune The Animation / neptunia
 	'GATCHAMAN Crowds'	=>	["Anime", [undef],				'Gatcha'], #12eps *************************************
 	'Kimi no Iru Machi'	=>	["Anime", [undef],				'KnIM'], #****************************
 );
