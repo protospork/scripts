@@ -106,7 +106,8 @@ sub pubmsg {
 	if (grep $nick eq $_, (@ignorenicks)){ $notitle++; }
 
 	#fix this immediately (what is regexp::common using?)
-	return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://(?:boards|images)\.4chan\.org.+(?:jpe?g|gif|png)?)}ix;	#shit's fucked
+	#return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://(?:boards|images)\.4chan\.org.+(?:jpe?g|gif|png)?)}ix;	#shit's fucked
+	return unless $data =~ m{(?:^|\s)(https?://\S+)}ix;
 	my $url = $1;
 
 	print $target.': '.$url if $debugmode;
@@ -701,7 +702,6 @@ sub imgur {
 	#convert thumb URL to normal one
 	$url =~ s/\d+\.thumbs/images/;
 	$url =~ s{thumb/(\d+)s\.}{src/$1.};
-	$url =~ /^.+\.(\w{3,4})$/;
 	$url = URI->new($url);
 
 
@@ -721,16 +721,17 @@ sub imgur {
 	if ($stop == 1 || $go == 0){
 		print $chan.' isn\'t in mirrorchans, switching to check size' if $debugmode == 1;
 		return check_image_size($url,$nick,$chan,$server);
+	} elsif ($imgurkey eq 'replaceme'){
+		print "c8_imgur_key not set";
+		return check_image_size($url,$nick,$chan,$server);
 	}
-
-	$msg = ' '.$msg; #??
 
 	#OH GOD YOU FORGOT TO CHECK FOR DUPES
 	if ($url =~ /photobucket/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this
 		$mirrored{$url}->[5]++; #repost counter
 
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
+		$server->command("msg $controlchan ".xcc($nick).' '.$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
 
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Stop using photobucket, you cunt.\017";
@@ -738,17 +739,13 @@ sub imgur {
 		$mirrored{$url}->[5]++;
 
 		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
+		$server->command("msg $controlchan ".xcc($nick).' '.$msg) unless $chan eq $controlchan;
 		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
 
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017";
 	}
 
 	#now ...actually do it
-	if ($imgurkey eq 'replaceme'){
-		print "c8_imgur_key not set";
-		return;
-	}
 	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url, 'caption' => $url])
 	|| print "I can't work out why it would die here";
 	#okay what broke
