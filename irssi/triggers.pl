@@ -52,7 +52,7 @@ sub loadconfig {
 		make_path($ENV{HOME}."/.irssi/scripts/cfg/");
 	}
 	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");
-		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
+		unless ($req->is_success){
 			print $req->status_line;
 			$tries++;
 			loadconfig() unless $tries > 2;
@@ -734,7 +734,7 @@ sub conversion { #this doens't really work except for money
 	print join ', ', ($trig,$in) if $debug;
 	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
 
-	if ($in =~ /BTC$/ || $out eq 'BTC'){
+	if ($in =~ /BTC$/ || $out eq 'BTC'){ #is bitcoincharts still alive even? because I could just pull this too
 		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
 		return $prices->status_line unless $prices->is_success;
 
@@ -758,37 +758,8 @@ sub conversion { #this doens't really work except for money
 			return $num.' '.$in.' is '.$product.' '.$out if $product;
 			return ':<';
 		}
-	} elsif ($in =~ /MSP$/ || uc $out eq 'MSP'){
-		my $num; ($num,$in) = ($in =~ /([\d.]+)\s*(\D+)/);
-		if ($in eq 'USD' && uc $out eq 'MSP'){
-			my $base = ($num/4.99);
-			if ($base < 1){
-				return ((sprintf "%d", (($base)*400)).'MSP, but you\'d need to buy at least 400 for $4.99');
-			} else {
-				my $ideal = (sprintf "%d", (($base)*400));
-				my $real = (sprintf "%d", ((($base)*400)-((($base)*400)%400)+400));
-				my $realcost = (sprintf "%.02f", (($real/400)*4.99));
-
-				($real-400) == $ideal
-					? return $num.$in.' is '.$real.'MSP'
-					: return $num.$in.' is ideally '.$ideal.'MSP, but here in reality you\'ll pay '.$realcost.'USD for '.$real.'MSP';
-			}
-			return ':<';
-		} elsif ($in eq 'MSP' && uc $out eq 'USD'){
-			my $block = $num/400;
-			my $real = int $block;
-			if ($real < $block){
-				$real++;
-			}
-			$real *= 4.99;
-			return $num."MSP = ".(sprintf "%.02f", $real)."USD";
-		} else {
-			return ':<';
-		}
-	} elsif ($out !~ /[a-z]+/i){
-		#math
-		$in .= $_ for @_;
-		undef $out;
+	} else {
+		return "google shut my api off sorry\x{03}01,01 (actually fuck you I'm not sorry)";
 	}
 
 
