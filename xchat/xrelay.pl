@@ -20,7 +20,7 @@ sub unload { prnt "relay $ver unloaded"; }
 my $cfgpath = 'X:\My Dropbox\Public\GIT\scripts\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
-my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.adelais.net');
+my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.galador.org');
 
 my %dupe;
 my $last = ' '; #maybe look into making this an array and returning the last #, or last [string] and match
@@ -208,7 +208,7 @@ sub newtopic {
 			return;
 		}
 
-		if ($1 >= $newep || $newep == 720 || $newep == 1080){
+		if ($1 >= $newep || $newep =~ /^((1[02]|4)80|(7|19)20)$/){
 			debug_say("Old episode or actually a resolution");
 			return;
 		} else {
