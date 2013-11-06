@@ -21,7 +21,7 @@ my $BNCfix = 1;    #talking from two clients on a BNC? this'll treat any line fr
 my $ytshorten = 1; #make this 0 to leave youtube urls completely untouched
 my $ytembed = 1;   #make this 1 to rewrite youtube urls to the fullscreen /embed/ version. overrules ytshorten
 my $wikimobile = 0;#rewrite wikipedia links to use the (nicer) mobile layout
-my $deHTTPS = 1;   #fix for opera's installer being slightly stupid
+my $deHTTPS = 0;   #fix for opera's installer being slightly stupid
 my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
 my $linkbucks = 1; #many (all?) linkbucks links are just some junk prepended to a valid URL. this'll strip that
 
@@ -32,7 +32,11 @@ my $hideDCC = 1;   #I don't need to see what people are downloading.
 my $badcracks = 1;
 my $hilights = 1; #you'll need to change $server and $homechan in &highlighter
 
+#don't touch this
+my $crack_cooldown = time; 
 
+
+#record incoming status so the line can be returned that way
 #I'm sure there's a nicer way to do this bit
 my ($red,$action) = (0,0);
 sub everything {
@@ -67,7 +71,7 @@ sub magic_happens {
 	my $clr = 23;
 	if ($sprinkles){ $clr = xccolor($nick) }
 
-	if ($badcracks && $message =~
+	if ($badcracks && time - $crack_cooldown > 10 && $message =~
 	m<
 		^(Under\sSEH\sTeam
 		|\x{41c}\x{44b}
@@ -125,6 +129,10 @@ sub magic_happens {
 
 	#colored >quotes
 	$message =~ s/^>(?![._]>)(.+)$/\x03$clr>$1\x0F/;
+
+	#kale's trillian blue text
+	$message =~ s/^\x{03}10// if $channel eq '#wanikani';
+
 	#colored symbols (hey why not)
 	unless ($message =~ /\x{03}|^\s*$/ #don't code colors if colors were already coded
 	|| $net =~ /freenode|criten|none/i #or if it's going to kill readability
