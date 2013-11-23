@@ -124,7 +124,7 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?)$/i){ $return = readtext(@terms); }
+		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)$/i){ $return = readtext(@terms); }
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -142,11 +142,12 @@ sub event_privmsg {
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
-		when (/^l(?:ast)?fm$/i){		$return = lastfm($server, $nick, @terms); }
+		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		when (/^shorten$/i){		$return = waaai($last{$target}{'link'}); }
 		when (/^time$/i){			$return = wa(@terms); }
+		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -635,6 +636,11 @@ sub readtext {
 		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; }
 		when (/anim[eu]/i){	$tgt = $listloc.'animu.txt'; }
 		when (/natesilver/i){ $tgt = $listloc.'natesilver.txt'; }
+		when (/krieger/i){ $tgt = $listloc.'krieger.txt'; }
+		when (/archer/i){ $tgt = $listloc.'archer.txt'; }
+		when (/pam/i){ $tgt = $listloc.'pam.txt'; }
+		when (/carol|cheryl/i){ $tgt = $listloc.'carol.txt'; }
+		when (/lana/i){ $tgt = $listloc.'lana.txt'; }
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
@@ -877,6 +883,41 @@ sub return_rose_scores {
 	my $t;
 	$#out > 5 ? $t = 5 : $t = $#out;
 	$_[-1]->command("msg $_[0] ".(join '; ', @out[0..$t]));
+	return;
+}
+
+sub gfycat {
+	my ($url,$nick,$chan,$server) = @_;
+
+	return unless $url =~ /\.gif$/i;
+
+	$server->command("msg $chan This may take up to 30 seconds");
+
+	$ua->timeout(30);
+
+	my $fetch = 'http://upload.gfycat.com/transcode/'.(time.'-c8').'?fetchUrl='.$url;
+	my $req = $ua->get($fetch); #that center stuff is b/c gfycat wants a random string
+
+	$ua->timeout(13);
+
+	unless ($req->is_success){
+		return "$fetch error: ", $req->status_line;
+	}
+	my $slug = $req->content;		
+
+	my ($hash,$size);
+	if ($slug =~ /^\{"gfyname":"([^"]+)","gfysize":(\d+)/){
+		($hash,$size) = ($1,$2);
+	} else {
+		return $slug;
+	}
+
+	my $pub = $ua->get('http://gfycat.com/ajax/publish/'.$hash);
+	return $pub->status_line." while publishing" unless $pub->is_success;
+	
+	my $gfylink = 'http://gfycat.com/'.$hash;
+
+	$server->command("msg $chan $gfylink");
 	return;
 }
 
