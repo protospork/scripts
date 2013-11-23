@@ -156,14 +156,11 @@ sub pubmsg {
 	}
 
 	my $title = '0';
-	my $override = 0;
-	($title,$url,$override) = shenaniganry($url,$nick,$target,$data,$server);
+	($title,$url) = shenaniganry($url,$nick,$target,$data,$server);
 	if (! $title || ($title && $title eq '0')){
 		$title = get_title($url);
 	} else {
-		if (! $notitle || $override){ 
-			sendresponse($title,$target,$server);
-		}
+		sendresponse($title,$target,$server) unless $notitle;
 		return;
 	}
 
@@ -214,9 +211,9 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# bare image links, possibly produced by that last block
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
-		if ($url =~ /4c(?:ha|d)n\.org.+(?:jpe?g|png|gif)/i || $url =~ /minus\.com.+\.gif/){
+		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i){
 			$return = imgur($url,$chan,$data,$server,$nick);
-			return ($return,$url,1);
+			return ($return,$url);
 		}
 		my $this = check_image_size($url,$nick,$chan,$server);
 		if ($this && $this ne '0'){
@@ -749,57 +746,18 @@ sub imgur {
 		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017";
 	}
 
-	my ($imgurlink, $delete, $size) = ('nope') x 3; #is this even possible
 	#now ...actually do it
-	if ($url !~ /\.gif$/){
-		my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url, 'caption' => $url])
-		|| print "I can't work out why it would die here";
-		#okay what broke
-		unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
-		#nothing broke? weird.
+	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url, 'caption' => $url])
+	|| print "I can't work out why it would die here";
+	#okay what broke
+	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
+	#nothing broke? weird.
 
-		my $hash;
-		eval { $hash = decode_json($resp->content) };
-		if ($@){ print 'OH NO THERE ISNT ANY CONTENT'; }
-		
-		($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
-	} else {
-		#gfycat goes here. don't forget to recreate $hash
-		# http://www.reddit.com/r/gfycat/comments/1qm76x/developer_api/cde6i9w
+	my $hash;
+	eval { $hash = decode_json($resp->content) };
+	if ($@){ print 'OH NO THERE ISNT ANY CONTENT'; }
 
-		warn "gif input disabled";
-		return;
-
-		$ua->timeout(25);
-
-		my $fetch = 'http://upload.gfycat.com/transcode/'.(time.$nick).'?fetchUrl='.$url;
-		my $req = $ua->get($fetch); #that center stuff is b/c gfycat wants a random string
-
-		$ua->timeout(13);
-
-		unless ($req->is_success){
-			print "$fetch error: ", $req->status_line;
-			return;
-		}
-		my $slug = $req->content;		
-
-		my ($hash);
-		if ($slug =~ /^\{"gfyname":"([^"]+)","gfysize":(\d+)/){
-			($hash,$size) = ($1,$2);
-		} elsif ($slug =~ /"([^"]+ please wait[^"]+)/){
-			print $slug;
-			return $1;
-		} else {
-			print $slug;
-			return;
-		}
-
-		my $pub = $ua->get('http://gfycat.com/ajax/publish/'.$hash);
-		return $pub->status_line unless $pub->is_success;
-		
-		$imgurlink = 'http://gfycat.com/'.$hash;
-	}
-
+	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
 	#push all this junk into %mirrored
 	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
 	tied(%mirrored)->save;
@@ -808,7 +766,7 @@ sub imgur {
 
 	#return some shit
 	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-	$server->command("msg $controlchan ".xcc($nick)." $msg") unless $chan eq $controlchan;
+	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
 	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
 
 	$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$mirrored{$url}[-1]).' ('.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB)') if $image_chan;
