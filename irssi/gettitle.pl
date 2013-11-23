@@ -123,8 +123,8 @@ sub pubmsg {
 		$server->command("msg $controlchan $ver complete.");
 		return;
 	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
-		my $url_sh = unwrap_shortener($url); #TODO: stop maintaining a list of shorteners ('maintaining')
-		if ($url_sh eq '=\\' || $url_sh eq $url){ return; }
+		$url = unwrap_shortener($url); #TODO: stop maintaining a list of shorteners
+		return if $url eq '=\\';
 		if (! grep lc $target eq lc $_, @dont_unshorten){
 			$server->command("msg $target $url");
 		}
@@ -397,7 +397,7 @@ sub get_title {
 		when (/twitter\.com/){ return twitter($page, $url); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
-		when (m!newegg[^f]\S+Product!){ return newegg($page); }
+		when (m!newegg\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return amazon($page); }
 		when (m!store\.steampowered\.com/app!){ return steam($page); }
 		when (m!4chan\S+/res/!){ return fourchan($page); }
@@ -466,10 +466,9 @@ sub twitter {
 	$text = $text->as_trimmed_text;
 	$text =~ s/\n|<br(?: \/)?>/ /g;
 	$text =~ s/\xA0//g;
-	$text =~ s/(http\S+)\x{2026}/$1/g;
 
 	$text =~ s&\bpic\.twitter&http://pic.twitter&g;
-	# $text =~ s&(http\S+)&unwrap_shortener($1)&gie; ?
+	# $text =~ s&(http\S+)&unwrap_shortener($1)&gie;
 
 	$name = $url;
 	$name =~ s{^.+\.com/|/status.+$}{}g;
@@ -676,7 +675,7 @@ sub check_image_size {
 	|| ($req->content_type =~ /gif$/ && $req->content_length > ($largeimage * 2))){ #gifs are big and we all know this
 		my $size = $req->content_length;
 		$size = sprintf "%.2fMB", ($size / 1048576);
-		$return = $size.'? '.$filesizecomment[(int rand scalar @filesizecomment)-1];
+		$return = $filesizecomment[(int rand scalar @filesizecomment)-1].' ('.$size.')';
 	}
 	if ($image_chan && $req->content_length){ #I guess facebook 404s are successes? so, we look for >0 length instead
 		if ($chan eq $image_chan && grep $nick =~ /$_/i, (@nomirrornicks)){ return $return; }
