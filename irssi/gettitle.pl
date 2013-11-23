@@ -156,11 +156,14 @@ sub pubmsg {
 	}
 
 	my $title = '0';
-	($title,$url) = shenaniganry($url,$nick,$target,$data,$server);
+	my $override = 0;
+	($title,$url,$override) = shenaniganry($url,$nick,$target,$data,$server);
 	if (! $title || ($title && $title eq '0')){
 		$title = get_title($url);
 	} else {
-		sendresponse($title,$target,$server) unless $notitle;
+		if (! $notitle || $override){
+			sendresponse($title,$target,$server);
+		}
 		return;
 	}
 
@@ -213,7 +216,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
 		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i){
 			$return = imgur($url,$chan,$data,$server,$nick);
-			return ($return,$url);
+			return ($return,$url,1);
 		}
 		my $this = check_image_size($url,$nick,$chan,$server);
 		if ($this && $this ne '0'){
