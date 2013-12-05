@@ -11,6 +11,7 @@ use JSON;
 use Tie::YAML;
 use File::Path qw'make_path';
 use WWW::WolframAlpha;
+use URI::Escape;
 #use TMDB;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
@@ -125,6 +126,7 @@ sub event_privmsg {
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice(@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)$/i){ $return = readtext(@terms); }
+		when (/boobs/i){ 			$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -166,6 +168,24 @@ sub event_privmsg {
 	}
 }
 
+sub check_for_submission {	#provides a (really ghetto) item submission routine for the readtext stuff
+	my ($server, $nick, $trigger) = (shift, shift, shift);
+
+	if (! $_[0] || ($_[0] =~ /submit|add/ && ! $_[1])){ #I don't expect that second case often, really
+		return readtext($trigger);
+	} elsif ("@_" !~ /http/){
+		return "I don't see a picture.";
+	}
+
+	my $nag = 'msg memoserv send '.$owner.' Content submission from '.$nick.' for .'.$trigger.': '."@_";
+	if ($server->{usermode} !~ /r/){ #you can't send memos unless you're identified I THINK
+		return "Please find protospork, give him your link(s), and make him fix the bot.";
+	}
+
+	$server->command($nag);
+	return "Submitted, probably.";
+}
+
 sub imgops {
 	my $query = 'http://imgops.com/';
 	if ($_[2]){
@@ -178,6 +198,7 @@ sub imgops {
 	}
 	return $query;
 }
+
 my %drinks; #tying this to disk really doesn't seem worthwhile
 sub drinkify { #UNIRONICALLY WRITTEN WHILE DRINKING
 	my $nick = shift;
@@ -386,6 +407,10 @@ sub ddg {
 	} else {
 		$orig_url = $query;
 	}
+
+	#I need to scrub the url encoding out of those
+	$orig_url = uri_unescape $orig_url;
+
 	if (length $orig_url > 80){
 		$orig_url = waaai($orig_url);
 	}
@@ -641,6 +666,7 @@ sub readtext {
 		when (/pam/i){ $tgt = $listloc.'pam.txt'; }
 		when (/carol|cheryl/i){ $tgt = $listloc.'carol.txt'; }
 		when (/lana/i){ $tgt = $listloc.'lana.txt'; }
+		when (/boobs/i){ $tgt = $listloc.'boobs.txt'; }
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
@@ -901,7 +927,7 @@ sub gfycat {
 	$ua->timeout(13);
 
 	unless ($req->is_success){
-		return "$fetch error: ", $req->status_line;
+		return ("$fetch error: ".($req->status_line).'. Try http://gfycat.com/fetch/'.$url);
 	}
 	my $slug = $req->content;		
 
