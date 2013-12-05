@@ -1,5 +1,5 @@
 use Modern::Perl;
-use LWP;
+use LWP::UserAgent;
 use File::Path qw(make_path);
 use HTML::TreeBuilder;
 use Text::Unidecode;
@@ -10,6 +10,8 @@ use File::Slurp;
 #todo:
 # - merge w/imgur
 # - motherless http://motherless.com/G5148014
+# - imagefap http://www.imagefap.com/pictures/3126490/Melina-Amateur-Blonde-Teen
+binmode STDOUT, ":utf8";
 
 my $ua = LWP::UserAgent->new(
     agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox 17.0',
@@ -34,10 +36,39 @@ sub grab_index {
             chdir("_XHAMSTER");
             return grab_xh_index($_[0]);
         }
+        when (/minus\.com/){
+            make_path("_MINUS");
+            chdir("_MINUS");
+            return grab_minus_index($_[0]);
+        }
         default { die "unsupported host"; }
     }
 }
 
+sub grab_minus_index {
+    print "Fetching ";
+
+    $ua->timeout(25);
+
+    my $resp = $ua->get($_[0]);
+    die $resp->code unless $resp->is_success;
+
+    #don't forget to dump the url to file w/ clean list of images
+
+    my $title = $_[0];
+    $title =~ s{^.+/([^/]+)$}{$1}
+    || die "oh no";
+
+    say $title;
+
+    my ($album_title) = ($resp->decoded_content =~ m{<title>(.+?) - Minus</title>});
+
+    my (@ids) = ($resp->decoded_content =~ m{"id": "([^"]+)",}g);
+    say ((scalar @ids).' ids pulled. Parsing.');
+    map { $_ = 'http://i'.((int(rand(7)))+1).'.minus.com/i'.$_.'.jpg' } @ids;
+
+    return ($album_title, @ids);
+}
 
 sub grab_vxp_index { # http://visualxpleasure.blogspot.com/
     print "Fetching ";
@@ -150,9 +181,9 @@ sub rewrite_xhamster { #given an image landing page, return the direct link
 
 ##output methods
 sub dump_to_txt {
-    my ($albumname, @urls) = @_;
+    my ($albumname, $link, @urls) = @_; #if we're not coming from minus, $link should just be the first actual pic. so it should work either way
 
-    write_file('files.txt', (join "\n", @urls))
+    write_file('files.txt', {binmode => ':utf8'}, (join "\n", ($link, @urls)))
     || die $!;
 
     return $albumname;
@@ -183,7 +214,7 @@ sub download_album {
         }
 
         say($newfilename.' :: '.$img->code.' :: '.(sprintf "%.02d", ($img->content_length / 1024)).' kB');
-        # sleep 1;
+        sleep int rand 5 if rand 50 < 20;
     }
     return $albumname;
 }
