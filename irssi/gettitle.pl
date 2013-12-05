@@ -214,7 +214,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# bare image links, possibly produced by that last block
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
-		if ($url =~ /4chan\.org.+(?:jpe?g|png|gif)/i){
+		if ($url =~ /4c(?:ha|d)n\.org.+(?:jpe?g|png|gif)/i){
 			$return = imgur($url,$chan,$data,$server,$nick);
 			return ($return,$url,1);
 		}
@@ -360,7 +360,7 @@ sub unwrap_shortener { # http://expandurl.appspot.com/#api
 
 sub get_title {
 	my ($url) = @_;
-	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme|isitup|4chan\S+res/i){
+	if(defined $titlecache{$url}{'url'} && $url !~ /isup\.me|downforeveryoneorjustme|isitup|4c(?:ha|d)n\S+res/i){
 		unless (time - $titlecache{$url}{'time'} > 28800){ #is eight hours a sane expiry? I have no idea!
 			print '(cached)' if $debugmode;
 			return $titlecache{$url}{'url'};
