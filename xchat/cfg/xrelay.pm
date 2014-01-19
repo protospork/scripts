@@ -25,7 +25,7 @@
 	"guilty crown"		=>	["Anime", [qw'coalguys commie'],"GC",		[undef],		undef], #2259],
 	"fate \x{2044} zero"=>	["Anime", [qw|commie|],		"F/0",			["commie:8bit"],undef], #2277],
 	"fate zero"			=>	["Anime", [qw|UTW|],		"F/0",			[undef],		undef], #2277],
-	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		undef], #2257],
+#	"phi brain"			=>	["Anime", [undef],			undef,			[undef],		undef], #2257],
 	"tomodachi ga sukunai"=>["Anime", [qw|mazui|],		"Haganai",	 	[undef],		undef], #2270], #boku ha/wa tomodachi ga sukunai
 	"ben-to"			=>	["Anime", [qw'gg'],			"Ben-to",		[undef],		undef],#2275], Ben-to airs first on TVA, which isn't listed on syoboi
 	'plastic nee-san'	=>	["Anime", ['retouched'],	undef,			[undef],		undef], # web series
@@ -58,7 +58,7 @@
 	"Koi-Ken"			=>	["Anime", [undef],			'Koi-Ken',		[undef],		undef], #Koi-Ken!
 	"Eureka Seven: AO"=>	["Anime", [undef],			'E7',			[undef],		undef], #ugh
 	"furusato saisei"	=>	["Anime", [undef],			undef,			[undef],		undef], #dunno. shokotan op/ed though ##it's folktales from japan
-	'folktales from japan'=>["Anime", ['horrible'],		undef,			[undef],		undef],
+#	'folktales from japan'=>["Anime", ['horrible'],		undef,			[undef],		undef],
 	"Lupin III"		=>	["Anime", [qw'sage gg'],	'Lupin',		[undef],		undef], #Lupin III - Mine Fujiko to Iu Onna ##sage
 	"Lupin the Third"	=>	["Anime", [qw'sage'],		'Lupin',		[undef],		undef],
 	"to Iu Onna"		=>	["Anime", [qw'sage commie gg'],'Lupin',		[undef],		undef],
@@ -167,6 +167,45 @@
 	'Neptun'			=>	["Anime", [qw'commie horrible'],'Neptunia'], #Choujigen Game Neptune The Animation / neptunia
 	'GATCHAMAN Crowds'	=>	["Anime", [undef],				'Gatcha'], #12eps *************************************
 	'Kimi no Iru Machi'	=>	["Anime", [undef],				'KnIM'], #****************************
+#fall 2013
+	'Coppelion'			=>	["Anime", [qw'horrible vivid koi'],	'Coppelion'],
+	'Kanata'			=>	["Anime", [qw'horrible utw fff'],'Kanata'], #Kyoukai no Kanata (kyoani)
+	'Kyousougiga'		=>	["Anime", [qw'commie koi'],		'Kyousougiga'],
+	'Outbreak Company'	=>	["Anime", [qw'horrible koi doki'],	'Outbreak'],
+	'Kill la Kill'		=>	["Anime", [qw'underwater commie horrible'],	'KlK'], #***************
+	'Golden Time'		=>	["Anime", [qw'commie fff horrible'],'Time'],
+	'Strike the Blood'	=>	["Anime", [qw'fff horrible'],	'StB'], #no
+	'Log Horizon'		=>	["Anime", [qw'horrible commie'],'Horizon'], #*********************
+	'Tesagure'			=>	["Anime", [undef],				'Tesagure'], #tesagure! bukatsu-mono (web?)
+	'Walkure Romanze'	=>	["Anime", [qw'horrible koi'],	'Walkure'], #no
+	'Non Non Biyori'	=>	["Anime", ['horrible', 'm 3 3 w'],'NNB'],
+	'Tokyo Ravens'		=>	["Anime", [qw'gg koi'],			'Ravens'], #prob not
+	'BlazBlue'			=>	["Anime", [qw'horrible commie'],'BlazBlue'], #BLAZBLUE ALTER MEMORY	(no)
+	'Samurai Flamenco'	=>	["Anime", [qw'horrible commie'],'Flamenco'], #*************************************
+	'Galilei Donna'		=>	["Anime", [qw'horrible commie whynot'],	'Galilei'], #***************	
+	'Build Fighters'	=>	["Anime", [qw'sage horrible'],	'Gundam'],
+	'Yuushibu'			=>	["Anime", [qw'commie horrible'], 'Yuushibu'],
+	'Yozakura'			=>	["Anime", ['cthuko'],			'Yozakura'],
+#winter/spring 2014
+	imocho				=> ["Anime", [undef], 'ImoCho'], #saikin, imouto no yousu ga chotto okaishiin da ga
+	"space dandy"		=> ["Anime", [undef], 'Dandy'],
+	"witch craft works"	=> ["Anime", [undef], 'WCW'],
+	"tonari no seki-kun"=> ["Anime", [undef], 'Seki'],
+	noragami			=> ["Anime", [undef], 'Noragami'], ###########
+	saki				=> ["Anime", [undef], 'Saki'],
+	koiuta				=> ["Anime", [undef], 'Koiuta'], #toaru hikuushi e no koiuta
+	"d-frag"			=> ["Anime", [undef], 'Defrag'],
+	hamatora			=> ["Anime", [undef], 'Hamatora'],
+	"onee-chan ga kita"	=> ["Anime", [undef], undef],
+	"mahou sensou"		=> ["Anime", [undef], 'Sensou'],
+	"magical warfare"	=> ["Anime", [qw'horrible'], 'Sensou'],
+	"sakura trick"		=> ["Anime", [undef], 'Trick'], ##########
+	"strange+"			=> ["Anime", [undef], 'Strange+'],
+	reitetsu			=> ["Anime", [undef], 'Hozuki'], #houzuki no reitetsu
+	nourin				=> ["Anime", [undef], 'Nourin'],
+	"no-rin"			=> ["Anime", [qw'horrible'], 'Nourin'],
+	nisekoi				=> ["Anime", [undef], 'NiseKoi'],
+	barristers			=> ["Anime", [undef], 'Barristers'], ####
 );
 
 @blacklist = qw(
@@ -175,7 +214,7 @@ animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
-Farfie Aniplex-rip
+Farfie Aniplex-rip 8bit
 ); #regex special characters should NOT be escaped
 @moreblacklist = (
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn",
