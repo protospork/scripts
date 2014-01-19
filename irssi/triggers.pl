@@ -4,6 +4,7 @@ use LWP;
 use URI;
 use URI::Escape qw'uri_escape_utf8 uri_unescape';
 use HTML::TreeBuilder;
+use HTML::Query;
 use HTML::Entities;
 use utf8;
 use vars qw($VERSION %IRSSI);
@@ -256,7 +257,7 @@ sub isup {
 	my $req = $ua->get('http://isup.me/'.$url);
 	return $req->code.' uhoh' unless $req->is_success;
 
-	my $status = HTML::TreeBuilder->new_from_content($req->decoded_content)->look_down(_tag => 'div', id => 'container')->as_trimmed_text;
+	my $status = (HTML::Query->new(text => $req->decoded_content)->query('div#container')->get_elements())[0]->as_trimmed_text;
 	$status =~ s{^.+?just you[!.] | Check.+$|^Huh? |(?<=interwho\.).+$}{}g;
 	return $status;
 }
@@ -912,38 +913,47 @@ sub return_rose_scores {
 	return;
 }
 
-sub gfycat {
+sub gfycat { # http://gfycat.com/api
 	my ($url,$nick,$chan,$server) = @_;
 
 	return unless $url =~ /\.gif$/i;
 
-	$server->command("msg $chan This may take up to 30 seconds");
+	# $server->command("msg $chan This may take up to 30 seconds");
 
-	$ua->timeout(30);
+	# $ua->timeout(30);
 
-	my $fetch = 'http://upload.gfycat.com/transcode/'.(time.'-c8').'?fetchUrl='.$url;
+	my $fetch = 'http://upload.gfycat.com/transcode/'.((time % 10000).'c8').'?fetchUrl='.(uri_escape_utf8 $url);
 	my $req = $ua->get($fetch); #that center stuff is b/c gfycat wants a random string
 
-	$ua->timeout(13);
+	# $ua->timeout(13);
 
 	unless ($req->is_success){
 		return ("$fetch error: ".($req->status_line).'. Try http://gfycat.com/fetch/'.$url);
 	}
 	my $slug = $req->content;		
 
-	my ($hash,$size);
-	if ($slug =~ /^\{"gfyname":"([^"]+)","gfysize":(\d+)/){
-		($hash,$size) = ($1,$2);
+	my ($hash,$size,$oldsize);
+	if ($slug =~ /"gfyname":"([^"]+)","gfysize":(\d+),"gifsize":(\d+)/i){ #these params randomly go in/out of camelCase
+		($hash,$size,$oldsize) = ($1,$2,$3);
 	} else {
 		return $slug;
 	}
 
-	my $pub = $ua->get('http://gfycat.com/ajax/publish/'.$hash);
-	return $pub->status_line." while publishing" unless $pub->is_success;
+	for ($size,$oldsize){
+		$_ /= 1048576;
+		if ($_ =~ /\.\d\d(\d)/ && $1 >= 5){ #rounding, poorly
+			$_ += 0.01;
+		}
+		$_ = sprintf "%.2fMB", $_;
+	}
+
+	# no longer necessary?
+	# my $pub = $ua->get('http://gfycat.com/ajax/publish/'.$hash);
+	# return $pub->status_line." while publishing" unless $pub->is_success;
 	
 	my $gfylink = 'http://gfycat.com/'.$hash;
 
-	$server->command("msg $chan $gfylink");
+	$server->command("msg $chan $url ($oldsize) => $gfylink ($size)");
 	return;
 }
 
@@ -991,6 +1001,7 @@ sub weather {
 		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
 		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
+		$weather =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
 
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
