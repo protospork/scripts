@@ -143,8 +143,8 @@ sub magic_happens {
 		my @end;
 		for (split /\s+/, $message){ #what if I split on /\b/?
 			if (/\x{02}/){ push @end, $_; next; }
-			if (/^http|^www|^ed2k/i){ #MOTHERFUCKING URLS
-				s/^([<(]+)((http|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
+			if (/^http|^www|^ed2k|^irc/i){ #MOTHERFUCKING URLS
+				s/^([<(]+)((http|ircs?|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
 				s/(http\S+?)([)>]+)$/$1\003$clr$2\x0F/ig;
 				push @end, $_;
 				next;
@@ -188,30 +188,6 @@ sub magic_happens {
 		if ($action == 1){ emit_print('Your Action', $mynick, $message, $_[2]); }
 		else { emit_print('Your Message', $mynick, $message, $_[2], $_[3]); }
 		return EAT_ALL;
-	}
-	if ($channel eq '#tac'){
-		no warnings 'uninitialized';
-		my $term = "\x03";
-		if ($message =~ /\x030?1,0?1/){
-			$term = "\x0301,01";
-		}
-
-		given ($nick){
-			when (/aria/i){
-				$message =~ s/cock/\x03,20the$term/gi;
-				$message =~ s/schlick(ed)?/if ($1 eq 'ed'){ "\x03,20fapped$term" } else { "\x03,20fap$term" }/eg;
-			}
-			when (/shou|murasa/i){
-				$message =~ s/hold(ing)? hands/\x03,20fuck$1$term/gi; #holded hands or hold handsed?
-				$message =~ s/(?<=god )kiss|kiss(?= it)/\x03,20damn$term/gi;
-				$message =~ s/cute butt/\x03,20shit$term/gi; #why
-				$message =~ s/(?<=what the )Gensokyo/\x03,20hell$term/gi;
-			}
-			default {
-				#nothing
-			}
-		}
-		use warnings 'uninitialized';
 	}
 
 	unless ($message =~ /^\s*$/){
