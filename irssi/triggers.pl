@@ -370,7 +370,12 @@ sub ddg {
 	if ($terms[0] =~ /^[\\!]/){
 		$feelinglucky++;
 	}
-	uri_escape_utf8($_) for @terms;
+	for (@terms){
+		print $_;
+		$_ =~ s/\+/%2B/g;
+		print $_;
+	}
+	print for @terms;
 	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch
 
 	if (! $feelinglucky){
