@@ -80,7 +80,7 @@ hook_command("**", \&clearqueries);
 sub clearqueries { #clears the queries from *status znc spams when it loses the internet
 	my @empty;
 	for (get_list('channels')){
-		$_->{channel} =~ /\*status/ ?
+		$_->{channel} =~ /^\*/ ?
 		push @empty, $_->{context} :
 		next;
 	}
