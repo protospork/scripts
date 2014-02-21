@@ -2,9 +2,8 @@ use Modern::Perl;
 use LWP;
 use JSON;
 use Xchat qw':all';
-use HTML::TreeBuilder;
 use Text::Unidecode;
-if ($^O eq 'MSWin32'){ use Win32::Unicode::File; } #needed solely for filesize in now_playing
+use Win32::Unicode::File; #needed solely for filesize in now_playing
 
 #absolutely none of the commands in this script have error handling and that's terrible
 # eval use strict; my ($x,$o); for (split //, "&2"){ my $r = sprintf "%x", ord $_; $o .= $_.' '.$r.'; '; $x .= '\x{'.$r.'}'; } print $o; print $x;
