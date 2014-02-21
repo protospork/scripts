@@ -22,8 +22,8 @@ Some popular bangs are promoted to work without the !, notably:
 `.w(eather) [zipcode]` - it remembers  
 `.lastfm [username]` - it remembers too  
 `.isup [url]` - see if a website is really down  
-<strike>`.tmdb` - search themoviedb.org</strike> (down for now)  
-`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions  
+<strike>`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions</strike>  
+`.rpn` - [god help me](https://metacpan.org/pod/Math::RPN#OPERATORS)  
 `.ai(rtime)` - [search upcoming anime or just display some](http://www.mahou.org/Showtime/)  
 `.time` - returns the current time in a place (Uses [Wolfram Alpha](http://www.wolframalpha.com/))
   

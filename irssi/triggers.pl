@@ -13,7 +13,7 @@ use Tie::YAML;
 use File::Path qw'make_path';
 use WWW::WolframAlpha;
 use URI::Escape;
-#use TMDB;
+use Math::RPN;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
@@ -26,7 +26,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 
 
-$VERSION = "2.8.0";
+$VERSION = "2.9.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -141,10 +141,10 @@ sub event_privmsg {
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
+		when (/^rpn/i){				$return = rpn_calc(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
-	#api is down?	when (/^tmdb/i){			moviedb($server, $target, @terms); return; } #multiline responses
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
@@ -551,108 +551,7 @@ sub lastfm_api {
 		return 'oh no';
 	}
 }
-sub moviedb {
-	my ($server, $target) = (shift, shift);
-	my $call = shift;
-	my $query = join ' ', @_;
-	print $query if $debug;
-	my ($person, $full, $id);
-	given ($call){
-		when (/:person/){ $person++; $full++; }
-		when (/:full/){ $full++; }
-	}
-	if ($query =~ /^\d+$/){ $id = $query; $full++; }
 
-	if ($tmdb_key eq 'replaceme'){
-		print "c8_tmdb_key not set.";
-		return;
-	}
-	my $tmdb = TMDB->new({api_key => $tmdb_key});
-	if (! $person){
-		my @out;
-		if (! $id){
-			my @res = $tmdb->search->movie($query);
-			if (scalar @res == 1){ $full++; }
-			for my $res (@res) {
-				push @out, $res->{name}.' ['.$res->{year}.']('.$res->{url}.')';
-			}
-			$id = $res[0]->{id};
-		}
-		if (! $full){
-			my $out = shift @out;
-			while (length $out < 300 && @out){
-				$out .= ', '.(shift @out);
-			}
-			$server->command('msg '.$target.' '.$out) if $out;
-			return;
-		} else {
-			my $det = $tmdb->movie($id);
-			$det = $det->info();
-			# print keys %$det if $debug;
-
-			my $out = '<'.$det->{name}.'>';
-			if ($det->{released}){
-				$out .= ' Released:[ '.$det->{released}.' ]';
-			}
-			if ($det->{certification}){
-				$out .= ' Rating:[ '.$det->{certification}.' ]';
-			}
-			if ($det->{genres}){
-				$out .= ' Genre:[ ';
-
-				my $i = 0;
-				while ($i < 5 && $i <= $#{$det->{genres}}){
-					$out .= ', ' unless $i == 0;
-					$out .= $det->{genres}[$i]{name};
-					$i++;
-				}
-
-				$out .= ' ]';
-			}
-			if ($det->{trailer}){
-				my $trl = $det->{trailer};
-				$trl =~ s!http://www.youtube.com/watch?v=!http://youtu.be/!;
-				$out .= ' Trailer:[ '.$trl.' ]';
-			}
-			if ($det->{url}){
-				$out .= ' Link:[ '.$det->{url}.' ]'
-			}
-			$server->command('msg '.$target.' '.$out);
-			return;
-		}
-	} else {
-		return; #only works for madonna and cher for some stupid reason
-		my @rep = $tmdb->search->person($query);
-		my $them = $rep[0]->{id};
-		print $query.': '.$rep[0]->{id} if $debug;
-		$them = $tmdb->person($them);
-		$them = $them->info();
-
-		my $out = '<'.$them->{name}.'>';
-		if ($them->{known_movies}){
-			$out .= ' Total Movies:[ '.$them->{known_movies}.' ]';
-		}
-		if ($them->{filmography}){
-			$out .= ' Movies:[ ';
-			my $i = 0;
-			while ($i < 5 && $i <= $#{$them->{filmography}}){
-				$out .= ', ' unless $i == 0;
-				if ($them->{filmography}[$i]{job} eq 'Actor'){
-					$out .= $them->{filmography}[$i]{name}.' ('.$them->{filmography}[$i]{character}.')';
-				} else {
-					$out .= $them->{filmography}[$i]{name};
-				}
-				$i++;
-			}
-		}
-		if ($them->{url}){
-			$out .= ' Link:[ '.$them->{url}.' ]';
-		}
-		$server->command('msg '.$target.' '.$out);
-		return;
-	}
-
-}
 sub codepoint {
 	my $char = $_[0];
 	$char =~ s/^(.).*$/$1/;
@@ -758,6 +657,17 @@ sub countdown {
 	} else {
 		return lc(join ', ', keys %timers);
 	}
+}
+
+sub rpn_calc {
+	my $terms = join ',', @_;
+	$terms =~ s/rpn,//; #hurr
+
+	my $out;
+	eval { $out = rpn($terms); };
+	if ($@){ return $@; }
+
+	return $out;
 }
 
 sub conversion { #this doens't really work except for money
