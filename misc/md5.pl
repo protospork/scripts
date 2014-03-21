@@ -12,7 +12,7 @@ if (@ARGV){
 	@files = @ARGV;
 }
 if (!@files){
-	@files = glob "*.jpg *.png";
+	@files = glob "*.jpg *.png *.gif";
 }
 
 for my $this (@files){
