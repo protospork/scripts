@@ -3,9 +3,15 @@ use Modern::Perl;
 use Digest::MD5;
 
 my @files;
+my $short = 0;
 if (@ARGV){
+	if ($ARGV[0] =~ /^--short$|^-s$/i){
+		shift @ARGV;
+		$short++;
+	}
 	@files = @ARGV;
-} else {
+}
+if (!@files){
 	@files = glob "*.jpg *.png";
 }
 
@@ -20,6 +26,18 @@ for my $this (@files){
 	my $hash = $md5->b64digest;
 	
 	$hash =~ s/\//_/g;
-	say $this.' => '.$hash;
+	my $out = $this.' => '.$hash;
+
+	if ($short){
+		$hash =~ s{^.*?([[:alpha:]]{4}).*}{$1};
+		if (length $hash > 4){
+			$hash =~ s/[+_-]//g;
+			$hash =~ s{^.*?([[:alpha:]]{4}).*}{$1};
+		}
+		$out .= ' => '.$hash;
+	}
+
+	say $out;
+
 	rename ($this, $hash.'.'.$ext) || die $!;
 }
