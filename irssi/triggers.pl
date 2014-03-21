@@ -80,10 +80,12 @@ sub event_privmsg {
 	return if grep lc $target eq lc $_, (@offchans);
 
 	#has .rose timed out yet?
+	no warnings "uninitialized"; #jesus christ SHUT UP
 	if (time - $rose->[1] > 1800){
 		$rose->[0] = 0;
 		$rose->[1] = 1;
 	}
+	use warnings "uninitialized";
 
 	my @terms;
 	if ($text =~ /^\s*\.(.+?)\s*$/){ #make sure it's a trigger
@@ -109,7 +111,7 @@ sub event_privmsg {
 	} elsif (time - $rose->[1] < 1800 && $text =~ /^$rose->[0]$/){ #1/2 hour is still probably too long a timeout
 		$rosescores{$target}{$nick}++;
 		tied(%rosescores)->save;
-		return_rose_scores($target, $nick, $rose, $server);
+		return_rose_scores($target, $nick, $rose, $server, 0);
 		$rose = undef;
 		return;
 	} elsif ($text =~ /\b(http\S+)\b/ig){
@@ -124,10 +126,10 @@ sub event_privmsg {
 	}
 
 	given ($terms[0]){
-		when (/^flip$|^ro(se|ll)$/i){	$return = dice(@terms); }
+		when (/^flip$|^ro(se|ll)$/i){	$return = dice([$target, $nick, $rose, $server],@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)$/i){ $return = readtext(@terms); }
-		when (/boobs/i){ 			$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
+		when (/boobs|owl/i){ 		$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -146,7 +148,7 @@ sub event_privmsg {
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
-		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)] unless $target =~ /#tac/i; }
+		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)]; }# unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		when (/^shorten$/i){		$return = waaai($last{$target}{'link'}); }
 		when (/^time$/i){			$return = wa(@terms); }
@@ -572,6 +574,7 @@ sub readtext {
 		when (/carol|cheryl/i){ $tgt = $listloc.'carol.txt'; }
 		when (/lana/i){ $tgt = $listloc.'lana.txt'; }
 		when (/boobs/i){ $tgt = $listloc.'boobs.txt'; }
+		when (/owl/i){ $tgt = $listloc.'owls.txt'; }
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
@@ -663,6 +666,10 @@ sub rpn_calc {
 	my $terms = join ',', @_;
 	$terms =~ s/rpn,//; #hurr
 
+	if (length $terms > 50){
+		return "that looks a little ridiculous";
+	}
+
 	my $out;
 	eval { $out = rpn($terms); };
 	if ($@){ return $@; }
@@ -744,8 +751,13 @@ sub utfdecode { #why
 	return $y;
 }
 sub dice {
+	my $params = shift;
 	my $flavor = lc $_[0];
 	if ($flavor eq 'rose'){
+		if ($_[1] && $_[1] =~ /score/){
+			return_rose_scores(@$params, 1);
+			return;
+		}
 		$rose->[0] = 0;
 		my @throws = roll(5,6);
 		for (@throws){
@@ -814,17 +826,20 @@ sub ident {
 	$server->command("msg nickserv identify ".$botpass);
 }
 sub return_rose_scores {
-	$_[-1]->command("msg $_[0] $_[1] is correct: ".$_[2][0]);
-	my @out;
+	if ($_[-1] == 0){
+		$_[-2]->command("msg $_[0] $_[1] is correct: ".$_[2][0]);
+	} else {
+		my @out;
 
-	for (keys %{$rosescores{$_[0]}}){
-		push @out, ((sprintf "%02d", $rosescores{$_[0]}{$_}).' - '.$_);
+		for (keys %{$rosescores{$_[0]}}){
+			push @out, ((sprintf "%02d", $rosescores{$_[0]}{$_}).' - '.$_);
+		}
+		no warnings 'numeric';
+		@out = reverse sort { $a <=> $b } @out;
+		my $t;
+		$#out > 5 ? $t = 5 : $t = $#out;
+		$_[-2]->command("msg $_[0] ".(join '; ', @out[0..$t]));
 	}
-	no warnings 'numeric';
-	@out = reverse sort { $a <=> $b } @out;
-	my $t;
-	$#out > 5 ? $t = 5 : $t = $#out;
-	$_[-1]->command("msg $_[0] ".(join '; ', @out[0..$t]));
 	return;
 }
 
