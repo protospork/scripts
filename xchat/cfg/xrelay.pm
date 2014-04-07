@@ -189,23 +189,46 @@
 #winter/spring 2014
 	imocho				=> ["Anime", [undef], 'ImoCho'], #saikin, imouto no yousu ga chotto okaishiin da ga
 	"space dandy"		=> ["Anime", [undef], 'Dandy'],
-	"witch craft works"	=> ["Anime", [undef], 'WCW'],
+	"witch craft works"	=> ["Anime", [qw'fff horrible'],'WCW'],
 	"tonari no seki-kun"=> ["Anime", [undef], 'Seki'],
 	noragami			=> ["Anime", [undef], 'Noragami'], ###########
 	saki				=> ["Anime", [undef], 'Saki'],
 	koiuta				=> ["Anime", [undef], 'Koiuta'], #toaru hikuushi e no koiuta
 	"d-frag"			=> ["Anime", [undef], 'Defrag'],
 	hamatora			=> ["Anime", [undef], 'Hamatora'],
-	"onee-chan ga kita"	=> ["Anime", [undef], undef],
-	"mahou sensou"		=> ["Anime", [undef], 'Sensou'],
-	"magical warfare"	=> ["Anime", [qw'horrible'], 'Sensou'],
+	# "onee-chan ga kita"	=> ["Anime", [undef], undef],
+	# "mahou sensou"		=> ["Anime", [qw'fff'],			'Sensou'],
+	# "magical warfare"	=> ["Anime", [qw'horrible'],	'Sensou'],
 	"sakura trick"		=> ["Anime", [undef], 'Trick'], ##########
 	"strange+"			=> ["Anime", [undef], 'Strange+'],
 	reitetsu			=> ["Anime", [undef], 'Hozuki'], #houzuki no reitetsu
 	nourin				=> ["Anime", [undef], 'Nourin'],
 	"no-rin"			=> ["Anime", [qw'horrible'], 'Nourin'],
 	nisekoi				=> ["Anime", [undef], 'NiseKoi'],
-	barristers			=> ["Anime", [undef], 'Barristers'], ####
+	# barristers			=> ["Anime", [undef], 'Barristers'], ####
+#spring 2014
+	"Kanojo ga Flag wo Oraretara"	=> ["Anime", [undef], undef],
+	"black bullet"					=> ["Anime", [undef], undef],
+	m3								=> ["Anime", [undef], "M3"],
+	Mangaka							=> ["Anime", [undef], undef],
+	"no game no life"				=> ["Anime", [undef], undef],
+	"Soul Eater Not"				=> ["Anime", [undef], undef],
+	atelier							=> ["Anime", [undef], 'Atelier'],
+	"Hitsugi no Chaika"				=> ["Anime", [undef], undef],
+	"akuma no riddle"				=> ["Anime", [undef], undef],
+	"Bokura wa Minna Kawaisou"		=> ["Anime", [undef], undef],
+	nanana							=> ["Anime", [undef], undef],
+	wixoss							=> ["Anime", [undef], 'WIXOSS'],
+	sidonia							=> ["Anime", [undef], "Sidonia"],
+	hanamonogatari					=> ["Anime", [undef], undef],
+	mushishi						=> ["Anime", [undef], "Mushishi"],
+	"break blade"					=> ["Anime", [undef], "Earth"],
+	"captain earth"					=> ["Anime", [undef], undef],
+	gokukoku						=> ["Anime", [undef], undef],
+	"Mahouka Koukou no Rettousei"	=> ["Anime", [undef], undef],
+	"mekaku city actors"			=> ["Anime", [undef], undef],
+	"Soredemo Sekai wa Utsukushii"	=> ["Anime", [undef], 'SoreSeka'],
+	"Sadon Desu"					=> ["Anime", [undef], "Sadon"],
 );
 
 @blacklist = qw(
@@ -214,7 +237,7 @@ animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
-Farfie Aniplex-rip 8bit
+Farfie Aniplex-rip 8bit peeps gxs
 ); #regex special characters should NOT be escaped
 @moreblacklist = (
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn",

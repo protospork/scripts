@@ -9,7 +9,16 @@ use LWP;
 use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows.
 no warnings 'misc';
 
-my $ver = '4.03';
+# how to deal w/shitty services:
+#hook activity in target channel, re-send message in own nick if it times out?
+# - timers are awful
+#periodically check for some kind or usermode or channel +r (confirm that)?
+# - +r check before each msg would be okay, otherwise see previous
+#manual command to switch from botserv<->local?
+# - shitty but better than nothing
+
+
+my $ver = '4.13';
 register('relay', $ver, 'bounce new TokyoTosho uploads into an irc channel', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -24,8 +33,10 @@ my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.galador.org');
 
 my %dupe;
 my $last = ' '; #maybe look into making this an array and returning the last #, or last [string] and match
-hook_command('lastannounce', \&sayprev);
-hook_command('dumprelaycache', \&dumpcache);
+my $botserv = 1;
+hook_command('relay_last_announce', \&sayprev);
+hook_command('relay_dump_cache', \&dumpcache);
+hook_command('relay_through_botserv', \&togglebot);
 
 #Sample test line:
 #	/recv :TokyoTosho!~TokyoTosh@Tokyo.Tosho PRIVMSG #tokyotosho-api :Torrent367273Anime1[TMD]_Bakuman_-_10_[F7D2E973].mkvhttp://www.nyaa.eu/?page=download&tid=178017213.52MBshut up I'm testing something
@@ -66,7 +77,12 @@ sub whoosh {
 				unless $do_hentai == 1;
 			$output = "\x03".$Chntai."Hentai\x0F".$output;
 		}
-		my $spam = 'bs say '.$spamchan.' '.$output;
+		my $spam;
+		if ($botserv){
+			$spam = 'bs say '.$spamchan.' '.$output;
+		} else {
+			$spam = 'msg '.$spamchan.' '.$output;
+		}
 
 		debug_say("Checking $name against general blacklist");
 		for (@blacklist){
@@ -147,9 +163,13 @@ sub whoosh {
 			#now the actual channel announces
 			if ($okgroup == 1 && $other == 0){
 				if ($cat eq 'Anime'){
-					command('bs say '.$anime.' '.$output, undef, $destsrvr);
-					$last = $output;
-					#don't return, we want the summary in $ctrlchan and possible topic update
+					if ($botserv){
+						command('bs say '.$anime.' '.$output, undef, $destsrvr);
+					} else {
+						command('msg '.$anime.' '.$output, undef, $destsrvr);
+					}
+				$last = $output;
+				#don't return, we want the summary in $ctrlchan and possible topic update
 				}
 				elsif ($cat eq 'Music'){
 					command('msg '.$music.' '.$output, undef, $destsrvr);
@@ -240,6 +260,15 @@ sub debug_say {
 	return 0 unless $debug;
 	prnt($_[0], $ctrlchan, $destsrvr);
 	return 1;
+}
+
+sub togglebot {
+	$botserv++;
+	$botserv %= 2;
+	$botserv 
+	? prnt ("now relaying through botserv")
+	: prnt ("now relaying through local nick");
+	return EAT_XCHAT;
 }
 
 sub reformat_info {
