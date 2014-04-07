@@ -128,7 +128,7 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice([$target, $nick, $rose, $server],@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)$/i){ $return = readtext(@terms); }
+		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?$/i){ $return = readtext(@terms); }
 		when (/boobs|owl/i){ 		$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
@@ -575,6 +575,13 @@ sub readtext {
 		when (/lana/i){ $tgt = $listloc.'lana.txt'; }
 		when (/boobs/i){ $tgt = $listloc.'boobs.txt'; }
 		when (/owl/i){ $tgt = $listloc.'owls.txt'; }
+		when (/hooters?/i){ 
+			if ((int rand 99) % 2){
+				$tgt = $listloc.'owls.txt';
+			} else {
+				$tgt = $listloc.'boobs.txt';
+			}
+		}
 		default { return; }
 	}
 	my $req = $ua->get($tgt);
