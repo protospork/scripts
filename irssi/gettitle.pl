@@ -242,7 +242,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		$url->query_form(undef);
 	} elsif ($url =~ m{https?://(?:www\.)?amazon\.(\S{2,5})/(?:[a-zA-Z0-9-]+)?/[dg]p(?:/product)?/([A-Z0-9]{10})}){
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
-	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/res/\d+)(?:#\S+?)?$}){
+	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/thread/\d++)}){
 		$url = 'http://api.4chan.org/'.$1.'.json';
 	}
 
@@ -400,7 +400,7 @@ sub get_title {
 		when (m!newegg[^f]\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return amazon($page); }
 		when (m!store\.steampowered\.com/app!){ return steam($page); }
-		when (m!4chan\S+/res/!){ return fourchan($page); }
+		when (m!4chan\S+/(?:res|thread)/!){ return fourchan($page); }
 		when (/instagram\.com/){
 			# if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
 			# 	print $1 if $debugmode;
@@ -516,7 +516,7 @@ sub deviantart {
 	my $page = shift;
 	my $title;
 	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
-	$title = $1 || $2 || 'Deviantart is broken.';
+	$title = $1 || $2 || 0;
 	return $title unless $title =~ /\.swf$/; #hawk doesn't want videos spoiled or something
 }
 sub newegg {
@@ -704,8 +704,9 @@ sub imgur {
 	my ($url,$chan,$msg,$server,$nick) = (@_);
 
 	#convert thumb URL to normal one
-	$url =~ s/\d+\.thumbs/images/;
-	$url =~ s{thumb/(\d+)s\.}{src/$1.};
+	#NOTE: thumbs are always jpeg. this won't work for png or gif/webm
+	$url =~ s/\d+\.t\.4cdn/i.4cdn/;
+	$url =~ s{/(\d+)s\.}{/$1.};
 	$url = URI->new($url);
 
 
