@@ -1,7 +1,9 @@
 use Modern::Perl;
+no warnings 'utf8';
 use JSON;
 use LWP; #RobotUA straight up doesn't work anymore. Owns
 use Data::Dumper;
+use Tie::YAML;
 use File::Slurp;
 use File::Copy qw(copy);
 use File::Util;
@@ -9,10 +11,14 @@ use Digest::MD5;
 use Cwd 'cwd';
 my $root_dir = cwd;
 
-# <@cephalopods> done: fetch thread index, build list of files to download. todo: create folder, fetch pics, hash pics/redownload fuckups, thread watching
-# <@cephalopods> that sounds like "most of the script" but really all I have to do is cram this new code into my old 4chan ripper
 
-#haha fuck that, the old script is *bonkers*
+#verify() should run immediately after a file downloads, instead of on the second pass
+
+#on first run in existing folder w/o logfile, immediately increments $empty_tries.
+# deleting a pic only fixes it sometimes  DO IT BETWEEN RUNS
+
+
+binmode STDOUT, ":utf8"; 
 
 my $debug = 1;
 my $ua = LWP::UserAgent->new();
@@ -23,10 +29,15 @@ $|++;
 my %pics;
 my %thread;
 
+# tie my %pics, 'Tie::YAML', $root_dir.'\4chan-log.po' or die $!;
+
+my $empty_tries = 0; #number of times we've checked the thread and found no updates
+my $last_check = 1111111111; #unix time the thread index was last downloaded
+
 sub make_api_link {
-	# https://boards.4chan.org/gif/res/6016093 -> http(s)://a.4cdn.org/board/res/threadnumber.json
-	(my ($board,$hash) = ($_[0] =~ m{boards\.4chan\.org/([^/]+)/res/(\d+)}))
-		|| return 'ERROR: That isn\'t a link to a thread.';
+	# https://boards.4chan.org/gif/res/6016093 -> http(s)://a.4cdn.org/board/res/6016093.json
+	(my ($board,$hash) = ($_[0] =~ m{boards\.4chan\.org/([^/]+)/thread/(\d+)}))
+		|| die 'ERROR: That isn\'t a link to a thread.';
 	my $url = 'https://a.4cdn.org/'.$board.'/res/'.$hash.'.json';
 	say $url if $debug;
 	
@@ -35,10 +46,13 @@ sub make_api_link {
 
 	return $url;
 }
-sub pull_index { #this needs to support X-If-Modified-Since (or something)
-	my $url = check(make_api_link($_[0]));
-	my $req = $ua->get($url);
-	if ($req->is_error){ return 'ERROR ('.$req->code.'): Could not retrieve thread.'; }
+sub pull_index { 
+	my $thread = shift;
+
+	my $url = check(make_api_link($thread));
+	my $req = $ua->get($url, {'If-Modified-Since' => $last_check});
+	if ($req->is_error){ die 'ERROR ('.$req->code.'): Could not retrieve thread.'; }
+	if ($req->code == 304){ return 'No updates since '.$last_check; } #need a way to verify this even works
 
 	if ($debug){
 		say 'HTTP '.$req->code;
@@ -47,6 +61,7 @@ sub pull_index { #this needs to support X-If-Modified-Since (or something)
 	return $req->decoded_content;
 }
 sub json_to_list {
+	if ($_[0] =~ /^No updates/){ return $_[0]; }
 	my $json = decode_json $_[0];
 	# write_file('4chan'.time.'.txt', Dumper $json) if $debug;
 
@@ -75,18 +90,21 @@ sub json_to_list {
 	$thread{'title'} = $fu->escape_filename($thread{'title'});
 
 	say 'Thread title is '.$thread{'title'};
+	return time;
 }
 sub grab_images { 
-	create_dir($thread{'title'});
+	create_dir($thread{'title'}) unless cwd =~ $thread{'title'};
 	my @dir = glob "*.*"; #don't glob on every iteration, idiot
 
-	for (keys %pics){
+	my $rval = 0; # this gets flipped if a file is grabbed, used to keep the 'watch thread' thing from going insane 
+
+	for (sort keys %pics){
 		rewrite_filename($_);
 
-		if (file_check($_, @dir)){ #make sure it doesn't exist
+		if (file_check($_, @dir) == 1){ #make sure it doesn't exist
 			next;
 		} else {
-			sleep 2; #moot says no more than 1 req/sec so I'll be nice
+			sleep 1; #moot says no more than 1 req/sec so I'll be nice
 		}
 		my $url = 'https://i.4cdn.org/'.$thread{'board'}.'/src/'.$_.$pics{$_}{'ext'};
 
@@ -95,16 +113,23 @@ sub grab_images {
 		my $resp = $ua->get($url, ':content_file' => $pics{$_}{'fixed_name'});
 		if ($resp->is_error){
 			say $resp->code;
-			#TODO: look for partial file and delete it; maybe retry
 		} else {
 			say $pics{$_}{'fixed_name'};
+			$rval++;
 		}
 	}
+	if ($rval == 0){
+		$empty_tries++;
+	} else {
+		$empty_tries = 0;
+	}
+	recheck_thread();
 }
 sub rewrite_filename { 
 	# ~~~~~ note that this takes the %pics key, not the name ~~~~~~~
 	# prefixes filename w/post # to prevent dupe names overwriting each other
 	my $name = $fu->escape_filename($pics{$_[0]}{'name'});
+	$name =~ s/[^[:ascii:]]/U/g;
 
 	# but if the filename is all digits (*chan repost), fuck it.
 	if ($name =~ /^\d+$|^tumblr_/){
@@ -119,17 +144,35 @@ sub rewrite_filename {
 
 	return $name;
 }
-sub file_check { #glob for file & md5 it. later.
+sub file_check { #glob for file & md5 it.
 	my ($fi, @dir) = @_;
 
-	if (grep $pics{$fi}{'fixed_name'} eq $_, @dir){
-		#TODO: actually look at the existing file
-		return 1;
+	if (grep quotemeta $pics{$fi}{'fixed_name'} =~ quotemeta $_, @dir){ #quotemeta should be unnecessary
+		my $src_hash = $pics{$fi}{'md5'};
+		$src_hash =~ s/==$//;
+		
+		# print "$_ exists as ".$pics{$fi}{'fixed_name'};
+		
+		if (exists $pics{$fi}{'ondisk'}){ #no reason to test if we did it before
+			return 1;
+		}
+
+		my $ok = verify($fi);
+		
+		if ($ok){
+			# print "\n";
+			return 1;
+		} else {
+			# print " but is broken.\n";
+			say "$_ is broken.";
+			unlink $fi;
+			return 0;
+		}
 	}
 	return 0;
 }
 sub create_dir {
-	my $albumname = $_[0];
+	my $albumname = $thread{'board'}.'/'.$_[0];
 
 	say 'Saving to: '.$albumname if $debug;
 	
@@ -137,13 +180,54 @@ sub create_dir {
 	# switched to File::Util since I'm using it for escape_filename anyway
 	$fu->make_dir($albumname, undef, '--if-not-exists'); 
 	chdir $albumname;
+	tie %pics, 'Tie::YAML', '4chan-log.po' or die $!;
 }
-sub check {
+sub check { #I don't remember why I did this
 	$_[0] =~ /^ERROR/ 
 	? die $_[0]
 	: return $_[0];
 }
+sub record_success {
+	my $fi = $_[0];
+	$pics{$fi}{'ondisk'} = time;
+	tied(%pics)->save;
+	return $pics{$fi}{'ondisk'};
+}
+sub verify {
+	my $fi = $_[0];
 
-check(json_to_list(pull_index($ARGV[0])));
+	$pics{$fi}{'md5'} =~ s/==$//;
+
+	open my $file, '<', $pics{$fi}{'fixed_name'} || die $!;
+	binmode($file);
+
+	my $md5 = Digest::MD5->new;
+	$md5->addfile($file);
+	my $hash = $md5->b64digest;
+
+	close $file;
+	
+	if ($hash eq $pics{$fi}{'md5'}){
+		record_success($fi);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+sub recheck_thread {
+	my $wait = 2**($empty_tries);
+	$wait = 64 if $wait > 64; #exponential hops are cool but let's not go crazy here
+
+	say '$empty_tries count: '.$empty_tries;
+
+	my $tstamp = [localtime];
+	$tstamp = sprintf "%02d:%02d:", $tstamp->[2], $tstamp->[1];
+	say "$tstamp Sleeping $wait minutes.";
+	sleep $wait * 60;
+
+	$last_check = check(json_to_list(pull_index($ARGV[0])));
+	grab_images();
+}
+
+$last_check = check(json_to_list(pull_index($ARGV[0])));
 grab_images();
-
