@@ -27,16 +27,12 @@ use vars qw(
 
 
 
-# <@cullen> 23:13:07 <&hawk> http://dl.dropboxusercontent.com/u/416702/vlcsnap-00020.png
-# <@cullen> no seriously what movie is that
-# <-- BreadOfWonder!UserName@adelais-5e300aed.livnmi.sbcglobal.net has quit (Ping timeout: 181 seconds)
-# <@SFLegend> http://www.rutland-times.co.uk/news/local/suspected-smoke-over-colsterworth-turns-out-to-be-a-cloud-1-5434228
-# --> BreadOfWonder (UserName@adelais-5e300aed.livnmi.sbcglobal.net) has joined #18+
-# <-- Wintermote!4645a298@adelais-d3f96ed8.mibbit.com has quit (Quit: http://www.mibbit.com ajax IRC Client)
-# --> Wintermote (4645a298@adelais-d3f96ed8.mibbit.com) has joined #18+
-# <-- DominoEffect!DominoEffec@e126b4.3ad95f.a59e76.0fd6b1 has quit (Ping timeout: 181 seconds)
-# <@penguins> .gis
-# <c8h10n4o2> http://images.google.com/searchbyimage?image_url=
+
+
+# <Lucifer7>  13 my $yt = new WebService::GData::YouTube();
+# <Lucifer7>  11 eval { $video = $yt->get_video_by_id($yt_id); };
+# <~tuxedo_mask> does the module actually work?
+# <Lucifer7> yeah
 
 
 
@@ -227,8 +223,11 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	# API transforms
 	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		# $url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
+		$url = 'http://twitter.com/intent/retweet?tweet_id='.$1;
 		if (grep $chan eq $_, (@offtwitter)){ return; }
-	} elsif ($url =~ m[(?:www\.)?(?:youtu(?:\.be/|be\.com|listenonrepeat\.com)/(?:watch\S+v=|embed/))([\w-]{11})]i){
+	} elsif ($url =~ m[youtu(\.?be|be\.com)|listenonrepeat\.com]i){
+		$url =~ s{youtu\.be/([\w-]{11})}{gdata.youtube.com/feeds/api/videos/$1?alt=jsonc&v=2}i;
+		$url =~ s{(?:youtube|listenonrepeat)\.com/(?:watch\S+v=|embed/)([\w-]{11})}{gdata.youtube.com/feeds/api/videos/$1?alt=jsonc&v=2}i;
 		#youtube API v2 (current stable, doesn't offer any degree of resolution info)
 		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
 
@@ -394,7 +393,7 @@ sub get_title {
 				return $title;
 			}
 		}
-		when (/twitter\.com/){ return twitter($page, $url); }
+		when (m|twitter\.com/intent|){ return twitter($page, $url); }
 		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg[^f]\S+Product!){ return newegg($page); }
@@ -429,53 +428,47 @@ sub twitter {
 	my $page = shift;
 	my $url = shift;
 	my $junk;
-	# API RETIRED, GO FUCK YOURSELF WITH AN OUTH CERTIFICATE
-	# eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #never done this before
-	# if ($@){ return $page->status_line.' (twitter\'s api is broken again)'.' '.$page->content_type; }
-
-	# my $text = $junk->{'text'};
-	# $text =~ s/\n/ /g;
-	# #expand t.co links.
-	# for (@{$junk->{'entities'}{'urls'}}){
-	# 	my ($old,$new) = ($_->{'url'},$_->{'expanded_url'});
-	# 	$new = $old unless $new;
-
-	# 	#unwrap urls for real
-	# 	if ($new =~ $url_shorteners){
-	# 		$new = unwrap_shortener($new);
-	# 	}
-
-	# 	$text =~ s/$old/$new/gi;
-	# }
-
-	# my $person = xcc($junk->{'user'}{'screen_name'});
-
-	# my $title = $person.' '.$text;
-	# $title = '<protected account>' if $title eq '<> ';
-	# return decode_entities($title);
-
-	# write_file($ENV{HOME}.'/.irssi/twitterwtf.txt', {binmode => ':utf8'}, $page->decoded_content);
 
 	eval { $junk = HTML::TreeBuilder->new_from_content($page->decoded_content); };
 	if ($@ || ! $junk || ! ref $junk || ! $junk->can('look_down')){ return 'Twitter is extra broken today ('.$page->status_line.' '.$page->content_type.' '.length($page->content).')'; }
 
 	my ($text,$name);
-	eval { $text = $junk->look_down(_tag => 'p', class => qr/tweet-text/); };
+	eval { $text = $junk->look_down(_tag => 'div', class => qr/tweet-text/); };
 	if ($@ || ! $text){ return $page->code.' How Would I Know'; }
+	eval { $name = $junk->look_down(_tag => 'span', class => qr/tweet-full-name/); };
+	if ($@ || ! $name){ return $page->code.' God Damn It'; }
+
+	my @links;
+	eval { @links = $text->look_down(_tag => 'a', class => qr/tweet-url/); };
+	if ($@){ return $page->code.' What Hath Science Wrought'; }
 
 	$text = $text->as_trimmed_text;
 	$text =~ s/\n|<br(?: \/)?>/ /g;
 	$text =~ s/\xA0//g;
-	$text =~ s/(http\S+)\x{2026}/$1/g;
+	# $text =~ s/(http\S+)\x{2026}/$1/g;
 
-	$text =~ s&\bpic\.twitter&http://pic.twitter&g;
-	# $text =~ s&(http\S+)&unwrap_shortener($1)&gie; ?
+	for my $me (@links){
+		next if $me->attr('class') =~ /username|hashtag/;
+		next if $me->attr('title') =~ m{twitter.+photo};
+		my $old = $me->as_trimmed_text;
+		my $new = $me->attr('data-expanded-url');
+		$text =~ s/$old/$new/;
+	}
 
-	$name = $url;
-	$name =~ s{^.+\.com/|/status.+$}{}g;
+	# write_file('twitter.txt', {binmode => ':utf8'}, $text) || return $!;
+	
+	$text =~ s{\@(\w+)}{xcc($1,"@".$1)}eg; #color names (mainly @replies)
 
-	return decode_entities(xcc($name).' '.$text);
+	$text =~ s&\bpic\.twitter&http://pic.twitter&g; #?
+
+	$name = $name->as_trimmed_text;
+	$name =~ s{\@}{}g;
+
+	my $out = xcc($name).' '.$text;
+
+	return decode_entities($out);
 }
+
 sub youtube {
 	my $page = shift;
 	my $junk;
@@ -509,6 +502,14 @@ sub youtube {
 	my $hd = '';
 	eval { $hd = '[HD]' if exists $junk->{'yt$hd'}; };
 	if ($@){ return '[screams internally]'; }
+
+
+	my $uploader = 'yosemite sam';
+	eval { $uploader = $junk->{'data'}{'uploader'}; };
+	if ($@){ return '[screams internally]'; }
+	if ($uploader eq 'theyoungturks'){
+		return "don't bother it's a young turks video";
+	}
 
 	return (decode_entities($title)).$length.$hd;
 }
