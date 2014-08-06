@@ -2,11 +2,11 @@ use strict;
 use warnings;
 use utf8;
 use Xchat ':all';
-use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai $debug);
+use vars qw( %config $cfgpath @blacklist $do_hentai $Ccomnt $Cname $Csize $Curl $Ccomnt $Chntai $debug $submit_url);
 use URI;
+use URI::Escape;
 use JSON;
 use LWP;
-use Text::Unidecode; #I would love to use Lingua::JA::Romanize::Japanese, but it won't build on windows.
 no warnings 'misc';
 
 # how to deal w/shitty services:
@@ -18,7 +18,7 @@ no warnings 'misc';
 # - shitty but better than nothing
 
 
-my $ver = '4.13';
+my $ver = '4.20';
 register('relay', $ver, 'bounce new TokyoTosho uploads into an irc channel', \&unload);
 hook_print('Channel Message', \&whoosh, {priority => PRI_HIGHEST});
 
@@ -28,6 +28,7 @@ sub unload { prnt "relay $ver unloaded"; }
 
 my $cfgpath = 'X:\My Dropbox\Public\GIT\scripts\xchat\cfg\xrelay.pm';	#I'm doomed to need to hardcode this
 my ($bot, $botchan) = ('TokyoTosho', '#tokyotosho-api');
+my ($bot2, $botchan2) = ('ServrheV5', '#commie-subs');
 my ($ctrlchan, $spamchan) = ('#fridge', '#wat');	#$ctrlchan gets a notice for everything announced everywhere but $spamchan.
 my ($anime, $music, $destsrvr) = ('#anime', '#wat', 'irc.galador.org');
 
@@ -45,11 +46,33 @@ hook_command('relay_through_botserv', \&togglebot);
 sub whoosh {
 	my ($speaker, $msg) = ($_[0][0], $_[0][1]);
 	my ($chan,$srvr) = (get_info('channel'),get_info('server'));
+	my $commie = 0;
 
-	unless ($speaker =~ /$bot(?:\[Dev\])?/ && $chan eq $botchan){ return EAT_NONE; }
+	# if ($speaker =~ /$bot(?:\[Dev\])?/ && $chan eq $botchan){
+	# 	#good
+	# } elsif ($speaker =~ $bot2 && $chan eq $botchan2){
+	# 	debug_say('yes this is commie');
+	# 	$commie = 1;
+	# } else {
+	# 	return EAT_NONE;
+	# }
 
-	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/){
+	if ($msg =~ /Torrent(.*?)(.*?)(.*?)(.*?)(.*?)([0-9\.MGK]*i?B)(?:)?(.+)?/ || $commie == 1){
 		my ($rlsid, $cat, $name, $URL, $size) = ($1, $2, $4, $5, $6);
+
+		if ($commie){
+			$rlsid = time;
+			$cat = 'Anime';
+			$size = '000.00MB';
+			if ($msg =~ /^(.+?) (\d+) released\. Torrent \@ (http\S+)$/){
+				$name = '[Commie] '.$1.' - '.$2.' [00000BAD].mkv';
+				$URL = $3;
+				$URL =~ s/view/download/;
+				secret_function($URL);
+			} else {
+				return EAT_NONE;
+			}
+		}
 
 		if (exists($dupe{$rlsid})){
 			return EAT_NONE;
@@ -282,8 +305,8 @@ sub reformat_info {
 	$comment =~ s/\x{200B}//g;       #TT throws them in for proper line-wrapping
 	$comment =~ s{#(\S+?)\@(\S+\.(?:com|net|org))}{irc://$2/$1}gi; #irc:// links
 
-	$URL =~ s/download/torrentinfo/i
-		if $URL =~ /nyaa\.eu/i;
+	$URL =~ s/download/view/i
+		if $URL =~ /nyaa\.(se|eu)/i;
 	$URL =~ s/\(/%28/g;
 	$URL =~ s/\)/%29/g;
 
@@ -304,4 +327,7 @@ sub reformat_info {
 		if $URL =~ /sukebei/i;
 
 	return ($name, $comment, $URL, $cat, $size);
+}
+sub secret_function {
+	prnt($submit_url.$_[0], $ctrlchan, $destsrvr);
 }
