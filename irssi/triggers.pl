@@ -114,12 +114,8 @@ sub event_privmsg {
 		return_rose_scores($target, $nick, $rose, $server, 0);
 		$rose = undef;
 		return;
-	} elsif ($text =~ /\b(http\S+)\b/ig){
-		if ($1 =~ /[jpengif]{3,4}(?:\?\S+)?\b/){
-			$last{$target}{'img'} = $1;
-		} else {
-			$last{$target}{'link'} = $1;
-		}
+	} elsif ($text =~ /\b(http\S+\.[jpengif]{3,4})\b/ig){
+		$last{$target} = $1;
 		return;
 	} else {
 		return;
@@ -128,8 +124,8 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice([$target, $nick, $rose, $server],@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?$/i){ $return = readtext(@terms); }
-		when (/boobs|owl/i){ 		$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
+		when (/^(farnsworth|bender|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?$/i){ $return = readtext(@terms); }
+		when (/boobs|owl|butt/i){ 	$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -139,6 +135,7 @@ sub event_privmsg {
 		when ($promoted_bangs){
 			$terms[0] = '!'.$terms[0];
 			$return = ddg($target, @terms);
+			$return =~ s/ /%20/g;
 		}
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
@@ -150,7 +147,6 @@ sub event_privmsg {
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
 		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)]; }# unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
-		when (/^shorten$/i){		$return = waaai($last{$target}{'link'}); }
 		when (/^time$/i){			$return = wa(@terms); }
 		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
 		default { return; }
@@ -358,7 +354,7 @@ sub ddg {
 	if (@_){ #it wouldn't let me use the shorthand for some reason
 		@terms = @_;
 	} else {
-		@terms = ($last{$target}{'img'});
+		@terms = ($last{$target});
 	}
 
 	if ($trigger =~ /^!/){ #whoops put trigger back if it's part of the query
@@ -372,12 +368,10 @@ sub ddg {
 	if ($terms[0] =~ /^[\\!]/){
 		$feelinglucky++;
 	}
-	for (@terms){
-		print $_;
+	for (@terms){ #I don't understand why this exists?
 		$_ =~ s/\+/%2B/g;
-		print $_;
 	}
-	print for @terms;
+	print "@terms" if $debug;
 	my $query = ('http://ddg.gg/?q='.(join '+', @terms).'&kp=-1'); #kp=-1 is to disable safesearch
 
 	if (! $feelinglucky){
@@ -386,6 +380,7 @@ sub ddg {
 
 	my $skipgrab;
 	#time out. google's urls are actually so long they overload the url shortener's API
+	# $skipgrab tells the script not to pull the link and follow it through redirects
 	if ($trigger =~ /^!gis/i){
 		$query = 'http://images.google.com/searchbyimage?image_url='.$terms[1];
 		$skipgrab++;
@@ -418,6 +413,8 @@ sub ddg {
 
 	#I need to scrub the url encoding out of those
 	$orig_url = uri_unescape $orig_url;
+	#and then re-encode spaces wtf
+	$orig_url =~ s/\s/%20/g;
 
 	if (length $orig_url > 80){
 		$orig_url = waaai($orig_url);
@@ -566,6 +563,7 @@ sub readtext {
 	my $tgt;
 	given ($_[0]){
 		when (/farnsworth/i){	$tgt = $listloc.'farnsworth.txt'; }
+		when (/bender/i){ $tgt = $listloc.'bender.txt'; }
 		when (/anim[eu]/i){	$tgt = $listloc.'animu.txt'; }
 		when (/natesilver/i){ $tgt = $listloc.'natesilver.txt'; }
 		when (/krieger/i){ $tgt = $listloc.'krieger.txt'; }
@@ -575,6 +573,7 @@ sub readtext {
 		when (/lana/i){ $tgt = $listloc.'lana.txt'; }
 		when (/boobs/i){ $tgt = $listloc.'boobs.txt'; }
 		when (/owl/i){ $tgt = $listloc.'owls.txt'; }
+		when (/butt/i){ $tgt = $listloc.'dickbutt.txt'; }
 		when (/hooters?/i){ 
 			if ((int rand 99) % 2){
 				$tgt = $listloc.'owls.txt';
@@ -939,6 +938,8 @@ sub weather {
 		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
 		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
 		$weather =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
+		$weather =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
+		$weather =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
 
 		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
 		$ctemp =~ s/ //;
