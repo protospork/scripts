@@ -24,6 +24,8 @@ my $wikimobile = 0;#rewrite wikipedia links to use the (nicer) mobile layout
 my $deHTTPS = 0;   #fix for opera's installer being slightly stupid
 my $intents = 1;   #convert twitter userpage links into twitter intent links. usually all you need anyway
 my $linkbucks = 1; #many (all?) linkbucks links are just some junk prepended to a valid URL. this'll strip that
+my $gfycat = 1;    # turn gfycat gif links into actual ones
+my $tinypic = 1;   #defeat the ad bullshit on tinypic links
 
 my $deshortentwitter = 1; #not perfect, but does what it does solely through text manipulation (no web calls, no UI lag)
 
@@ -112,6 +114,12 @@ sub magic_happens {
 			$message =~ s/%([0-9A-Fa-f]{2})/$1 eq '20' ? '%'.$1	: chr(hex($1))/eg; #this regex is at the core of URI::Escape
 		}
 	}
+	if ($gfycat){
+		$message =~ s{http://giant.gfycat.com/(\S+).gif}{http://gfycat.com/$1}g;
+	}
+	if ($tinypic){
+		$message =~ s{(http://i\d+\.tinypic\S+)}{http://butt.academy/cgi/tp.pl?u=$1}g;
+	}
 
 	$message =~ s/=([<>^_-]{3,})=/$1/g;	#keitoshi
 	$message =~ s/\b:C\b/:(/ig; #also keitoshi
@@ -144,7 +152,7 @@ sub magic_happens {
 		for (split /\s+/, $message){ #what if I split on /\b/?
 			if (/\x{02}/){ push @end, $_; next; }
 			if (/^http|^www|^ed2k|^irc/i){ #MOTHERFUCKING URLS
-				s/^([<(]+)((http|ircs?|www)\S+\.\S+)$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
+				s/^([<(]+)((http|ircs?|www)\S+\.\S+)"*$/\003$clr$1\x0F$2/ig; #working around outstanding firefox bugs woo
 				s/(http\S+?)([)>]+)$/$1\003$clr$2\x0F/ig;
 				push @end, $_;
 				next;
