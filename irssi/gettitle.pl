@@ -6,6 +6,8 @@ use HTML::TreeBuilder;
 use HTML::ExtractMeta;
 use URI::Escape;
 use File::Path qw'make_path';
+use Net::Twitter::Lite::WithAPIv1_1;
+use WebService::GData::YouTube;
 use Tie::YAML;
 use JSON;
 use URI;
@@ -20,7 +22,7 @@ use vars qw(
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey  %shocksites
 	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver
-	@notruncate $VERSION %IRSSI
+	@notruncate $VERSION %IRSSI $tw_consumer_key $tw_consumer_secret $tw_token $tw_token_secret
 );
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
@@ -67,8 +69,8 @@ Irssi::command_bind('gettitle_conf_reload', \&loadconfig);
 my $ua = LWP::UserAgent->new(
 	# agent => 'Mozilla/5.0 (X11; U; Linux; i686; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13',
 	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0',
-	max_size => 500000,
-	timeout => 13,
+	max_size => 7000,
+	timeout => 6,
 	protocols_allowed => ['http', 'https'],
 	'Accept-Encoding' => 'gzip,deflate',
 	'Accept-Language' => 'en-us,en;q=0.5',
@@ -103,7 +105,7 @@ sub pubmsg {
 
 	#fix this immediately (what is regexp::common using?)
 	#return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://(?:boards|images)\.4chan\.org.+(?:jpe?g|gif|png)?)}ix;	#shit's fucked
-	return unless $data =~ m{(?:^|\s)(https?://\S+)}ix;
+	return unless $data =~ m{(?:^|\s)(https?://\S+)|c8h10n4o2://reload.config}ix;
 	my $url = $1;
 
 	print $target.': '.$url if $debugmode;
@@ -113,7 +115,7 @@ sub pubmsg {
 	#	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
 	$url = URI->new($url)->canonical;
 
-	if ($url eq ':c8h10n4o2.reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?)
+	if ($url eq 'c8h10n4o2://reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?) ##DOESN'T WORK
 		$server->command("msg $controlchan reloading");
 		loadconfig() || return;
 		$server->command("msg $controlchan $ver complete.");
@@ -221,18 +223,12 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	}
 
 	# API transforms
-	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
-		# $url = 'http://api.twitter.com/1/statuses/show/'.$1.'.json?include_entities=1';
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){ #arguably pointless but I never rewrote the regex downstream
 		$url = 'http://twitter.com/intent/retweet?tweet_id='.$1;
 		if (grep $chan eq $_, (@offtwitter)){ return; }
 	} elsif ($url =~ m[youtu(\.?be|be\.com)|listenonrepeat\.com]i){
-		$url =~ s{youtu\.be/([\w-]{11})}{gdata.youtube.com/feeds/api/videos/$1?alt=jsonc&v=2}i;
-		$url =~ s{(?:youtube|listenonrepeat)\.com/(?:watch\S+v=|embed/)([\w-]{11})}{gdata.youtube.com/feeds/api/videos/$1?alt=jsonc&v=2}i;
-		#youtube API v2 (current stable, doesn't offer any degree of resolution info)
-		$url = 'http://gdata.youtube.com/feeds/api/videos/'.$1.'?alt=jsonc&v=2';
-
-		# $url = 'http://gdata.youtube.com/feeds/api/videos/'.$1
-			# .'?alt=json&fields=title,yt:hd,media:group(media:content(@duration))';
+		$url =~ s{youtu\.be/([\w-]{11})}{YOUTUBE::$1}i;
+		$url =~ s{(?:youtube|listenonrepeat)\.com/(?:watch\S+v=|embed/)([\w-]{11})}{YOUTUBE::$1}i;
 	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
 		my %que = $url->query_form;
 		return unless $url =~ /item=\S+/i;
@@ -365,7 +361,8 @@ sub get_title {
 			return $titlecache{$url}{'url'};
 		}
 	}
-
+	if ($url =~ m|twitter\.com/intent|){ return twitter($url); }
+	if ($url =~ m|YOUTUBE::(.{11})|){ return youtube($1); }
 	my $page = $ua->get($url);
 	if (! $page->is_success){
 		print 'Error '.$page->status_line if $debugmode;
@@ -393,8 +390,8 @@ sub get_title {
 				return $title;
 			}
 		}
-		when (m|twitter\.com/intent|){ return twitter($page, $url); }
-		when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
+		# when (m|twitter\.com/intent|){ return twitter($page, $url); }
+		# when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg[^f]\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return amazon($page); }
@@ -425,93 +422,53 @@ sub get_title {
 	}
 }
 sub twitter {
-	my $page = shift;
 	my $url = shift;
-	my $junk;
-
-	eval { $junk = HTML::TreeBuilder->new_from_content($page->decoded_content); };
-	if ($@ || ! $junk || ! ref $junk || ! $junk->can('look_down')){ return 'Twitter is extra broken today ('.$page->status_line.' '.$page->content_type.' '.length($page->content).')'; }
-
-	my ($text,$name);
-	eval { $text = $junk->look_down(_tag => 'div', class => qr/tweet-text/); };
-	if ($@ || ! $text){ return $page->code.' How Would I Know'; }
-	eval { $name = $junk->look_down(_tag => 'span', class => qr/tweet-full-name/); };
-	if ($@ || ! $name){ return $page->code.' God Damn It'; }
-
-	my @links;
-	eval { @links = $text->look_down(_tag => 'a', class => qr/tweet-url/); };
-	if ($@){ return $page->code.' What Hath Science Wrought'; }
-
-	$text = $text->as_trimmed_text;
-	$text =~ s/\n|<br(?: \/)?>/ /g;
-	$text =~ s/\xA0//g;
-	# $text =~ s/(http\S+)\x{2026}/$1/g;
-
-	for my $me (@links){
-		next if $me->attr('class') =~ /username|hashtag/;
-		next if $me->attr('title') =~ m{twitter.+photo};
-		my $old = $me->as_trimmed_text;
-		my $new = $me->attr('data-expanded-url');
-		$text =~ s/$old/$new/;
-	}
-
-	# write_file('twitter.txt', {binmode => ':utf8'}, $text) || return $!;
+	# most of this code lifted from https://github.com/isolation/automods/blob/master/AdvTitle.pm#L90
+	my $nt = Net::Twitter::Lite::WithAPIv1_1->new(
+		consumer_key        => $tw_consumer_key,
+		consumer_secret     => $tw_consumer_secret,
+		access_token        => $tw_token,
+		access_token_secret => $tw_token_secret,
+		ssl                 => 1,
+	);
+	$url =~ s{^.+id=(\d+)+$}{$1};
+	my $status;
 	
-	$text =~ s{\@(\w+)}{xcc($1,"@".$1)}eg; #color names (mainly @replies)
-
-	$text =~ s&\bpic\.twitter&http://pic.twitter&g; #?
-
-	$name = $name->as_trimmed_text;
-	$name =~ s{\@}{}g;
-
-	my $out = xcc($name).' '.$text;
-
-	return decode_entities($out);
+	eval { $status = $nt->show_status($url); };
+	if ($@ || !$status) { return $@ or return 'wtf'; }
+	my $message = $status->{'text'};
+	
+	decode_entities($message);
+	$message =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
+	
+	# these two loops replace t.co links with their real targets
+	for (@{$status->{'entities'}->{'urls'}}) {
+		$message =~ s{$_->{'url'}}{$_->{'expanded_url'}};
+	}
+	for (@{$status->{'entities'}->{'media'}}) {
+		$message =~ s{$_->{'url'}}{https://$_->{'display_url'}};
+	}
+	
+	return(xcc($status->{'user'}->{'screen_name'}).' '.$message);
 }
-
 sub youtube {
-	my $page = shift;
-	my $junk;
-	eval { $junk = JSON->new->utf8->decode($page->decoded_content); }; #->{'entry'}; };
-	if ($@){ return 'YouTube - uh-oh ('.$page->status_line.')'.' '.$page->content_type; }
-
-	my $title = "\00301,00You\00300,04Tube\017 - ";
-	if ($junk->{'data'}{'title'}){
-		$title .= $junk->{'data'}{'title'};
-	# if ($junk->{"title"}{'$t'}){
-	# 	$title .= $junk->{"title"}{'$t'};
-	} else {
-		$title .= filler_title();
-	}
-	my ($length, $rawlen);
-	eval { $rawlen = $junk->{'data'}{'duration'}; };
-	# eval { $rawlen = $junk->{'media$group'}{'media$content'}[0]{'duration'}; };
-	if ($@){ return '[screams internally]'; }
-
-	if ($rawlen){
-		$length .=
-		(sprintf "%02d", ($rawlen / 3600)).':'. #h
-		(sprintf "%02d", (($rawlen / 60) % 60)).':'. #m
-		(sprintf "%02d", ($rawlen % 60)); #s
-	} else {
-		$length = 'Live';
-	}
-	$length =~ s/^(00:)//;
-	$length =~ s/(.+)/ [$1]/;
-
-	my $hd = '';
-	eval { $hd = '[HD]' if exists $junk->{'yt$hd'}; };
-	if ($@){ return '[screams internally]'; }
-
-
-	my $uploader = 'yosemite sam';
-	eval { $uploader = $junk->{'data'}{'uploader'}; };
-	if ($@){ return '[screams internally]'; }
-	if ($uploader eq 'theyoungturks'){
-		return "don't bother it's a young turks video";
-	}
-
-	return (decode_entities($title)).$length.$hd;
+	my $hash = $_[0];
+	my $yt   = new WebService::GData::YouTube();
+	my $video = $yt->get_video_by_id($hash);
+	
+	my $out;
+	eval {$out = $video->title; };
+	if ($@ || !$out){ return $@ or return 'wtf'; }
+	
+	my $time = $video->duration;
+	$time =
+		(sprintf "%02d", ($time / 3600)).':'. #h
+		(sprintf "%02d", (($time / 60) % 60)).':'. #m
+		(sprintf "%02d", ($time % 60)); #s
+	$time =~ s/^(00:)//;
+	
+	$out = "\00301,00You\00300,04Tube\017 - ".$out." [".$time."]";
+	return $out;
 }
 sub deviantart {
 	my $page = shift;
@@ -637,7 +594,7 @@ sub steam {
 		} else {
 			$discount = '';
 		}
-		my $price = $obj->look_down(_tag => 'div', 'itemprop' => 'price');
+		my $price = $obj->look_down(_tag => 'div', 'class' => 'discount_final_price');
 		if ($price){
 			$price = decode_entities($price->as_trimmed_text.' || ');
 		} else {
