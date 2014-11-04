@@ -14,16 +14,36 @@ use File::Path qw'make_path';
 use WWW::WolframAlpha;
 use URI::Escape;
 use Math::RPN;
+use WWW::Wunderground::API;
+use Encode;
+# use Data::Dumper;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$promoted_bangs $lfm_key $lfm_secret $wa_appid);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
+
+# <@DominoEffect>  proto did you add a timer to c8 yet
+# <-- SFLegend!sflegend1@854c57.c4100b.47da59.607bdc has quit (Ping timeout: 181 seconds)
+# <@cephalopods> probably not
+# <@DominoEffect> you should
+# <@DominoEffect> .timer <minutes> <reason>, when it goes off make it tab me/whoever
+# <@cephalopods> I have absolutely no idea how irssi's timers work if they even exist
+# <@cephalopods> and that seems like a dumb thing to use threads for
+# <@cephalopods> although I suppose I could use threads for it
+# <@cephalopods> literally just spawn one does `sleep $m * 60;` and returns
+
+
+# <+Decitron> .spaghettiO
+# <+Decitron> Say something.
+# <+Decitron> say something
+# <SpaghettiO> Beej, really. not i'll go again before Halo 5 chimpout"
+# <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
 $VERSION = "2.9.0";
@@ -139,9 +159,10 @@ sub event_privmsg {
 		}
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
-		when (/^c(alc|vt)?$|^xe?$/i){$return = conversion(@terms); }
+		when (/^cvt$|^xe?$/i){		$return = currency(@terms); }
 		when (/^rpn/i){				$return = rpn_calc(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
+		when (/^wx$/i){				$return = weather_fallback($server, $nick, @terms); }
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
@@ -165,6 +186,55 @@ sub event_privmsg {
 		if (int rand 1000 <= 2){ $return =~ s/ /\x{07}/; } # I'm sorry I had to
 		$server->command('msg '.$target.' '.$return);
 	}
+}
+
+sub currency {
+	#todo: 
+	#	commas
+	#	cache exchange rates for 24h
+
+	shift; #dump the trigger
+	my ($quant, $in) = (shift, shift);
+	my $out;
+	if (@_){ $out = shift; }
+	no warnings 'uninitialized';
+	if ($out eq 'to'){
+		$out = $_[-1];
+	} elsif (!$out){
+		$out = 'USD';
+	}
+	if ($quant =~ /[^\.\d]/){
+		return "NaN";
+	}
+	use warnings 'uninitialized';
+
+	$in = uc $in;
+	$out = uc $out;
+
+	if (length $in > 3 || length $out > 3){
+		return 'use the three letter codes';
+	}
+
+	my $req = $ua->get('http://rate-exchange.appspot.com/currency?from='.$in.'&to='.$out.'&q='.$quant);
+	if (! $req->is_success){
+		print 'conversion: '.$req->code;
+		return;
+	}
+	if ($req->decoded_content =~ /"err": "([^"]+)"/i){
+		print $req->decoded_content;
+		return $1;
+	}
+	my $str = $req->decoded_content;
+	$str =~ s/.+?"v": (\d+(?:\.\d+)?).*?$/$1/ || return $req->decoded_content;
+
+	#round up
+	$str = sprintf "%.03f", $str;
+	unless ($str =~ s/\.(\d+?)[56789]/".".(sprintf "%02d", ($1 + 1))/e){
+		#or don't
+		$str =~ s/\d$//;
+	}
+
+	return "$quant $in is $str $out";
 }
 
 sub check_for_submission {	#provides a (really ghetto) item submission routine for the readtext stuff
@@ -265,6 +335,25 @@ sub airtimes {
 	my $atdebug = 0;
 
 	print "query = $query" if $atdebug;
+	
+	my @now = localtime;
+	my $yr = sprintf("%02d", $now[5] % 100);
+
+	my $season = int((($now[4] + 1) / 3) + 1);
+	given ($season){
+		when (1){
+			$season = 'Winter';
+		} when (2){
+			$season = 'Spring';
+		} when (3){
+			$season = 'Summer';
+		} when (4){
+			$season = 'Fall';
+		} default {
+			#nope
+		}
+	}
+	print "it's $season $yr" if $atdebug;
 
 	#load mahou
 	my $req = $ua->get('http://www.mahou.org/Showtime/?o=ET');
@@ -322,7 +411,7 @@ sub airtimes {
 	}
 	#return an array or the top match to the query
 	my @retlines;
-	my @fmt = qw(Title Slot ETA Links);
+	my @fmt = qw(Title Slot ETA Season Links);
 	if ($query){
 		for (@shows){
 			if ($_->{'title'} =~ /$query/i){
@@ -331,7 +420,15 @@ sub airtimes {
 			}
 		}
 	} else {
-		@retlines = @shows;
+		####sort season
+		for (@shows){
+			if ($_->{'season'} =~ /$season $yr/i){
+				push @retlines, $_;
+			}
+		}
+		if ($#shows < 3){
+			@retlines = @shows;
+		}
 	}
 	return "no match" unless @retlines;
 	for my $line (@retlines){
@@ -914,7 +1011,7 @@ sub weather {
 
 	$location =~ s/ /_/g; $location =~ s/,//g;
 
-	my $results = $ua->get("http://38.102.136.104/auto/raw/$location");
+	my $results = $ua->get("http://wunderground.com/auto/raw/$location");
 	my @badarray = split(/\n/, $results->decoded_content);
 	if ( ! $results->is_success ) {
 		$server->command(
@@ -964,5 +1061,79 @@ sub weather {
 			return $out[0]."$ctemp\xB0C/$ftemp\xB0F".$out[1];
 		}
 	}
+}
+
+## .wx [hawk] where it searches the db for hawk's nick and gives me his weather without resetting mine
+sub weather_fallback {
+	#wa doesn't expose enough info to use
+	my ($server,$nick) = (shift, lc shift);
+	my $text = '';
+	$text = join ' ', @_[1..$#_] if $#_ > 0; ##pulling from 1 on b/c 0 is the trigger
+
+	my $location;
+	if ($text eq ''){
+		if (exists $savedloc{$nick}){
+			$location = $savedloc{$nick}
+		} else {
+			$server->command("notice $nick Could you please repeat that?");
+			return;
+		}
+	} else {
+		$location = $text;
+	}
+
+	$location =~ s/ /_/g; $location =~ s/,//g;
+
+	my $w = new WWW::Wunderground::API(
+		api_key => $wu_apikey,
+		location => $location,
+		auto_api => 1,	
+	);
+
+	# print $w->conditions->location->city || return "fffffffffuck";
+
+	my $when;
+	eval { $when = $w->conditions->observation_time; };
+	if ($@ || ! $when){ return "$@ ($location isn't a place?)"; }
+	$when =~ s/^.+?, //;
+	
+	$savedloc{$nick} = $location;
+	tied(%savedloc)->save;
+
+	# print Dumper($w->data);
+	
+	my $out = "\x{02}".$w->conditions->observation_location->full."\x{02} "."($when): ";
+
+# <@tuxedo_mask> maybe I should just chuck html entities in and then decode it at the end
+# <@tuxedo_mask> that seems completely sane
+# <@tuxedo_mask> html entities are our friends
+# <@tuxedo_mask> I wonder what percentage of my batshit hacks have been for the purpose of avoiding batshit character encoding issues
+# (the degree symbols aren't rendering)
+
+	if ($w->conditions->observation_location->country =~ /US/){
+		$out .= $w->conditions->temp_f."\x{B0}F/".$w->conditions->temp_c."\x{B0}C - ";
+	} else {
+		$out .= $w->conditions->temp_c."\x{B0}C/".$w->conditions->temp_f."\x{B0}F - ";
+	}
+
+	$out .= $w->conditions->weather." | ";
+
+	if ($w->conditions->windchill_f =~ /NA/){
+		$out .= $w->conditions->relative_humidity.' Humidity | ';
+	} else {
+		$out .= 'Windchill '.$w->conditions->windchill_f."\x{B0}F | ";
+	}
+
+	my $wind = $w->conditions->wind_string;
+	$wind =~ s/From the/Wind/;
+	if ($wind =~ /Calm/){
+		$wind = "Barometer: ".$w->conditions->pressure_mb;
+	}
+
+	$out .= $wind;
+	
+	$out = encode('UTF-8', $out);
+	
+	return $out;
 }
 Irssi::signal_add("event privmsg", "event_privmsg");
