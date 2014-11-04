@@ -33,6 +33,10 @@ for my $this (@files){
 		if (length $hash > 4){
 			$hash =~ s/[+_-]//g;
 			$hash =~ s{^.*?([[:alpha:]]{4}).*}{$1};
+			if (length $hash > 4){
+				$hash =~ s/[0-9]//g;
+				$hash =~ s{^.*?([[:alpha:]]{4}).*}{$1};
+			}
 		}
 		$out .= ' => '.$hash;
 	}
