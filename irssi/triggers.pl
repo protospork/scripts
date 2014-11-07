@@ -162,7 +162,12 @@ sub event_privmsg {
 		when (/^cvt$|^xe?$/i){		$return = currency(@terms); }
 		when (/^rpn/i){				$return = rpn_calc(@terms); }
 		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
-		when (/^wx$/i){				$return = weather_fallback($server, $nick, @terms); }
+		when (/^wx$/i){
+			if ($#terms >= 1 && $terms[1] =~ s/^\@//){
+				$nick = pop @terms;
+			}
+			$return = weather_fallback($server, $nick, @terms); 
+		}
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
@@ -1068,7 +1073,7 @@ sub weather_fallback {
 	#wa doesn't expose enough info to use
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
-	$text = join ' ', @_[1..$#_] if $#_ > 0; ##pulling from 1 on b/c 0 is the trigger
+	if ($#_ > 0){ $text = join ' ', @_[1..$#_]; } ##pulling from 1 on b/c 0 is the trigger
 
 	my $location;
 	if ($text eq ''){
@@ -1126,11 +1131,18 @@ sub weather_fallback {
 
 	my $wind = $w->conditions->wind_string;
 	$wind =~ s/From the/Wind/;
+	$wind =~ s/MPH Gusting to/->/;
+	$wind =~ s{([0-9.]+) -> ([0-9.]+) MPH}{$1 eq $2 ? "$1 MPH" : "$1 -> $2 MPH"}e;
 	if ($wind =~ /Calm/){
 		$wind = "Barometer: ".$w->conditions->pressure_mb;
 	}
 
 	$out .= $wind;
+	
+	$out =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
+	$out =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
+	$out =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
+	$out =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
 	
 	$out = encode('UTF-8', $out);
 	
