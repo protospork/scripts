@@ -55,6 +55,11 @@ $VERSION = "2.9.0";
     license => 'MIT/X11'
 );
 
+
+tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
+tie my %savedloc, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.po' or die $!;
+tie my %rosescores, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/rosescores.po' or die $!;
+
 my $json = JSON->new->utf8;
 my $ua = LWP::UserAgent->new(
 	agent => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox 17.0',
@@ -90,7 +95,6 @@ sub loadconfig {
 }
 loadconfig();
 
-tie my %rosescores, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/rosescores.po' or die $!;
 sub event_privmsg {
 	my ($server, $data, $nick, $mask) = @_;
 	my ($target, $text) = split(/ :/, $data, 2);
@@ -116,12 +120,14 @@ sub event_privmsg {
 			my @query = split /\s+/, $choices;
 			if ($choices =~ s/\s+or\s+/, /ig){ #shortcut to .choose
 				$server->command('msg '.$target.' '.(choose('choose', (split /\s+/, $choices))));
+				return;
 			} elsif ($query[0] =~ /wh([oy]|at|e(n|re))|how/i){ #stupid 8ball
 				$server->command('msg '.$target.' '.(choose(qw'8ballunsure some junk data')));
+				return;
 			} else { #straightup 8ball
 				$server->command('msg '.$target.' '.(choose(qw'8ball some junk data')));
+				return;
 			}
-			return;
 		} elsif ($text =~ /^\s*\w+.+\s+$botnick\?\s*$/i){ #this needs to be re-integrated with the last regex sometime
 			$server->command('msg '.$target.' '.(choose(qw'8ball some junk data')));
 			return;
@@ -161,9 +167,8 @@ sub event_privmsg {
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^cvt$|^xe?$/i){		$return = currency(@terms); }
 		when (/^rpn/i){				$return = rpn_calc(@terms); }
-		when (/^w(eather)?$/i){		$return = weather($server, $nick, @terms); }
-		when (/^wx$/i){
-			if ($#terms >= 1 && $terms[1] =~ s/^\@//){
+		when (/^w(eather|x)?$/i){
+			if ($#terms >= 1 && $terms[1] =~ s/^\@//){ 
 				$nick = pop @terms;
 			}
 			$return = weather_fallback($server, $nick, @terms); 
@@ -346,7 +351,9 @@ sub airtimes {
 
 	my $season = int((($now[4] + 1) / 3) + 1);
 	given ($season){
-		when (1){
+		when (5){ #this is december. 
+			$season = 'Fall';
+		} when (1){
 			$season = 'Winter';
 		} when (2){
 			$season = 'Spring';
@@ -429,6 +436,8 @@ sub airtimes {
 		for (@shows){
 			if ($_->{'season'} =~ /$season $yr/i){
 				push @retlines, $_;
+			} else {
+				print "wrong season" if $atdebug;
 			}
 		}
 		if ($#shows < 3){
@@ -530,6 +539,14 @@ sub wa { #wolfram alpha, for now just used for .time
 # http://api.wolframalpha.com/v2/query?format=plaintext&input=time%20in%20singapore&appid=
 # http://products.wolframalpha.com/api/documentation.html
 	my $wa = WWW::WolframAlpha->new(appid => $wa_appid);
+	
+	if ($_[1] =~ /^\@(\w+)/){
+		if (exists $savedloc{$1}){
+			$_[1] = $savedloc{$1}
+		} else {
+			return "who dat";
+		}
+	}
 	my $input = (join ' ', @_[1..$#_]);
 	print $input.' =>';
 	if ($input =~ /^\s*$/){ return time; } #return unix time given no options
@@ -564,7 +581,6 @@ sub waaai {
 	}
 }
 
-tie my %lastfms, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/lastfm.po' or die $!;
 sub lastfm {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
@@ -995,85 +1011,13 @@ sub gfycat { # http://gfycat.com/api
 	return;
 }
 
-#originally based on an xchat script called weatherbot.pl by lyz@princessleia.com. not sure if it still bears any resemblance
-tie my %savedloc, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/weathernicks.po' or die $!;
-sub weather {
-	my ($server,$nick) = (shift, lc shift);
-	my $text = '';
-	$text = join ' ', @_[1..$#_] if $#_ > 0; ##pulling from 1 on b/c 0 is the trigger
-
-	my $location;
-	if ($text eq ''){
-		if (exists $savedloc{$nick}){
-			$location = $savedloc{$nick}
-		} else {
-			$server->command("notice $nick Could you please repeat that?");
-			return;
-		}
-	} else {
-		$location = $text;
-	}
-
-	$location =~ s/ /_/g; $location =~ s/,//g;
-
-	my $results = $ua->get("http://wunderground.com/auto/raw/$location");
-	my @badarray = split(/\n/, $results->decoded_content);
-	if ( ! $results->is_success ) {
-		$server->command(
-			"notice $nick .w [zipcode|city, state|airport code] - if you can't ".
-			"get anything, search http://www.faacodes.com/ for an airport code"
-		);
-		return;
-	} elsif ( $results->content =~ /[<>]|^\s*$/ ) {
-		$server->command(
-			"notice $nick .w [zipcode|city, state|airport code] - if you can't ".
-			"get anything, search http://www.faacodes.com/ for an airport code"
-		);
-		return;
-	} else {
-		$savedloc{$nick} = $location;
-		tied(%savedloc)->save;
-
-		my @array = split(/[|]\s*/, $results->decoded_content);
-		my ($timestamp,$ctemp) = ($array[0],'');
-		$timestamp =~ s/(\d\d?:\d\d \wM \w\w\w).+/$1/;
-		my ($town, $state, $weather, $ftemp, $hum, $bar, $wind, $windchill) = @array[18,19,8,1,4,7,6,2];
-		$weather =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
-		$weather =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
-		$weather =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
-		$weather =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
-
-		if ($ftemp ne "") { $ctemp = sprintf( "%4.1f", ($ftemp - 32) * (5 / 9) ); }
-		$ctemp =~ s/ //;
-
-		my @out;
-		if ($wind !~ m/ 0$/){
-			if ($ftemp < 40 && $windchill !~ /N.A/){
-				push @out,	("\002$town, $state\002 ($timestamp): ",
-						" - $weather | Windchill $windchill\xB0F | Wind $wind MPH");
-			} else {
-				push @out,	("\002$town, $state\002 ($timestamp): ",
-						" - $weather | $hum Humidity | Wind $wind MPH");
-			}
-		} else {
-			push @out,	("\002$town, $state\002 ($timestamp): ",
-					" - $weather | $hum Humidity | Barometer: $bar");
-		}
-
-		if ($array[22] =~ m/^[KP]/){ #america
-			return $out[0]."$ftemp\xB0F/$ctemp\xB0C".$out[1];
-		} else {
-			return $out[0]."$ctemp\xB0C/$ftemp\xB0F".$out[1];
-		}
-	}
-}
-
-## .wx [hawk] where it searches the db for hawk's nick and gives me his weather without resetting mine
 sub weather_fallback {
-	#wa doesn't expose enough info to use
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
 	if ($#_ > 0){ $text = join ' ', @_[1..$#_]; } ##pulling from 1 on b/c 0 is the trigger
+	if ($nick eq '.'){
+		$nick = (keys %savedloc)[rand keys %savedloc];
+	}
 
 	my $location;
 	if ($text eq ''){
@@ -1109,19 +1053,20 @@ sub weather_fallback {
 	
 	my $out = "\x{02}".$w->conditions->observation_location->full."\x{02} "."($when): ";
 
-# <@tuxedo_mask> maybe I should just chuck html entities in and then decode it at the end
-# <@tuxedo_mask> that seems completely sane
-# <@tuxedo_mask> html entities are our friends
-# <@tuxedo_mask> I wonder what percentage of my batshit hacks have been for the purpose of avoiding batshit character encoding issues
-# (the degree symbols aren't rendering)
-
-	if ($w->conditions->observation_location->country =~ /US/){
+	if ($w->conditions->observation_location->country =~ /^US$/){
 		$out .= $w->conditions->temp_f."\x{B0}F/".$w->conditions->temp_c."\x{B0}C - ";
 	} else {
 		$out .= $w->conditions->temp_c."\x{B0}C/".$w->conditions->temp_f."\x{B0}F - ";
 	}
 
-	$out .= $w->conditions->weather." | ";
+	my $thing = $w->conditions->weather;
+	$thing =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
+	$thing =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
+	$thing =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
+	$thing =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
+
+
+	$out .= $thing." | ";
 
 	if ($w->conditions->windchill_f =~ /NA/){
 		$out .= $w->conditions->relative_humidity.' Humidity | ';
@@ -1138,11 +1083,6 @@ sub weather_fallback {
 	}
 
 	$out .= $wind;
-	
-	$out =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
-	$out =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
-	$out =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
-	$out =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
 	
 	$out = encode('UTF-8', $out);
 	
