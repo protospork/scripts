@@ -52,7 +52,7 @@ sub now_playing {
 	$text->[0] =~ s/\\//g;
 
 	# would pulling size from http://localhost:13579/info.html be saner than a filesystem call?
-	$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
+ 	$text->[-1] = sprintf "%.2f", ((file_size ($text->[-1])) / 1048576);
 	if ($text->[5] =~ s/^00://){
 		$text->[3] =~ s/^00://;
 	}
@@ -145,6 +145,7 @@ hook_command('romaji', sub{
 	my ($st,$st2) = ($_[1][1],'');
 	for (split //, $st){
 		$_ = chr((ord $_) + 65248) unless /\s|\./;
+		$_ =~ s/\s/\x{3000}/;
 		$st2 .= $_;
 	}
 	command('say '.$st2);
@@ -191,4 +192,24 @@ sub zalgo {
 		unless ($_ =~ /^ $/){ $zalgo .= "\x{489}"; }
 	}
 	if ($action eq '1'){ command("action $zalgo"); } else { command("say $zalgo"); }
+}
+hook_command('shrug', \&shrug);
+sub shrug {
+	my @faces = (
+		"\x{b0}o \x{b0} ",
+		"\x{27}\x{ff5e}\x{60}\x{ff1b}",
+		"\x{b0}\x{203f} \x{b0} ",
+		"\x{30c4}",
+		"\x{ffe3}\x{30fc}\x{ffe3}",
+		"oosp",
+	);
+	my @arms = (
+		["\x{af}", "/\x{af}"],
+		[" \x{2510}", "\x{250c}"],
+		["oh", "no"],
+	);
+	
+	my $out = int rand $#arms; #gotta have the smae number for both sides ##do you?
+	$out = $arms[$out][0].'('.$faces[int rand $#faces].')'.$arms[$out][1];
+	command("say $out");
 }
