@@ -499,7 +499,10 @@ sub fourchan {
 	my $page = shift;
 	my $thread;
 	eval { $thread = JSON->new->utf8->decode($page->decoded_content); };
-	if ($@){ return '4chan - oops ('.$page->status_line.')'.' '.$page->content_type; }
+	if (! $thread){ 
+		if ($@){ print $@ };
+		return '4chan - oops ('.$page->status_line.')'.' '.$page->content_type; 
+	}
 
 	my ($title, $imgct, $repct) = ('No Title', 0, 0);
 	if ($thread->{'posts'}[0]){
@@ -594,17 +597,17 @@ sub steam {
 		} else {
 			$discount = '';
 		}
-		my $price = $obj->look_down(_tag => 'div', 'class' => 'discount_final_price');
-		if ($price){
-			$price = decode_entities($price->as_trimmed_text.' || ');
-		} else {
+		my $price = $obj->look_down(_tag => 'meta', 'itemprop' => 'price');
+		eval { $price = $price->attr('content'); };
+		if (!$price || $price == '' || $@){
 			$price = '$UHOH || ';
-		}
-		my $title = $obj->look_down(_tag => 'div', 'class' => 'apphub_AppName');
-		if ($title){
-			$title = decode_entities($title->as_trimmed_text);
 		} else {
-			$title = 'Something Has Gone Wrong';
+			$price = decode_entities($price.' || ');
+		}
+		my $title = $obj->look_down(_tag => 'title')->as_trimmed_text;
+		$title =~ s/ on Steam//;
+		if (! $title){
+			$title = 'It is literally impossible for this to be broken. Send help.';
 		}
 		return $discount.$price.$title;
 	}
