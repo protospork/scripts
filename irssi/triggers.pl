@@ -20,7 +20,7 @@ use Encode;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -94,6 +94,11 @@ sub loadconfig {
 	return $cfgver;
 }
 loadconfig();
+sub loadgettitle {
+	return 'fuck off' unless $_[-1] =~ /$trusted_masks/;
+	$_[0]->command('script load gettitle.pl');
+	return 'k';
+}
 
 sub event_privmsg {
 	my ($server, $data, $nick, $mask) = @_;
@@ -143,6 +148,9 @@ sub event_privmsg {
 	} elsif ($text =~ /\b(http\S+\.[jpengif]{3,4})\b/ig){
 		$last{$target} = $1;
 		return;
+	} elsif ($text =~ /shatter/ && ($text =~ /weed/ || $nick =~ /pieceofnothing/i)){
+		$server->command('msg '.$target.' shut up');
+		return;
 	} else {
 		return;
 	}
@@ -150,11 +158,12 @@ sub event_privmsg {
 	given ($terms[0]){
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice([$target, $nick, $rose, $server],@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
-		when (/^(farnsworth|bender|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?$/i){ $return = readtext(@terms); }
+		when (/^(farnsworth|bender|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?|homer|swanson|dukesilver$/i){ $return = readtext(@terms); }
 		when (/boobs|owl|butt/i){ 	$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
+		when (/^titles$/i){			$return = loadgettitle($server, $mask); }
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
 		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
@@ -692,6 +701,8 @@ sub readtext {
 		when (/boobs/i){ $tgt = $listloc.'boobs.txt'; }
 		when (/owl/i){ $tgt = $listloc.'owls.txt'; }
 		when (/butt/i){ $tgt = $listloc.'dickbutt.txt'; }
+		when (/homer/i){ $tgt = $listloc.'homer.txt'; }
+		when (/swanson|dukesilver/i){ $tgt = $listloc.'swanson.txt'; }
 		when (/hooters?/i){ 
 			if ((int rand 99) % 2){
 				$tgt = $listloc.'owls.txt';
