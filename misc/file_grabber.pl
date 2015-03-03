@@ -3,6 +3,7 @@
 use Modern::Perl;
 use File::Slurp;
 use File::Util;
+use Linux::Inotify2;
 use Number::Bytes::Human 'format_bytes';
 use LWP;
 use Cwd 'cwd';
@@ -11,43 +12,70 @@ use Cwd 'cwd';
 
 my $debug = 1;
 
+my $inotify = new Linux::Inotify2
+	or die "wait what $!";
+
 my $fu = File::Util->new();
 my $ua = LWP::UserAgent->new(
 	agent => 'grabber.pl is not a bot (protospork@gmail.com)'
 );
 my $root = cwd;
 
-my @lists = <*.txt>;
+say "Grabber started.";
 
-for (@lists){
-	my $dir = create_dir($_);
-	chdir $dir;
-	
-	my @links = extract_links($_);
-	my %out;
+$inotify->watch($root, IN_MOVE) #I think dropbox downloads files into temp and then moves them in when complete
+	or die "can't watch that";
 
-	for my $url (@links){
-		my $name = $url;
-		$name =~ s{^.+?/([^/]+)$}{$1}i;
-		$name = $fu->escape_filename($name);
+while () {
+	my @events = $inotify->read;
+	unless (@events > 0) {
+		print "read error: $!";
+		last ;
+	}
+	# printf "mask\t%d\n", $_->mask foreach @events;
+	do_shit();
+}
 
-		say "grabbing $url" if $debug;
 
-		my $resp = $ua->get($url, ':content_file' => $name);
-		if ($resp->is_error){
-			warn $url.' is probably broken';
+
+
+
+sub do_shit {
+
+	my @lists = <*.txt>;
+
+	for (@lists){
+		my $dir = create_dir($_) 
+			or return cleanup($_);
+		chdir $dir;
+		
+		my @links = extract_links($_);
+		my %out;
+
+		for my $url (@links){
+			my $name = $url;
+			$name =~ s{^.+?/([^/]+)$}{$1}i;
+			$name = $fu->escape_filename($name);
+
+			say "grabbing $url" if $debug;
+
+			my $resp = $ua->get($url, ':content_file' => $name);
+			if ($resp->is_error){
+				warn $url.' is probably broken';
+			}
+
+			my $size = $resp->content_length;
+			$size = format_bytes($size);
+
+			say "grabbed $name // $size" if $debug;
+
+			$out{$url} = [$resp->code, $size];
 		}
 
-		my $size = format_bytes(length $resp->content);
-		say "grabbed $name // $size" if $debug;
-
-		$out{$url} = [$resp->code, $size];
+		say "batch complete; writing summary";
+		write_summary(\%out);
+		cleanup($_);
 	}
-
-	write_summary(\%out);
-
-	chdir $root;
-	unlink $_ unless $debug;
 }
 
 sub create_dir {
@@ -56,8 +84,8 @@ sub create_dir {
 
 	say "creating $dir" if $debug;
 
-	$fu->make_dir($dir, undef, '--if-not-exists')
-		or die "somehow unable to create folders: $!";
+	$fu->make_dir($dir, undef) # ADD AN ACTUAL CHECK WHETHER THE FOLDER ALREADY EXISTS AND DON'T CALL THAT AN ERROR
+		or return "000 somehow unable to create folders: $!"; # IDIOT
 	return $dir;
 }
 sub extract_links {
@@ -78,4 +106,8 @@ sub write_summary {
 	my $name = time . '.log';
 
 	write_file($name, $runes);
+}
+sub cleanup {
+	chdir $root;
+	rename($_[0], $_[0].'.done');
 }
