@@ -3,11 +3,10 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1.1
+// @version     1.1.1
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
- 
  
 // ADDS A NEW ICON TO THE END OF THE (reply, retweet, etc) TOOLBAR
 // CLICK THE ICON TO GO DIRECTLY TO THE PICTURES IN THE TWEET
@@ -35,10 +34,10 @@ function getPhoto (){
   return urls.length;
 }
 function newPage(){
-  var newbody = document.createElement('body');
-  newbody.setAttribute('style', 'background-color: #141414');
-  newbody.innerHTML = '<img src='+urls.join('><img src=')+'>';
-  document.body = newbody;
+  var newBody = document.createElement('body');
+  newBody.setAttribute('style', 'background-color: #141414');
+  newBody.innerHTML = '<img src='+urls.join('><img src=')+'>';
+  document.body = newBody;
 }
 function makeButton(){
   var button = document.createElement('div');
