@@ -3,7 +3,7 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1.1.1
+// @version     1.2
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
@@ -13,25 +13,14 @@
  
 var urls = [];
 multiPics();
-if (urls.length == 0){
-  getPhoto();
-}
-makeButton();
 
 function multiPics (){
-  var box = document.getElementsByClassName('multi-photos');
-  if (box.length == 0){ return 0; }
+  var box = document.getElementsByClassName('cards-base');
   var hashes = box[0].getElementsByClassName('media-thumbnail');
   for (var i = 0; i < hashes.length; i++){
     urls.push(hashes[i].getAttribute("data-url").match("(http.+/media/.+?(jpg|png))(:large)?")[1]+':orig');
   }
-  return urls.length;
-}
-function getPhoto (){
-  var pic = document.getElementsByClassName('media-thumbnail');
-  var hash = pic[0].getAttribute("data-url").match("(http.+/media/.+?(jpg|png))(:large)?")[1]+':orig';
-  urls.push(hash);
-  return urls.length;
+  makeButton();
 }
 function newPage(){
   var newBody = document.createElement('body');
