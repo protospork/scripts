@@ -3,7 +3,7 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1
+// @version     1.1
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
@@ -17,10 +17,8 @@ multiPics();
 if (urls.length == 0){
   getPhoto();
 }
- 
 makeButton();
- 
- 
+
 function multiPics (){
   var box = document.getElementsByClassName('multi-photos');
   if (box.length == 0){ return 0; }
