@@ -3,7 +3,7 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1.2.2
+// @version     1.2.3
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
@@ -34,7 +34,8 @@ function makeButton(){
   button.setAttribute('class', "ProfileTweet-action u-textUserColorHover");
   button.innerHTML = '<a onclick="newPage()" href="#"><span class="Icon Icon--photo"></span></a>';
   
-  var toolbar = document.getElementsByClassName('ProfileTweet-actionList')[0];
+  var toolbar = document.getElementsByClassName('permalink-tweet-container')[0];
+  toolbar = toolbar.getElementsByClassName('ProfileTweet-actionList')[0];
   toolbar.insertBefore(button, toolbar.lastChild);
   
   document.getElementById('ostriches').addEventListener('click', newPage, false);
