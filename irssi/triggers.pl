@@ -27,18 +27,6 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-
-# <@DominoEffect>  proto did you add a timer to c8 yet
-# <-- SFLegend!sflegend1@854c57.c4100b.47da59.607bdc has quit (Ping timeout: 181 seconds)
-# <@cephalopods> probably not
-# <@DominoEffect> you should
-# <@DominoEffect> .timer <minutes> <reason>, when it goes off make it tab me/whoever
-# <@cephalopods> I have absolutely no idea how irssi's timers work if they even exist
-# <@cephalopods> and that seems like a dumb thing to use threads for
-# <@cephalopods> although I suppose I could use threads for it
-# <@cephalopods> literally just spawn one does `sleep $m * 60;` and returns
-
-
 # <+Decitron> .spaghettiO
 # <+Decitron> Say something.
 # <+Decitron> say something
@@ -798,7 +786,11 @@ sub countdown {
 }
 
 sub rpn_calc {
-	my $terms = join ',', @_;
+	my @those = @_;
+	for (@those){
+		s/,//g;
+	}
+	my $terms = join ',', @those;
 	$terms =~ s/rpn,//; #hurr
 
 	if (length $terms > 50){
