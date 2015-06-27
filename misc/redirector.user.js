@@ -3,7 +3,7 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1.2.3
+// @version     1.2.4
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
@@ -15,7 +15,7 @@ var urls = [];
 multiPics();
 
 function multiPics (){
-  var hashes = document.getElementsByClassName('media-thumbnail');
+  var hashes = document.getElementsByClassName('is-preview');
   for (var i = 0; i < hashes.length; i++){
     urls.push(hashes[i].getAttribute("data-url").match("(http.+/media/.+?(jpg|png))(:large)?")[1]+':orig');
   }
