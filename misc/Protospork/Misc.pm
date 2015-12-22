@@ -1,5 +1,7 @@
 package Protospork::Misc v0.0.2;
-use Exporter::Easy (EXPORT => [qw(waaai unwrap_shortener xcc)]);
+use base 'Exporter'; 
+
+our @EXPORT = qw(waaai unwrap_shortener xcc);
 
 use LWP;
 use URI;

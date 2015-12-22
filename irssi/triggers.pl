@@ -34,7 +34,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.9.0";
+$VERSION = "2.9.2";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -147,7 +147,7 @@ sub event_privmsg {
 		when (/^flip$|^ro(se|ll)$/i){	$return = dice([$target, $nick, $rose, $server],@terms); }
 		when (/^sins?$|^choose$|^guess$|^8ball$/i){	$return = choose(@terms); }
 		when (/^(farnsworth|bender|anim[eu]|natesilver(?:facts?)?|krieger|archer|pam|c(?:aro|hery)l|lana)|hooters?|homer|swanson|dukesilver$/i){ $return = readtext(@terms); }
-		when (/boobs|owl|butt/i){ 	$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
+		when (/^(boobs|owl|butt)s?$/i){ 	$return = check_for_submission($server, $nick, @terms); } #prob expand this to quote triggers too eventually
 		when (/^identify$/i){		$return = ident($server); }
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
@@ -177,6 +177,7 @@ sub event_privmsg {
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		when (/^time$/i){			$return = wa(@terms); }
 		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
+		when (/^flight$/){			$return = 'https://flightaware.com/live/flight/'.$terms[1]; }
 		default { return; }
 	}
 	if (! defined $return){

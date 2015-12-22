@@ -207,28 +207,41 @@
 	nisekoi				=> ["Anime", [undef], 'NiseKoi'],
 	# barristers			=> ["Anime", [undef], 'Barristers'], ####
 #spring 2014
-	"Kanojo ga Flag wo Oraretara"	=> ["Anime", [undef], undef],
+	"Kanojo ga Flag wo Oraretara"	=> ["Anime", [undef], "Flags"],
 	"black bullet"					=> ["Anime", [undef], undef],
 	m3								=> ["Anime", [undef], "M3"],
-	Mangaka							=> ["Anime", [undef], undef],
+	Mangaka							=> ["Anime", [undef], "Mangaka"],
 	"no game no life"				=> ["Anime", [undef], undef],
-	"Soul Eater Not"				=> ["Anime", [undef], undef],
+	"Soul Eater Not"				=> ["Anime", ["S-T-D"], "Eater"],
 	atelier							=> ["Anime", [undef], 'Atelier'],
 	"Hitsugi no Chaika"				=> ["Anime", [undef], undef],
 	"akuma no riddle"				=> ["Anime", [undef], undef],
 	"Bokura wa Minna Kawaisou"		=> ["Anime", [undef], undef],
-	nanana							=> ["Anime", [undef], undef],
+	nanana							=> ["Anime", [undef], "Nanana"],
 	wixoss							=> ["Anime", [undef], 'WIXOSS'],
 	sidonia							=> ["Anime", [undef], "Sidonia"],
 	hanamonogatari					=> ["Anime", [undef], undef],
-	mushishi						=> ["Anime", [undef], "Mushishi"],
-	"break blade"					=> ["Anime", [undef], "Earth"],
-	"captain earth"					=> ["Anime", [undef], undef],
-	gokukoku						=> ["Anime", [undef], undef],
-	"Mahouka Koukou no Rettousei"	=> ["Anime", [undef], undef],
+	"Mushishi S2"					=> ["Anime", [undef], "Mushishi"],
+	"break blade"					=> ["Anime", [undef], undef],
+	"captain earth"					=> ["Anime", [qw'commie'], "Earth"],
+	gokukoku						=> ["Anime", [undef], "Brynhildr"],
+	"Mahouka"						=> ["Anime", [undef], "Mahouka"], # mahouka koukou wa rettousei (or something) (HS calls it mahouka)
 	"mekaku city actors"			=> ["Anime", [undef], undef],
 	"Soredemo Sekai wa Utsukushii"	=> ["Anime", [undef], 'SoreSeka'],
 	"Sadon Desu"					=> ["Anime", [undef], "Sadon"],
+	haikyuu							=> ["Anime", ['Commie'], "Haikyuu"],
+#summer 2014
+	"sailor moon"					=> ["Anime", [qw'horrible commie'], "SMC"],
+	aldnoah							=> ["Anime", [qw'horrible commie'], "Aldnoah"],
+	'zankyou no terror'				=> ["Anime", [qw'FFF horrible'], 'Zankyou'],
+	'terror in tokyo'				=> ["Anime", ['commie'], 'Zankyou'],
+	jinsei 							=> ["Anime", ['FFF'], 'Jinsei'],
+	'ao haru ride'					=> ["Anime", [qw'horrible mezashite commie'], 'Ao Haru'],
+	"Tokyo ESP"						=> ["Anime", [qw'FFF horrible'], 'ESP'],
+	'rail wars'						=> ["Anime", [qw'FFF horrible'], 'Trains'],
+#fall 2014
+	"amagi"							=> ["Anime", [qw'vivid'],		'Amagi'],	#amagi brilliant park
+	"vanadis"						=> ["Anime", [qw'hiryuu'],		'Vanadis'],
 );
 
 @blacklist = qw(
@@ -237,7 +250,7 @@ animesenshi aoshen LQ bindesumux lorez thai italian persian getDBKAI gameternity
 german bakugan portuguese ptbr beyblade [RU] enconde ps3 dub Shani-san reencode re-encode animejoint anime-DDL
 rena-chan imur88 chinese narutoforreal Español spanish animephase logn animestop grohotun pokemon youshikibi ohys
 kanjouteki (Hi10) iPhone [P] [ReinWeiss] .avi [Hadena] [NemDiggers] [Hi10] CherryBoyz narutoverse asaadas deadfish
-Farfie Aniplex-rip 8bit peeps gxs
+Farfie Aniplex-rip 8bit [peeps] gxs
 ); #regex special characters should NOT be escaped
 @moreblacklist = (
 	"one piece", "galactic heroes", "kamen rider", "hitman reborn",
@@ -258,3 +271,5 @@ $Ccomnt	= "11,01";
 $Chntai	= "05,10";
 
 $debug = 0;
+$submit_url = "http://butt.academy/cgi/commietosho.pl?submit=";
+

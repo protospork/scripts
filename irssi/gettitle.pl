@@ -21,24 +21,13 @@ use vars qw(
 	@ignoresites @offchans @mirrorchans @offtwitter @nomirrornicks @defaulttitles @junkfiletypes
 	@meanthings @cutthesephrases @neweggreplace @yield_to $image_chan @norelaynicks @ignorenicks
 	@filesizecomment $largeimage $maxlength $spam_interval $mirrorfile $imgurkey  %shocksites
-	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver
+	$debugmode $controlchan %censorchans @dont_unshorten $url_shorteners $ver $yt_api_key
 	@notruncate $VERSION %IRSSI $tw_consumer_key $tw_consumer_secret $tw_token $tw_token_secret
 );
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-
-
-
-
-# <Lucifer7>  13 my $yt = new WebService::GData::YouTube();
-# <Lucifer7>  11 eval { $video = $yt->get_video_by_id($yt_id); };
-# <~tuxedo_mask> does the module actually work?
-# <Lucifer7> yeah
-
-
-
-$VERSION = "0.2.0";
+$VERSION = "0.2.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -124,7 +113,7 @@ sub pubmsg {
 		my $url_sh = unwrap_shortener($url); #TODO: stop maintaining a list of shorteners ('maintaining')
 		if ($url_sh eq '=\\' || $url_sh eq $url){ return; }
 		if (! grep lc $target eq lc $_, @dont_unshorten){
-			$server->command("msg $target $url");
+			$server->command("msg $target $url_sh");
 		}
 	}
 
@@ -239,6 +228,8 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
 	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/thread/\d++)}){
 		$url = 'http://api.4chan.org/'.$1.'.json';
+	} elsif ($url =~ m{store.steampowered.com/app/(\d+)}){
+		$url = 'http://store.steampowered.com/api/appdetails?appids='.$1;
 	}
 
 	# miscellany
@@ -390,12 +381,10 @@ sub get_title {
 				return $title;
 			}
 		}
-		# when (m|twitter\.com/intent|){ return twitter($page, $url); }
-		# when (/gdata\.youtube\.com.+alt=jsonc/){ return youtube($page); }
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
 		when (m!newegg[^f]\S+Product!){ return newegg($page); }
-		when (m!amazon\S+[dg]p!){ return amazon($page); }
-		when (m!store\.steampowered\.com/app!){ return steam($page); }
+		when (m!amazon\S+[dg]p!){ return; }# amazon($page); }
+		when (m!store\.steampowered\.com/api!){ return steam($page, $url); }
 		when (m!4chan\S+/(?:res|thread)/!){ return fourchan($page); }
 		when (/instagram\.com/){
 			# if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
@@ -453,19 +442,41 @@ sub twitter {
 }
 sub youtube {
 	my $hash = $_[0];
-	my $yt   = new WebService::GData::YouTube();
-	my $video = $yt->get_video_by_id($hash);
-	
+	my $junk = $ua->get('https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id='.$hash.'&key='.$yt_api_key);
+	return $junk->code unless $junk->is_success;
+	my $info;
+	eval { $info = JSON->new->utf8->decode($junk->decoded_content); };
+	if ($@ || !$info){ 
+		print "omg 1";
+		return $@ or return 'wtf'; 
+	} elsif ($info->{'pageInfo'}{'totalResults'}){
+		#technically this was a search? dumb
+		$info = $info->{'items'}[0];
+	} else {
+		print "omg 3";
+		return 'wtf';
+	}
+
 	my $out;
-	eval {$out = $video->title; };
-	if ($@ || !$out){ return $@ or return 'wtf'; }
+	eval { $out = $info->{'snippet'}{'title'}; };
+	if ($@ || !$out){ 
+		print "omg 4";
+		return $@ or return 'wtf'; 
+	}
 	
-	my $time = $video->duration;
-	$time =
-		(sprintf "%02d", ($time / 3600)).':'. #h
-		(sprintf "%02d", (($time / 60) % 60)).':'. #m
-		(sprintf "%02d", ($time % 60)); #s
-	$time =~ s/^(00:)//;
+	my $time = $info->{'contentDetails'}{'duration'};
+	if ($time !~ /M/){ #fuck you ISO
+		$time =~ /H/
+			? $time =~ s/(?<=H)/0M/
+			: $time =~ s/(?<=T)/0M/;
+	} elsif ($time !~ /S/){
+		$time .= '0S';
+	}
+	$time =~ s/(\d+)[HMS]/:$1/g;
+	$time =~ s/P(\d+D)?T:?/$1/;
+	$time =~ s/^(0*:)//;
+	$time =~ s/\b(\d)\b/0$1/g;
+	$time =~ s/^(\d\d)$/00:$1/;
 	
 	$out = "\00301,00You\00300,04Tube\017 - ".$out." [".$time."]";
 	return $out;
@@ -574,42 +585,23 @@ sub amazon {
 	return decode_entities('Amazon - '.$rating.' || '.$price.' || '.$info);
 }
 sub steam {
+	# http://store.steampowered.com/api/appdetails?appids=252950
+	# http://jsonprettyprint.com/
 	my $page = shift;
-	my $obj;
-	eval { $obj = HTML::TreeBuilder->new_from_content($page->decoded_content); };
-	if ($@ || ! $obj){ return 'steam: '.$page->status_line.' '.$page->content_type.' '.length($page->content); }
+	my $id = shift;
+	$id =~ s/^.+?appids=(\d+)$/$1/;
 
-	my $gated = $obj->look_down(_tag => 'div', 'id' => 'agegate_box');
-	if ($gated){
-		#fallback
-		my $title = $obj->look_down(_tag => 'title')->as_trimmed_text;
-		$title =~ s/ on Steam//;
-		return decode_entities($title);
+	my $src = $page->decoded_content;
+
+	$src =~ /name":"([^"]+)".+"final":(\d+),"discount_percent"/;
+	my ($name, $price) = ($1, $2);
+	$price /= 100;
+	$price = "\$$price || ";
+
+	if ($price && $name ne $id){
+		return $price.$name;
 	} else {
-		my $discount = $obj->look_down(_tag => 'div', 'class' => 'discount_pct');
-		if ($discount){
-			eval { $discount = decode_entities($obj->look_down(_tag => 'div', class => 'game_purchase_action')
-				->look_down(_tag => 'div', 'class' => 'discount_original_price')->as_trimmed_text.' '
-				.$discount->as_trimmed_text.' => '); };
-			if ($@ || !$discount){
-				$discount = '';
-			}
-		} else {
-			$discount = '';
-		}
-		my $price = $obj->look_down(_tag => 'meta', 'itemprop' => 'price');
-		eval { $price = $price->attr('content'); };
-		if (!$price || $price == '' || $@){
-			$price = '$UHOH || ';
-		} else {
-			$price = decode_entities($price.' || ');
-		}
-		my $title = $obj->look_down(_tag => 'title')->as_trimmed_text;
-		$title =~ s/ on Steam//;
-		if (! $title){
-			$title = 'It is literally impossible for this to be broken. Send help.';
-		}
-		return $discount.$price.$title;
+		return '┐(\'～`；)┌';
 	}
 }
 
@@ -621,10 +613,18 @@ sub check_image_size {
 	print $req->content_type.' '.$req->content_length if $debugmode == 1;
 	$return = 0 unless $req->content_type =~ /image/;
 
+	my $webm = 0;
+	
 	#shout if it's a magic jpeg
 	if ($req->content_type =~ /gif$/i){
 		if ($url =~ /imgur(?!.+gif$)/i){ #404 gif is a png now
-			$return = 'WITCH';
+			$return = $url;
+			$return =~ s/jpg$/gifv/;
+			$webm = $return;
+			$return .= ' ('.$meanthings[(int rand scalar @meanthings)-1].')';
+		} elsif ($url =~ /imgur.+gif$/i){
+			$return = $url.'v';
+			$webm = $return;
 		} else {
 			$url !~ /\.gif/i
 			? $return = 'WITCH'
@@ -637,7 +637,11 @@ sub check_image_size {
 	|| ($req->content_type =~ /gif$/ && $req->content_length > ($largeimage * 2))){ #gifs are big and we all know this
 		my $size = $req->content_length;
 		$size = sprintf "%.2fMB", ($size / 1048576);
-		$return = $size.'? '.$filesizecomment[(int rand scalar @filesizecomment)-1];
+		if ($webm){
+			$return = $size.' // '.$return
+		} else {
+			$return = $size.'? '.$filesizecomment[(int rand scalar @filesizecomment)-1];
+		}
 	}
 	if ($image_chan && $req->content_length){ #I guess facebook 404s are successes? so, we look for >0 length instead
 		if ($chan eq $image_chan && grep $nick =~ /$_/i, (@nomirrornicks)){ return $return; }
@@ -723,6 +727,10 @@ sub imgur {
 	if ($@){ print 'OH NO THERE ISNT ANY CONTENT'; }
 
 	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
+
+	#remap gif to something better
+	$imgurlink =~ s/gif$/gifv/;
+
 	#push all this junk into %mirrored
 	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
 	tied(%mirrored)->save;

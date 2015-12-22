@@ -5,6 +5,11 @@ use LWP;
 use Modern::Perl; #replace this with `use strict; use warnings;` if you don't have cpan access
 use HTML::ExtractMeta; #new
 use URI;
+
+package perlusernetworkmod;
+use base 'ZNC::Module';
+sub module_types { $ZNC::CModInfo::UserModule, $ZNC::CModInfo::NetworkModule }
+
 package expandurl;
 use base 'ZNC::Module';
 
