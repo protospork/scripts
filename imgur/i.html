@@ -1,0 +1,25 @@
+<html>
+<head>
+    <title>How do you fuck up so badly</title>
+    <!--<script src="garbage.js"></script>-->
+</head>
+<body bgcolor="000000">
+    <img src="//hella.moe/fu/g/this-kills-the-panel.gif" class="pangolins" id="yukari">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script src="URI.js" type="text/javascript"></script>
+    <!-- ^ custom build of uri.js with uri-jquery.js https://medialize.github.io/URI.js/docs.html -->
+    <script>
+var img = new URI(window.location.href);
+img = img.search();
+img = img.replace(/\?url=(?:https?:\/\/(?:[mi]\.)?imgur\.com\/)?([a-zA-Z0-9]{5,8}).*/, "//i.imgur.com/$1.jpg");
+//window.alert(img);
+
+if ( $( "#yukari" ).length ){
+    $( "#yukari" ).attr("src", img);
+} else {
+    window.alert("none of this makes any sense");
+    console.log("DICKS");
+}
+    </script>
+</body>
+</html>
