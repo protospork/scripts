@@ -153,7 +153,6 @@ sub event_privmsg {
 		when (/^i(?:mgops)?$/){		$return = imgops($target, @terms); }
 		when (/^rehash$/i){			$return = loadconfig(); }
 		when (/^titles$/i){			$return = loadgettitle($server, $mask); }
-		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
         when (/^g$|^wiki$|^amzn$|^yt$/i){
             $return = ddg($target, @terms) if $replace_google;
@@ -669,27 +668,6 @@ sub choose {
 	if ($return =~ /,/ && $pipes){ return choose('choose', (split /, /, $return)); } # now choices can be nested!
 	else { return $return; }
 }
-
-sub countdown {
-	if (! @_ || scalar @_ == 0){ #help message
-		return (join ', ', keys %timers);
-	}
-	print $_[-1] if $debug;
-	print $timers{uc $_[-1]}.' - '.time || 'AAAH';
-	if ($timers{uc $_[-1]}){
-		my $until = $timers{uc $_[-1]} - time;
-		return $_[-1].' already happened' if $until < 0;
-		my $string;
-		if ($until > 604800){ $string = int($until / 604800).' weeks '; $until = $until % 604800; }
-		if ($until > 86400){ $string .= int($until / 86400).' days '; $until = $until % 86400; }
-		if ($until > 3600){ $string .= int($until / 3600).' hours '; $until = $until % 3600; }
-		if ($until > 60){ $string .= int($until / 60).' minutes '; $until = $until % 60; }
-		return ($string.'until '.$_[0]);
-	} else {
-		return lc(join ', ', keys %timers);
-	}
-}
-
 sub rpn_calc {
 	my @those = @_;
 	for (@those){
