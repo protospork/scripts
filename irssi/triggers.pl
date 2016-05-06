@@ -16,11 +16,13 @@ use URI::Escape;
 use Math::RPN;
 use WWW::Wunderground::API;
 use Encode;
+use Finance::Quote;
 # use Data::Dumper;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks $replace_google);
+			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks
+            $replace_google);
 # #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
@@ -35,7 +37,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.10.0";
+$VERSION = "2.10.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -165,7 +167,7 @@ sub event_privmsg {
 		}
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
-		when (/^cvt$|^xe?$/i){		$return = currency(@terms); }
+		when (/^cvt$|^xe?$/i){		$return = conversion(@terms); }
 		when (/^rpn/i){				$return = rpn_calc(@terms); }
 		when (/^w(eather|x)?$/i){
 			if ($#terms >= 1 && $terms[1] =~ s/^\@//){
@@ -196,55 +198,6 @@ sub event_privmsg {
 		if (int rand 1000 <= 2){ $return =~ s/ /\x{07}/; } # I'm sorry I had to
 		$server->command('msg '.$target.' '.$return);
 	}
-}
-
-sub currency {
-	#todo:
-	#	commas
-	#	cache exchange rates for 24h
-
-	shift; #dump the trigger
-	my ($quant, $in) = (shift, shift);
-	my $out;
-	if (@_){ $out = shift; }
-	no warnings 'uninitialized';
-	if ($out eq 'to'){
-		$out = $_[-1];
-	} elsif (!$out){
-		$out = 'USD';
-	}
-	if ($quant =~ /[^\.\d]/){
-		return "NaN";
-	}
-	use warnings 'uninitialized';
-
-	$in = uc $in;
-	$out = uc $out;
-
-	if (length $in > 3 || length $out > 3){
-		return 'use the three letter codes';
-	}
-
-	my $req = $ua->get('http://rate-exchange.appspot.com/currency?from='.$in.'&to='.$out.'&q='.$quant);
-	if (! $req->is_success){
-		print 'conversion: '.$req->code;
-		return;
-	}
-	if ($req->decoded_content =~ /"err": "([^"]+)"/i){
-		print $req->decoded_content;
-		return $1;
-	}
-	my $str = $req->decoded_content;
-	$str =~ s/.+?"v": (\d+(?:\.\d+)?).*?$/$1/ || return $req->decoded_content;
-
-	#round up
-	$str = sprintf "%.03f", $str;
-	unless ($str =~ s/\.(\d+?)[56789]/".".(sprintf "%02d", ($1 + 1))/e){
-		#or don't
-		$str =~ s/\d$//;
-	}
-
-	return "$quant $in is $str $out";
 }
 
 sub check_for_submission {	#provides a (really ghetto) item submission routine for the readtext stuff
@@ -687,73 +640,23 @@ sub rpn_calc {
 	return $out;
 }
 
-sub conversion { #this doens't really work except for money
-	#only works with three inputs
-#	my ($trig, $in, $out) = @_;
-
-	#works with two or three inputs
+sub conversion { #this is for money
 	my $trig = uc shift;
+    my $amt = uc shift;
 	my $in = uc shift;
-	$in =~ s/to$//; #wha
+	$in =~ s/\w*to$//; #wha
 	my $out;
-	print join ', ', ($trig,$in) if $debug;
-	if (defined $_[0] && $debug == 1){ $out = uc $_[0]; print '=> '.$out; }
+	print join ', ', ($amt,$in) if $debug;
+	if (defined $_[0]){ $out = uc $_[0]; print '=> '.$out if $debug; }
+    else { $out = 'USD'; }
+    if (length $in != 3 || length $out != 3){
+        return 'use the three letter codes';
+    }
 
-	if ($in =~ /BTC$/ || $out eq 'BTC'){ #is bitcoincharts still alive even? because I could just pull this too
-		my $prices = $ua->get('http://bitcoincharts.com/t/weighted_prices.json');
-		return $prices->status_line unless $prices->is_success;
+    my $q = Finance::Quote->new();
+    my $rate = $q->currency($in, $out);
 
-		my $junk;
-		eval { $junk = JSON->new->utf8->decode($prices->decoded_content); };
-		if ($@){ return 'BTC - uh-oh ('.$prices->status_line.')'.' '.$prices->content_type; }
-
-		my $num; ($num,$in) = ($in =~ /(\d+)\s*(\D+)/);
-		if (uc $in eq 'BTC'){
-			my $multi = ($junk->{$out}->{'24h'} || $junk->{$out}->{'7d'} || $junk->{$out}->{'30d'})
-			|| return 'something seems to have exploded';
-
-			my $product = $num * $multi;
-			return $num.' '.$in.' is '.$product.' '.$out if $product;
-			return ':(';
-		} else {
-			my $divide = ($junk->{$in}->{'24h'} || $junk->{$in}->{'7d'} || $junk->{$in}->{'30d'})
-			|| return 'something is on fire';
-
-			my $product = $num / $divide;
-			return $num.' '.$in.' is '.$product.' '.$out if $product;
-			return ':<';
-		}
-	} else {
-		return "google shut my api off sorry\x{03}01,01 (actually fuck you I'm not sorry)";
-	}
-
-
-	my $construct = 'http://www.google.com/ig/calculator?q='.uri_escape_utf8(lc $in);
-	$construct .= '=?'.uri_escape_utf8(lc $out) if defined $out;
-
-	print $construct if $debug;
-
-	my $req = $ua->get($construct);
-	return $req->status_line unless $req->is_success;
-
-	my $output = $req->decoded_content;
-	print $output if $debug;
-	#it's not actually real JSON :(
-	#try $json->allow_barekey(1) ?
-	$output =~ /lhs: "(.*?)",rhs: "(.*?)",error: "(.*?)"/i || return 'regex error';
-	my ($from,$to,$error) = ($1,$2,$3);
-
-	#\x3c / \x3e are <>. \x25#215; is &#215; is �
-	$to =~ s/\\x22/\"/g;
-	$to =~ s/\\x26#215;/\*/g;
-	$to =~ s/\\x3csup\\x3e/\^/g;
-	$to =~ s/\\x3c\/sup\\x3e/ /g;
-
-	unless ($error){ return $from.' = '.$to; }
-	$error =~ s/\\x22/"/g;
-	#4 is "I don't know what that unit is" or something
-	$error = $dunno[rand(scalar(@dunno))-1] if $error =~ /(?:Error: )?4/i;
-	return $error;
+    return "$amt $in is ".($rate * $amt)." $out probably";
 }
 sub utfdecode { #why
 	my $x = my $y = uri_unescape($_[0]);
