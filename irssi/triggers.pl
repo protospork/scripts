@@ -20,7 +20,8 @@ use Encode;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
-			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks);	# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
+			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks $replace_google);
+# #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
 #protip: if you're storing nicks in a hash, make sure to `lc` them
@@ -34,7 +35,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.9.2";
+$VERSION = "2.10.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -154,6 +155,9 @@ sub event_privmsg {
 		when (/^titles$/i){			$return = loadgettitle($server, $mask); }
 		when (/^when$/i){			$return = countdown(@terms); }
 		when (/^!\S+$|^gs$|^ddg$/i){$return = ddg($target, @terms); }
+        when (/^g$|^wiki$|^amzn$|^yt$/i){
+            $return = ddg($target, @terms) if $replace_google;
+        }
 		# <sugoidesune> I think I'm going to go through those triggers and remove the ! from the ones that work right
 		when ($promoted_bangs){
 			$terms[0] = '!'.$terms[0];
@@ -165,10 +169,10 @@ sub event_privmsg {
 		when (/^cvt$|^xe?$/i){		$return = currency(@terms); }
 		when (/^rpn/i){				$return = rpn_calc(@terms); }
 		when (/^w(eather|x)?$/i){
-			if ($#terms >= 1 && $terms[1] =~ s/^\@//){ 
+			if ($#terms >= 1 && $terms[1] =~ s/^\@//){
 				$nick = pop @terms;
 			}
-			$return = weather_fallback($server, $nick, @terms); 
+			$return = weather_fallback($server, $nick, @terms);
 		}
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
@@ -197,7 +201,7 @@ sub event_privmsg {
 }
 
 sub currency {
-	#todo: 
+	#todo:
 	#	commas
 	#	cache exchange rates for 24h
 
@@ -343,13 +347,13 @@ sub airtimes {
 	my $atdebug = 0;
 
 	print "query = $query" if $atdebug;
-	
+
 	my @now = localtime;
 	my $yr = sprintf("%02d", $now[5] % 100);
 
 	my $season = int((($now[4] + 1) / 3) + 1);
 	given ($season){
-		when (5){ #this is december. 
+		when (5){ #this is december.
 			$season = 'Fall';
 		} when (1){
 			$season = 'Winter';
@@ -471,6 +475,24 @@ sub ddg {
 	}
 	my $feelinglucky;
 
+    given (lc $trigger){
+        when (/yt/){
+            unshift @terms, '\site:youtube.com';
+        }
+        when (/wiki/){
+            unshift @terms, '\site:en.wikipedia.org';
+        }
+        when (/amzn/){
+            unshift @terms, '\site:amazon.com';
+        }
+        when (/^g$/){
+            unshift @terms, '\site:google.com';
+        }
+        default {
+            #nothing changes
+        }
+    }
+
 	if ($trigger =~ /^ddg$/i && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
 		$terms[0] = '\\'.$terms[0];
 	}
@@ -537,7 +559,7 @@ sub wa { #wolfram alpha, for now just used for .time
 # http://api.wolframalpha.com/v2/query?format=plaintext&input=time%20in%20singapore&appid=
 # http://products.wolframalpha.com/api/documentation.html
 	my $wa = WWW::WolframAlpha->new(appid => $wa_appid);
-	
+
 	if ($_[1] =~ /^\@(\w+)/){
 		if (exists $savedloc{$1}){
 			$_[1] = $savedloc{$1}
@@ -692,7 +714,7 @@ sub readtext {
 		when (/butt/i){ $tgt = $listloc.'dickbutt.txt'; }
 		when (/homer/i){ $tgt = $listloc.'homer.txt'; }
 		when (/swanson|dukesilver/i){ $tgt = $listloc.'swanson.txt'; }
-		when (/hooters?/i){ 
+		when (/hooters?/i){
 			if ((int rand 99) % 2){
 				$tgt = $listloc.'owls.txt';
 			} else {
@@ -861,7 +883,7 @@ sub conversion { #this doens't really work except for money
 	$output =~ /lhs: "(.*?)",rhs: "(.*?)",error: "(.*?)"/i || return 'regex error';
 	my ($from,$to,$error) = ($1,$2,$3);
 
-	#\x3c / \x3e are <>. \x25#215; is &#215; is ×
+	#\x3c / \x3e are <>. \x25#215; is &#215; is ï¿½
 	$to =~ s/\\x22/\"/g;
 	$to =~ s/\\x26#215;/\*/g;
 	$to =~ s/\\x3csup\\x3e/\^/g;
@@ -988,7 +1010,7 @@ sub gfycat { # http://gfycat.com/api
 	unless ($req->is_success){
 		return ("$fetch error: ".($req->status_line).'. Try http://gfycat.com/fetch/'.$url);
 	}
-	my $slug = $req->content;		
+	my $slug = $req->content;
 
 	my ($hash,$size,$oldsize);
 	if ($slug =~ /"gfyname":"([^"]+)","gfysize":(\d+),"gifsize":(\d+)/i){ #these params randomly go in/out of camelCase
@@ -1008,7 +1030,7 @@ sub gfycat { # http://gfycat.com/api
 	# no longer necessary?
 	# my $pub = $ua->get('http://gfycat.com/ajax/publish/'.$hash);
 	# return $pub->status_line." while publishing" unless $pub->is_success;
-	
+
 	my $gfylink = 'http://gfycat.com/'.$hash;
 
 	$server->command("msg $chan $url ($oldsize) => $gfylink ($size)");
@@ -1040,7 +1062,7 @@ sub weather_fallback {
 	my $w = new WWW::Wunderground::API(
 		api_key => $wu_apikey,
 		location => $location,
-		auto_api => 1,	
+		auto_api => 1,
 	);
 
 	# print $w->conditions->location->city || return "fffffffffuck";
@@ -1049,12 +1071,12 @@ sub weather_fallback {
 	eval { $when = $w->conditions->observation_time; };
 	if ($@ || ! $when){ return "$@ ($location isn't a place?)"; }
 	$when =~ s/^.+?, //;
-	
+
 	$savedloc{$nick} = $location;
 	tied(%savedloc)->save;
 
 	# print Dumper($w->data);
-	
+
 	my $out = "\x{02}".$w->conditions->observation_location->full."\x{02} "."($when): ";
 
 	if ($w->conditions->observation_location->country =~ /^US$/){
@@ -1087,9 +1109,9 @@ sub weather_fallback {
 	}
 
 	$out .= $wind;
-	
+
 	$out = encode('UTF-8', $out);
-	
+
 	return $out;
 }
 Irssi::signal_add("event privmsg", "event_privmsg");
