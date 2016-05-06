@@ -1,3 +1,15 @@
+.gitignore
+irssi/cfg/
+misc/*.txt
+misc/edict*
+*.bak
+xchat/cfg/
+xchat/cfg/xrelay.pm
+*.po
+xchat/cfg/xrelay.pm
+api_keys.txt
+*.jpg
+
 #################
 ## Eclipse
 #################
