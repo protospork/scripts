@@ -177,7 +177,6 @@ sub event_privmsg {
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
-		when (/^ai(?:rtimes?)?$/i){ $return = [airtimes(@terms)]; }# unless $target =~ /#tac/i; }
 		when (/^drinkify$/i){		$return = drinkify($nick, @terms); }
 		when (/^time$/i){			$return = wa(@terms); }
 		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
