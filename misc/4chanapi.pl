@@ -29,10 +29,16 @@ $|++;
 my %pics;
 my %thread;
 
-# tie my %pics, 'Tie::YAML', $root_dir.'\4chan-log.po' or die $!;
+# if (-e $root_dir.'\4chan-log.po'){
+	# tie my %pics, 'Tie::YAML', $root_dir.'\4chan-log.po' or die $!;
+# } else {
+	# say "this is a new thread" if $debug;
+# }
 
 my $empty_tries = 0; #number of times we've checked the thread and found no updates
 my $last_check = 1111111111; #unix time the thread index was last downloaded
+my $last_size = 1;
+my $cycles = 0;
 
 sub make_api_link {
 	# https://boards.4chan.org/gif/res/6016093 -> http(s)://a.4cdn.org/board/res/6016093.json
@@ -50,18 +56,30 @@ sub pull_index {
 	my $thread = shift;
 
 	my $url = check(make_api_link($thread));
+	
 	my $req = $ua->get($url, {'If-Modified-Since' => $last_check});
 	if ($req->is_error){ die 'ERROR ('.$req->code.'): Could not retrieve thread.'; }
-	if ($req->code == 304){ return 'No updates since '.$last_check; } #need a way to verify this even works
-
+	if ($req->code == 304){ 
+		# it doesn't work; 4chan just returns http 200
+		$cycles++;
+		say "no updates (header)" if $debug;
+		return 'No updates since '.$last_check; 
+	} elsif (length $req->content == $last_size){
+		$cycles++;
+		say "size unchanged" if $debug;
+		return 'JSON size unchanged since '.$last_check;
+	}
+	$last_size = length $req->content;
+	
 	if ($debug){
 		say 'HTTP '.$req->code;
 		say ((length $req->content).'B');
 	}
+	$cycles++;
 	return $req->decoded_content;
 }
 sub json_to_list {
-	if ($_[0] =~ /^No updates/){ return $_[0]; }
+	if ($_[0] =~ /^No updates|^JSON size unchanged/){ return $_[0]; }
 	my $json = decode_json $_[0];
 	# write_file('4chan'.time.'.txt', Dumper $json) if $debug;
 
@@ -69,7 +87,7 @@ sub json_to_list {
 		return 'ERROR: lol JSON.pm';
 	}
 
-	for (@{$json->{'posts'}}){ #TODO: see if the pic is deleted
+	for (@{$json->{'posts'}}){
 		if (! $_->{'tim'}){
 			# say 'No image in '.$_->{'no'} if $debug;
 			next;
@@ -81,7 +99,7 @@ sub json_to_list {
 			'size'	=> $_->{'fsize'}, 
 			'md5'	=> $_->{'md5'},
 			'num'	=> $_->{'no'},
-		};
+		} || say "WHY";
 	}
 	
 	$thread{'title'} = $json->{'posts'}[0]{'sub'} 
@@ -101,7 +119,7 @@ sub grab_images {
 	for (sort keys %pics){
 		rewrite_filename($_);
 
-		if (file_check($_, @dir) == 1){ #make sure it doesn't exist
+		if (file_check($_, @dir) =~ /^STOP|^DO NOT/){ #make sure it doesn't exist
 			next;
 		} else {
 			sleep 1; #moot says no more than 1 req/sec so I'll be nice
@@ -116,6 +134,7 @@ sub grab_images {
 		} else {
 			say $pics{$_}{'fixed_name'};
 			$rval++;
+			file_check($_, @dir);
 		}
 	}
 	if ($rval == 0){
@@ -151,23 +170,20 @@ sub file_check { #glob for file & md5 it.
 		my $src_hash = $pics{$fi}{'md5'};
 		$src_hash =~ s/==$//;
 		
-		# print "$_ exists as ".$pics{$fi}{'fixed_name'};
-		
-		if (exists $pics{$fi}{'ondisk'}){ #no reason to test if we did it before
-			return 1;
-		}
+		# print "$_ exists as ".$pics{$fi}{'fixed_name'};		
 
 		my $ok = verify($fi);
 		
 		if ($ok){
-			# print "\n";
-			return 1;
+			return 'DO NOT DOWNLOAD THIS AGAIN';
 		} else {
 			# print " but is broken.\n";
 			say "$_ is broken.";
 			unlink $fi;
 			return 0;
 		}
+	} elsif (exists $pics{$fi}{'ondisk'} && $pics{$fi}{'ondisk'} =~ /^\d+$/){ # don't redownload a deleted file
+		return 'STOP';
 	}
 	return 0;
 }
@@ -196,6 +212,10 @@ sub record_success {
 sub verify {
 	my $fi = $_[0];
 
+	if ($pics{$fi}{'ondisk'} =~ /^\d+$/){ #seriously, DO NOT REDOWNLOAD A DELETED FILE
+		return 1;
+	}
+	
 	$pics{$fi}{'md5'} =~ s/==$//;
 
 	open my $file, '<', $pics{$fi}{'fixed_name'} || die $!;
@@ -217,6 +237,9 @@ sub verify {
 sub recheck_thread {
 	my $wait = 2**($empty_tries);
 	$wait = 64 if $wait > 64; #exponential hops are cool but let's not go crazy here
+
+	#workaround for bug where new threads immediately wait 2min
+	$wait = 0 if $cycles == 1;
 
 	say '$empty_tries count: '.$empty_tries;
 

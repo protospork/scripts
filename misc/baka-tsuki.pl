@@ -17,7 +17,7 @@ $outfile = $ARGV[1] || 'index.xhtml';
 #	-strip the ul/li stuff from around the images in the beginning
 
 say "Downloading text.";
-my $req = $ua->get($ARGV[0]); #grab the text
+my $req = $ua->get($ARGV[0].'&printable=yes'); #grab the 'FULL VOLUME' PAGE
 if (! $req->is_success){ die "Error downloading page: $req->code"; }
 else { say "Success."; }
 my $text = $req->decoded_content;
@@ -35,13 +35,14 @@ for (@images){
 	
 	s{/images/thumb(/\w/\w\w/)[^/]+/\d+px-}{/images$1}; #convert thumbnail url to fullsize image url
 	
-	$text =~ s{<a href="(?:[^"]+)" class="image"><img(?: [^>]+)* src="$orig"(?: [^>]+)* /></a>}{<img src=".$_" />}; #replace thumbnail with fullsize path in the text
+	#OLD $text =~ s{<a href="(?:[^"]+)" class="image"><img(?: [^>]+)* src="$orig"(?: [^>]+)* /></a>}{<img src=".$_" />}; #replace thumbnail with fullsize path in the text
+	$text =~ s{src="/project/images/thumb/}{src="/project/images/}g;
+	$text =~ s{src="/project(/images/./../[^/]+)/.+\.(?:png|jpg)"}{src="$1"}g;
 	
 	my $url = URI->new('http://www.baka-tsuki.org'.$_)->canonical;
 	# say $url;
 	my ($dirpath,$filename) = ($url->path,$url->path);# x 2;
 	
-	# say $dirpath;
 	#save the fullsize image in a path resembling the thumbnail one
 	$dirpath =~ s{^.+?/((\w)/\2\w/).+?$}{$1};
 	if (! -e $dirpath){
@@ -64,14 +65,18 @@ for (@images){
 	say "";
 }
 
-$text =~ s{<h3><span class="editsection">[<a href="\S*/project/\S+" title="[^"]+">edit</a>]</span> <span class="mw-headline" (id="[^"]+")>([^<]+)</span></h3>}
-          {<h2><span class="mw-headline" $1>$2</span></h2>}gs; #remove [edit] links and move chapter headings up a level so calibre can find them
+#OLD $text =~ s{<h3><span class="editsection">[<a href="\S*/project/\S+" title="[^"]+">edit</a>]</span> <span class="mw-headline" (id="[^"]+")>([^<]+)</span></h3>}
+#OLD           {<h2><span class="mw-headline" $1>$2</span></h2>}gs; #remove [edit] links and move chapter headings up a level so calibre can find them
 
+
+
+#probably none of these take effect anymore but fuck it
 $text =~ s{\.?/project}{.}g; #fix a few paths we might have missed
+$text =~ s{href="./index.php?title=File:}{href="}g; #fix image links, possibly?
 
 $text =~ s{(?<=</title>).+?(?=</head>)|<!-- tagline -->.+?<!-- /jumpto -->}{}sg; #strip all of the needless stuff from the top
 $text =~ s{</head>}{<link rel="stylesheet" href="$stylesheet" type="text/css" media="all" /></head>};
-$text =~ s{<!-- printfooter -->.+?<li id="footer-info-lastmod"> (This page was last modified on [^<]+)</li>.+?(?=</body>)}{}gs; #and the bottom
+$text =~ s{<div id="footer".+?<li id="footer-info-lastmod"> (This page was last modified on [^<]+)</li>.+?(?=</body>)}{}gs; #and the bottom
 my $last_modified = $1;
 
 utf8::encode($text); #stupid fucking wide character warnings
