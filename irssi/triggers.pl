@@ -37,7 +37,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.10.1";
+$VERSION = "2.10.2";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -182,6 +182,7 @@ sub event_privmsg {
 		when (/^time$/i){			$return = wa(@terms); }
 		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
 		when (/^flight$/){			$return = 'https://flightaware.com/live/flight/'.$terms[1]; }
+        when (/^space$/){           $return = space(@terms); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -199,7 +200,39 @@ sub event_privmsg {
 		$server->command('msg '.$target.' '.$return);
 	}
 }
+sub space {
+    my $req = $ua->get("https://launchlibrary.net/1.2/launch/next/8");
+    print (length $req->decoded_content) if $debug;
 
+    my $json;
+    eval { $json = JSON->new->utf8->decode($req->decoded_content); };
+    if ($@){ return "uh oh - ".$req->status_line; }
+
+    my %outlines;
+    my $count = $json->{'total'}; #we javascript now
+    my $launches = $json->{'launches'};
+    #error checking what's that
+    while ($count >= 0){
+        $count--;
+        my $this = $launches->[$count];
+        if ($this->{'tbddate'} == 1){ #date isn't actually set, fuck yall
+            next;
+        }
+        my $tmp;
+    #    say join ', ', keys %{$this};
+        $tmp = $this->{'name'};
+        $tmp .= " || ".$this->{'net'};
+        $tmp .= " || ".$this->{'location'}{'name'};
+        $tmp .= " || ".(join " / ", @{$this->{'vidURLs'}});
+
+        $outlines{$this->{'id'}} = $tmp;
+    }
+    my @go;
+    for (sort keys %outlines){ #I'm having issues with duplicate ID/entries appearing, and with sorting
+        unshift @go, $outlines{$_};
+    }
+    return \@go;
+}
 sub check_for_submission {	#provides a (really ghetto) item submission routine for the readtext stuff
 	my ($server, $nick, $trigger) = (shift, shift, shift);
 
@@ -320,20 +353,21 @@ sub ddg {
             unshift @terms, '\site:amazon.com';
         }
         when (/^g$/){
-            unshift @terms, '\site:google.com';
+            #why did I do this
+            #unshift @terms, '\site:google.com';
         }
         default {
             #nothing changes
         }
     }
 
-	if ($trigger =~ /^ddg$/i && $terms[0] !~ /^[!\\]/){ #.ddg = first result; .gs = index
+	if ($trigger =~ /^g$/i && $terms[0] !~ /^[!\\]/){ #.g = first result; .gs/.ddg = index
 		$terms[0] = '\\'.$terms[0];
 	}
 	if ($terms[0] =~ /^[\\!]/){
 		$feelinglucky++;
 	}
-	for (@terms){ #I don't understand why this exists?
+	for (@terms){ #I don't understand why this exists? why not use an actual url encoder?
 		$_ =~ s/\+/%2B/g;
 	}
 	print "@terms" if $debug;
