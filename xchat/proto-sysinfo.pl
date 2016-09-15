@@ -5,9 +5,17 @@ use Xchat ':all';
 use DateTime;
 use DateTime::Format::Duration;
 
-my $ver = '0.11';
+my $ver = '0.12';
 register('proto-sys', $ver, 'another fucking sysinfo thing', \&unload);
 my $debug = 0;
+
+#todo:
+#diskinfo (size, names, %free)
+#hardware (OS (installdate), cpu, ram, gpu, total hdd, uptime)
+#display (gpu, viewports (multiple?))
+#uptime record
+
+#run uptime silently every ~6h to save an approximate uptime record, once you're saving those
 
 
 prnt("sysinfo $ver loaded");
@@ -30,10 +38,16 @@ sub get_uptime {
 		$sys_boot = $boot;
 	}
 	$boot =~ s/^.+since //;
-	my @abs_boot = (split /[\/\s:]/, $boot, 6);
+	my @abs_boot = (split /[-\/\s:]/, $boot, 6);
 	if ($debug){
 		prnt "$abs_boot[0] / $abs_boot[1] / $abs_boot[2]";
 		prnt "$abs_boot[3] : $abs_boot[4] : $abs_boot[5]";
+	}
+	#oh, locales
+	if ($abs_boot[2] < 2000){
+		prnt "r u foreign?" if $debug;
+		my @date = ($abs_boot[0], $abs_boot[1], $abs_boot[2]);
+		($abs_boot[2], $abs_boot[0], $abs_boot[1]) = ($date[0], $date[1], $date[2]);
 	}
 	my $then = DateTime->new(
 		year	=> $abs_boot[2],
