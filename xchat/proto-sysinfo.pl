@@ -4,24 +4,27 @@ use Modern::Perl;
 use Xchat ':all';
 use DateTime;
 use DateTime::Format::Duration;
+use Tie::YAML;
 
-my $ver = '0.12';
+my $ver = '0.13';
 register('proto-sys', $ver, 'another fucking sysinfo thing', \&unload);
-my $debug = 0;
+my $debug = 1;
+
+tie my %config => 'Tie::YAML', 'prosys.po';
 
 #todo:
 #diskinfo (size, names, %free)
 #hardware (OS (installdate), cpu, ram, gpu, total hdd, uptime)
 #display (gpu, viewports (multiple?))
 #uptime record
-
-#run uptime silently every ~6h to save an approximate uptime record, once you're saving those
+#	run uptime silently every ~6h to save an approximate uptime record, once you're saving those
+#		^ requires a silent uptime method
 
 
 prnt("sysinfo $ver loaded");
 sub unload { prnt "sysinfo $ver unloaded"; }
 
-hook_command('pro_uptime', \&get_uptime);
+hook_command('pro_uptime', \&get_uptime;
 
 #find boot time once, save it in memory so it never runs that cmd command again
 my $sys_boot = 0;
@@ -79,4 +82,7 @@ sub get_uptime {
 	#also months
 	$out =~ s/0?(\d+? months)/$1/;
 	command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.']');
+	#TODO: compare $out to max uptime before overwriting it
+	$config{'uptime_record'} = $out;
+	tied(%config)->save;
 }
