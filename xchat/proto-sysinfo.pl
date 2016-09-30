@@ -24,7 +24,7 @@ tie my %config => 'Tie::YAML', 'prosys.po';
 prnt("sysinfo $ver loaded");
 sub unload { prnt "sysinfo $ver unloaded"; }
 
-hook_command('pro_uptime', \&get_uptime;
+hook_command('pro_uptime', \&get_uptime);
 
 #find boot time once, save it in memory so it never runs that cmd command again
 my $sys_boot = 0;

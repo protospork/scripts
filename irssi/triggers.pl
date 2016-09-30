@@ -37,7 +37,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.10.2";
+$VERSION = "2.11.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -168,7 +168,8 @@ sub event_privmsg {
 		when (/^hex$/i){			$return = ($nick.': '.(sprintf "%x", $terms[1])); }
 		when (/^help$/i){			$return = 'https://github.com/protospork/scripts/blob/master/irssi/README.md' }
 		when (/^cvt$|^xe?$/i){		$return = conversion(@terms); }
-		when (/^rpn/i){				$return = rpn_calc(@terms); }
+		when (/^rpn$/i){			$return = rpn_calc(@terms); }
+        when (/^aspect$/i){         $return = aspect(@terms); }
 		when (/^w(eather|x)?$/i){
 			if ($#terms >= 1 && $terms[1] =~ s/^\@//){
 				$nick = pop @terms;
@@ -368,6 +369,7 @@ sub ddg {
 		$feelinglucky++;
 	}
 	for (@terms){ #I don't understand why this exists? why not use an actual url encoder?
+     #no seriously, URLs with unicode in them are unclickable in hexchat
 		$_ =~ s/\+/%2B/g;
 	}
 	print "@terms" if $debug;
@@ -673,6 +675,21 @@ sub rpn_calc {
 
 	return $out;
 }
+sub aspect {
+#todo:
+#   -highlight if both dimensions are mod16
+#   -display a nearby mod16 resolution if not, somehow
+    my $in = join ' ', @_;
+    my ($dim, $dir, $shape) = ($in =~ /(\d+)([hw])\s*([0-9:-]+)/);
+    my ($w, $h) = split /[:-]/, $shape;
+    my $out = $dim;
+    given (lc $dir){
+        when('w'){ $out = (sprintf "%02dx%02d", ($dim, ($out / $w * $h))); }
+        when('h'){ $out = (sprintf "%02dx%02d", (($out / $h * $w), $dim)); }
+        default { $out = 'what' }
+    }
+    return $out;
+}
 
 sub conversion { #this is for money
 	my $trig = uc shift;
@@ -726,14 +743,16 @@ sub dice {
 
 		return $toss;
 	} elsif ($flavor eq 'roll'){
-		my @xdy = split /d/i, $_[1];
+        my $die = $_[1];
+        if ($die =~ /^d/i){ $die = '1'.$die; } #assume 1 if unspecified
+        my @xdy = split /d/i, $_[1];
 		s/\D// for @xdy;
 		if (! $xdy[1]){ #assume it's a d6
 			$xdy[1] = 6;
 		}
 
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] <= 1;
-		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 99;
+		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[1] > 999;
 		return ':| '.$meanthings[int(rand($#meanthings))-1] if $xdy[0] > 99;
 
 		my @throws = roll(@xdy);
