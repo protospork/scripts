@@ -3,7 +3,7 @@
 // @namespace   twimg
 // @description Redirects tweets to direct images
 // @include     https://twitter.com/*
-// @version     1.2.7
+// @version     1.2.8
 // @updateURL   https://raw.githubusercontent.com/protospork/scripts/master/misc/redirector.user.js
 // @grant       none
 // ==/UserScript==
@@ -30,8 +30,9 @@ function multiPics (){
 }
 function newPage(){
   var newBody = document.createElement('body');
-  newBody.setAttribute('style', 'background-color: #141414');
-  newBody.innerHTML = '<a href="'+document.location+'"><img src='+urls.join('><img src=')+'></a>';
+  newBody.setAttribute('style', 'background-color: #141414;');
+  newBody.innerHTML = '<style>img { max-width: 100% }</style><a href="'+document.location+'"><img src='+urls.join('><img src=')+'></a>';
+  
   document.body = newBody;
   document.title = "Click a picture to go back";
 }
