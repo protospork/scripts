@@ -6,7 +6,7 @@ use DateTime;
 use DateTime::Format::Duration;
 use Tie::YAML;
 
-my $ver = '0.13';
+my $ver = '0.16';
 register('proto-sys', $ver, 'another fucking sysinfo thing', \&unload);
 my $debug = 1;
 
@@ -63,11 +63,31 @@ sub get_uptime {
 	my $now = DateTime->now();
 	my $uptime = $now->subtract_datetime($then);
 	
+	my $out = make_uptime_string($uptime);
+	
+	my $record_uptime;
+	if ($config{'uptime_record'} && DateTime->compare($uptime, $config{'record_uptime'})){
+		$record_uptime = ' | Record: '.(make_uptime_string($config{'uptime_record'})).']';
+	} else {
+		$record_uptime = ']';
+	}
+	
+	command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.$record_uptime);
+	#TODO: compare $out to max uptime before overwriting it
+	if (DateTime->compare($uptime, $config{'record_uptime'})){
+		$config{'record_uptime'} = $uptime;
+		prnt "this should happen" if $debug;
+	} else {
+		prnt "this means the old record was better" if $debug;
+	}
+	tied(%config)->save;
+}
+sub make_uptime_string {
 	my $formatter = DateTime::Format::Duration->new(
 		pattern => '%Y years %m months %e days %H hours %M minutes %S seconds'
 	);
 	
-	my $out = $formatter->format_duration($uptime);
+	my $out = $formatter->format_duration($_[0]);
 	$out =~ s/^(0 years )?(00? months )?(0 days )?(00? hours )?(0 minutes )?(0 seconds)?//;
 	
 	#hour/minutes seem to be slightly broken?
@@ -81,8 +101,6 @@ sub get_uptime {
 	}
 	#also months
 	$out =~ s/0?(\d+? months)/$1/;
-	command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.']');
-	#TODO: compare $out to max uptime before overwriting it
-	$config{'uptime_record'} = $out;
-	tied(%config)->save;
+	
+	return $out;
 }
