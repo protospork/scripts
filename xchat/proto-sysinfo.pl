@@ -6,9 +6,9 @@ use DateTime;
 use DateTime::Format::Duration;
 use Tie::YAML;
 
-my $ver = '0.16';
+my $ver = '0.17';
 register('proto-sys', $ver, 'another fucking sysinfo thing', \&unload);
-my $debug = 1;
+my $debug = 0;
 
 tie my %config => 'Tie::YAML', 'prosys.po';
 
@@ -66,15 +66,15 @@ sub get_uptime {
 	my $out = make_uptime_string($uptime);
 	
 	my $record_uptime;
-	if ($config{'uptime_record'} && DateTime->compare($uptime, $config{'record_uptime'})){
-		$record_uptime = ' | Record: '.(make_uptime_string($config{'uptime_record'})).']';
+	if ($config{'record_uptime'} && DateTime::Duration->compare($uptime, $config{'record_uptime'}) eq "-1"){
+		$record_uptime = ' | Record: '.(make_uptime_string($config{'record_uptime'})).']';
 	} else {
 		$record_uptime = ']';
 	}
 	
 	command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.$record_uptime);
-	#TODO: compare $out to max uptime before overwriting it
-	if (DateTime->compare($uptime, $config{'record_uptime'})){
+	#compare $out to max uptime before overwriting it
+	if (DateTime::Duration->compare($uptime, $config{'record_uptime'}) eq "1"){
 		$config{'record_uptime'} = $uptime;
 		prnt "this should happen" if $debug;
 	} else {
