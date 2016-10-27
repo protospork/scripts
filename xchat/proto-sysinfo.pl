@@ -6,9 +6,12 @@ use DateTime;
 use DateTime::Format::Duration;
 use Tie::YAML;
 
-my $ver = '0.17';
+my $ver = '0.18';
 register('proto-sys', $ver, 'another fucking sysinfo thing', \&unload);
 my $debug = 0;
+
+#find boot time once, save it in memory so it never runs that cmd command again
+my $sys_boot = 0;
 
 tie my %config => 'Tie::YAML', 'prosys.po';
 
@@ -18,21 +21,30 @@ tie my %config => 'Tie::YAML', 'prosys.po';
 #display (gpu, viewports (multiple?))
 #uptime record
 #	run uptime silently every ~6h to save an approximate uptime record, once you're saving those
-#		^ requires a silent uptime method
-
+#	prob do a 'last updated' field and maybe one for 'record set on'
 
 prnt("sysinfo $ver loaded");
-sub unload { prnt "sysinfo $ver unloaded"; }
+#listen, sometimes we're forced to do things we're not proud of
+my @gross = (0, 'quiet');
+get_uptime(\@gross);
 
-hook_command('pro_uptime', \&get_uptime);
+sub unload { 
+	get_uptime(\@gross);
+	prnt "sysinfo $ver unloaded"; 
+}
 
-#find boot time once, save it in memory so it never runs that cmd command again
-my $sys_boot = 0;
+hook_command('pro_uptime', \&get_uptime, 'loud');
 
 
 #there's a way to just get the elapsed system runtime in seconds or something,
 # and that would be worlds better than using datetime math
 sub get_uptime {
+	my $quiet = 0;
+	if ($_[0][1] && $_[0][1] eq 'quiet'){
+		$quiet++;
+	} else {
+		prnt $_[0][1] if $debug;
+	}
 	my $boot;
 	if ($sys_boot){
 		$boot = $sys_boot;
@@ -72,7 +84,9 @@ sub get_uptime {
 		$record_uptime = ']';
 	}
 	
-	command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.$record_uptime);
+	unless ($quiet){
+		command('say '."\x{02}\x{03}07uptime\x{0F}[Current: ".$out.$record_uptime);
+	}
 	#compare $out to max uptime before overwriting it
 	if (DateTime::Duration->compare($uptime, $config{'record_uptime'}) eq "1"){
 		$config{'record_uptime'} = $uptime;
