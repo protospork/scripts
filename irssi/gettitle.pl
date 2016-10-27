@@ -27,7 +27,7 @@ use vars qw(
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "0.2.1";
+$VERSION = "0.2.2";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -370,7 +370,7 @@ sub get_title {
 			return $meta->get_image_url();
 			#will be rehosted in &moreshenanigans
 		}
-		when (m!yfrog\.com/(?:[zi]/)?\w+/?$!m){
+		when (m[yfrog\.com/(?:[zi]/)?\w+/?$]m){
 			#return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
 			return $meta->get_image_url();
 		}
@@ -422,14 +422,14 @@ sub twitter {
 	);
 	$url =~ s{^.+id=(\d+)+$}{$1};
 	my $status;
-	
+
 	eval { $status = $nt->show_status($url); };
 	if ($@ || !$status) { return $@ or return 'wtf'; }
 	my $message = $status->{'text'};
-	
+
 	decode_entities($message);
 	$message =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
-	
+
 	# these two loops replace t.co links with their real targets
 	for (@{$status->{'entities'}->{'urls'}}) {
 		$message =~ s{$_->{'url'}}{$_->{'expanded_url'}};
@@ -437,8 +437,15 @@ sub twitter {
 	for (@{$status->{'entities'}->{'media'}}) {
 		$message =~ s{$_->{'url'}}{https://$_->{'display_url'}};
 	}
-	
-	return(xcc($status->{'user'}->{'screen_name'}).' '.$message);
+
+    if ($status->{'user'}->{'verified'} eq 'true'){ 
+		my $mess = xcc($status->{'user'}->{'screen_name'}, '<', 0);
+		$mess .= "\x03\x{2714}\x0F";
+		$mess .= (xcc($status->{'user'}{'screen_name'}, $status->{'user'}{'screen_name'}.'>', 0).' '.$message);
+		return $mess;
+	} else {
+		return(xcc($status->{'user'}->{'screen_name'}).' '.$message);
+	}
 }
 sub youtube {
 	my $hash = $_[0];
@@ -446,9 +453,9 @@ sub youtube {
 	return $junk->code unless $junk->is_success;
 	my $info;
 	eval { $info = JSON->new->utf8->decode($junk->decoded_content); };
-	if ($@ || !$info){ 
+	if ($@ || !$info){
 		print "omg 1";
-		return $@ or return 'wtf'; 
+		return $@ or return 'wtf';
 	} elsif ($info->{'pageInfo'}{'totalResults'}){
 		#technically this was a search? dumb
 		$info = $info->{'items'}[0];
@@ -459,11 +466,11 @@ sub youtube {
 
 	my $out;
 	eval { $out = $info->{'snippet'}{'title'}; };
-	if ($@ || !$out){ 
+	if ($@ || !$out){
 		print "omg 4";
-		return $@ or return 'wtf'; 
+		return $@ or return 'wtf';
 	}
-	
+
 	my $time = $info->{'contentDetails'}{'duration'};
 	if ($time !~ /M/){ #fuck you ISO
 		$time =~ /H/
@@ -477,7 +484,7 @@ sub youtube {
 	$time =~ s/^(0*:)//;
 	$time =~ s/\b(\d)\b/0$1/g;
 	$time =~ s/^(\d\d)$/00:$1/;
-	
+
 	$out = "\00301,00You\00300,04Tube\017 - ".$out." [".$time."]";
 	return $out;
 }
@@ -510,9 +517,9 @@ sub fourchan {
 	my $page = shift;
 	my $thread;
 	eval { $thread = JSON->new->utf8->decode($page->decoded_content); };
-	if (! $thread){ 
+	if (! $thread){
 		if ($@){ print $@ };
-		return '4chan - oops ('.$page->status_line.')'.' '.$page->content_type; 
+		return '4chan - oops ('.$page->status_line.')'.' '.$page->content_type;
 	}
 
 	my ($title, $imgct, $repct) = ('No Title', 0, 0);
@@ -614,7 +621,7 @@ sub check_image_size {
 	$return = 0 unless $req->content_type =~ /image/;
 
 	my $webm = 0;
-	
+
 	#shout if it's a magic jpeg
 	if ($req->content_type =~ /gif$/i){
 		if ($url =~ /imgur(?!.+gif$)/i){ #404 gif is a png now
@@ -751,17 +758,11 @@ sub imgur {
 
 	return $return;
 }
-sub filler_title {
-	my $req = $ua->get('http://www.jocchan.com/stuff/IGeNerator/');
-	return ' uhoh' unless $req->is_success;
-	my $line = $req->content;
-	$line =~ s{^.+data-text="(.+) #IGeNerator.+$}{$1}s || return ' Oh No!';
-	return ' '.$line;
-}
 sub xcc { #xchat-alike nick coloring
 		my ($source,$clr,$string,$brk) = (shift,0);
 		if (@_){ $string = shift; }
 		else { $string = $source; $brk++; }
+        if (@_){ $brk = shift; }
 		$clr += ord $_ for (split //, $source);
 		$clr = sprintf "%02d", qw'19 20 22 24 25 26 27 28 29'[$clr % 9];
 		if ($brk){ $string = "\x03$clr<$string>\x0F"; }
