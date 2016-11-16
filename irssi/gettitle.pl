@@ -238,11 +238,6 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	if ($url =~ m{(?:bash\.org|qdb\.us)/\??(\d+)}i){ if (($1 % 11) > 8){ $return = "that's not funny :|" }
 	} elsif ($url =~ m/ytmnd\.com/i){ $return = 'No.';
 	} elsif ($url =~ s{https://secure\.wikimedia\.org/wikipedia/([a-z]+?)/wiki/(\S+)}{http://$1.wikipedia.org/wiki/$2}i){ $return = $url;
-	} elsif ($url->can('host') && $url->host eq 'yfrog.com'){
-		my $sec = $url->path;
-		$sec =~ s!^/z!!; #/z/hash pages seem to crash the script
-		$url->path($sec);
-		undef $sec;
 	} elsif ($url =~ m!gyazo!){
 		$return = "gyazo is terrible stop it"
 	}
