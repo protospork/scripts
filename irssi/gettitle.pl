@@ -220,12 +220,12 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	} elsif ($url =~ m[youtu(\.?be|be\.com)|listenonrepeat\.com]i){
 		$url =~ s{youtu\.be/([\w-]{11})}{YOUTUBE::$1}i;
 		$url =~ s{(?:youtube|listenonrepeat)\.com/(?:watch\S+v=|embed/)([\w-]{11})}{YOUTUBE::$1}i;
-	} elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
-		my %que = $url->query_form;
-		return unless $url =~ /item=\S+/i;
-		$url->host('www.ows.newegg.com');
-		$url->path('/Products.egg/'.$que{'Item'}.'/');
-		$url->query_form(undef);
+	# } elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
+	# 	my %que = $url->query_form;
+	# 	return unless $url =~ /item=\S+/i;
+	# 	$url->host('www.ows.newegg.com');
+	# 	$url->path('/Products.egg/'.$que{'Item'}.'/');
+	# 	$url->query_form(undef);
 	} elsif ($url =~ m{https?://(?:www\.)?amazon\.(\S{2,5})/(?:[a-zA-Z0-9-]+)?/[dg]p(?:/product)?/([A-Z0-9]{10})}){
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
 	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/thread/\d++)}){
@@ -611,10 +611,17 @@ sub steam {
 
 	my $src = $page->decoded_content;
 
-	$src =~ /name":"([^"]+)".+"final":(\d+),"discount_percent"/;
-	my ($name, $price) = ($1, $2);
+    #USE A PARSER YOU FUCKER
+    #any unicode in names ends up in json \u4HEX format
+	$src =~ /name":"([^"]+)".+"initial":(\d+),"final":(\d+),"discount_percent":(\d+)/;
+	my ($name, $oprice, $price, $disct) = ($1, $2, $3, $4);
 	$price /= 100;
-	$price = "\$$price || ";
+    $oprice /= 100;
+	if ($price < $oprice){
+        $price = "\$$oprice =(-$disct%)=> \$$price || ";
+    } else {
+        $price = "\$$price || ";
+    }
 
 	if ($price && $name ne $id){
 		return $price.$name;
