@@ -372,10 +372,6 @@ sub get_title {
 			return $meta->get_image_url();
 			#will be rehosted in &moreshenanigans
 		}
-		when (m[yfrog\.com/(?:[zi]/)?\w+/?$]m){
-			#return $1 if $page->decoded_content =~ m|<meta property="og:image" content="([^"]+)" />|i;
-			return $meta->get_image_url();
-		}
 		when (m!tinypic.com/(?:r/|view\.php)!){
 			if  ($page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|i){
 				my $title = $1;
