@@ -212,7 +212,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	}
 
 	# API transforms
-	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){ 
+	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		#arguably pointless but I never rewrote the regex downstream #10/26/2016 yes I did
 		#$url = 'http://twitter.com/intent/retweet?tweet_id='.$1;
 		$url = 'TWITTER::'.$1;
@@ -421,6 +421,7 @@ sub twitter {
 		access_token        => $tw_token,
 		access_token_secret => $tw_token_secret,
 		ssl                 => 1,
+        tweet_mode          => 'extended', #this doesn't do anything
 	);
 	$url =~ s{^TWITTER::(\d+)$}{$1};
 	my $status;
@@ -428,8 +429,15 @@ sub twitter {
 	eval { $status = $nt->show_status($url); };
 	if ($@ || !$status) { return $@ or return 'wtf'; }
 	my $message = $status->{'text'};
-	
-	if ($status->{'truncated'} == 1){ print "why is this truncated"; }
+
+	if ($status->{'truncated'} == 1){
+        print "why is this truncated";
+        if ($status->{'extended_tweet'}->{'full_text'}){
+            $message = $status->{'extended_tweet'}->{'full_text'};
+        } else {
+            $message =~ s/\x{2026}/\x{1F525}/;
+        }
+    }
 
 	decode_entities($message);
 	$message =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
@@ -440,18 +448,19 @@ sub twitter {
 		if ($_->{'expanded_url'} =~ m{twitter\.com/\w+/status/(\d+)}){
 			#oh fuck oh no
 			my $embed = twitter('TWITTER::'.($1));
-			$message =~ s{$_->{'expanded_url'}}{$embed};
+			$message =~ s{$_->{'expanded_url'}}{[$embed ]};
 		}
 	}
 	for (@{$status->{'entities'}->{'media'}}) {
 	# pretty
-	#	$message =~ s{$_->{'url'}}{https://$_->{'display_url'}};
+		$message =~ s{$_->{'url'}}{https://$_->{'display_url'}};
 	#convenient
-		$message =~ s{$_->{'url'}}{$_->{'media_url'}:orig};
+	###FIGURE OUT HOW TO INCLUDE MULTIPLE IMAGES, USE OTHER SCHEME FOR VIDEOS,
+	#	$message =~ s{$_->{'url'}}{$_->{'media_url'}:orig};
 	}
-    if ($status->{'user'}->{'verified'} eq 'true'){ 
+    if ($status->{'user'}->{'verified'} eq 'true'){
 		my $mess = xcc($status->{'user'}->{'screen_name'}, '<', 0);
-		$mess .= "\x03\x{2714}\x0F";
+		$mess .= "\x0313\x{2714}\x0F";
 		$mess .= (xcc($status->{'user'}{'screen_name'}, $status->{'user'}{'screen_name'}.'>', 0).' '.$message);
 		return $mess;
 	} else {
