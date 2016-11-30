@@ -870,18 +870,10 @@ sub gfycat { # http://gfycat.com/api
 	my $slug = $req->content;
 
 	my ($hash,$size,$oldsize);
-	if ($slug =~ /"gfyname":"([^"]+)","gfysize":(\d+),"gifsize":(\d+)/i){ #these params randomly go in/out of camelCase
-		($hash,$size,$oldsize) = ($1,$2,$3);
+	if ($slug =~ /"gfyname":"([^"]+)"/i){ #these params randomly go in/out of camelCase
+		($hash) = ($1);
 	} else {
 		return $slug;
-	}
-
-	for ($size,$oldsize){
-		$_ /= 1048576;
-		if ($_ =~ /\.\d\d(\d)/ && $1 >= 5){ #rounding, poorly
-			$_ += 0.01;
-		}
-		$_ = sprintf "%.2fMB", $_;
 	}
 
 	# no longer necessary?
@@ -890,7 +882,7 @@ sub gfycat { # http://gfycat.com/api
 
 	my $gfylink = 'http://gfycat.com/'.$hash;
 
-	$server->command("msg $chan $url ($oldsize) => $gfylink ($size)");
+	$server->command("msg $chan $url => $gfylink");
 	return;
 }
 
