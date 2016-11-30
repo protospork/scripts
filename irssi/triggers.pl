@@ -682,30 +682,71 @@ sub aspect {
     my $in = join ' ', @_;
     my ($dim, $dir, $shape) = ($in =~ /(\d+)([hw])\s*([0-9:-]+)/);
     my ($w, $h) = split /[:-]/, $shape;
-    my $out = $dim;
+    my $out = $dim; my $wid = 0; my $hgt = 0;
+    # given (lc $dir){
+    #     when('w'){ $out = (sprintf "%02dx%02d", ($dim, ($out / $w * $h))); }
+    #     when('h'){ $out = (sprintf "%02dx%02d", (($out / $h * $w), $dim)); }
+    #     default { $out = 'what' }
+    # }
+    # return $out;
     given (lc $dir){
-        when('w'){ $out = (sprintf "%02dx%02d", ($dim, ($out / $w * $h))); }
-        when('h'){ $out = (sprintf "%02dx%02d", (($out / $h * $w), $dim)); }
-        default { $out = 'what' }
+        when ('w'){
+            $wid = $dim;
+            $hgt = $dim / $w * $h;
+        }
+        when ('h'){
+            $wid = $dim / $h * $w;
+            $hgt = $dim;
+        }
+        default {
+            $wid = 'HELP';
+            $hgt = 'HELP';
+        }
     }
+    return (mod16_check($wid).'x'.mod16_check($hgt));
+}
+sub mod16_check {
+    my $n = shift;
+    return if $n !~ /^[.\d]+$/;
+
+    my $out = "\x{03}";
+    if ($n % 16 == 0){
+        $out .= '03';
+    } else {
+        $out .= '04';
+    }
+    $out .= sprintf "%02d", $n;
+    $out .= "\x{03}";
     return $out;
 }
 
 sub conversion { #this is for money
 	my $trig = uc shift;
     my $amt = uc shift;
-	my $in = uc shift;
-	$in =~ s/\w*to$//; #wha
-	my $out;
-	print join ', ', ($amt,$in) if $debug;
-	if (defined $_[0]){ $out = uc $_[0]; print '=> '.$out if $debug; }
-    else { $out = 'USD'; }
+	my ($in,$out) = (0,0);
+    for (@_){
+        next if $_ =~ /^to$/i;
+        if ($in eq '0'){
+            $in = $_;
+        } else {
+            $out = $_;
+        }
+    }
+    if ($out eq '0'){ $out = 'USD'; }
+
+	print join ', ', ($amt,$in, scalar @_) if $debug;
+	print '=> '.$out if $debug;
+
     if (length $in != 3 || length $out != 3){
-        return 'use the three letter codes';
+        return 'you fucked up';
     }
 
     my $q = Finance::Quote->new();
     my $rate = $q->currency($in, $out);
+
+    if ($rate == 0){
+        return 'https://en.wikipedia.org/wiki/ISO_4217#Active_codes';
+    }
 
     return "$amt $in is ".($rate * $amt)." $out probably";
 }
