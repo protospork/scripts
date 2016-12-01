@@ -17,7 +17,7 @@ use Math::RPN;
 use WWW::Wunderground::API;
 use Encode;
 use Finance::Quote;
-# use Data::Dumper;
+use Data::Dumper;
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
@@ -889,8 +889,16 @@ sub gfycat { # http://gfycat.com/api
 sub weather_fallback {
 	my ($server,$nick) = (shift, lc shift);
 	my $text = '';
-	if ($#_ > 0){ $text = join ' ', @_[1..$#_]; } ##pulling from 1 on b/c 0 is the trigger
-	if ($nick eq '.'){
+    my $hourly = 0;
+    shift; #dump the trigger
+	if (@_){
+        if ($_[0] =~ /^-?-h/i){
+            shift @_;
+            $hourly++;
+        }
+        $text .= join ' ', @_[0..$#_];
+    }
+	if ($nick eq '.'){ #?
 		$nick = (keys %savedloc)[rand keys %savedloc];
 	}
 
@@ -914,51 +922,87 @@ sub weather_fallback {
 		auto_api => 1,
 	);
 
-	# print $w->conditions->location->city || return "fffffffffuck";
+    my $out;
+    if ($hourly){
+        no warnings; #something about hash refs and cleanup
+        my $for;
+        eval { $for = $w->hourly; };
+        if ($@ || ! $for){ return "$@ (dude I have no idea)"; }
+        eval { $out = $w->conditions->display_location->full; };
+        if ($@ || ! $out){ return "$@ (network error?)"; }
 
-	my $when;
-	eval { $when = $w->conditions->observation_time; };
-	if ($@ || ! $when){ return "$@ ($location isn't a place?)"; }
-	$when =~ s/^.+?, //;
+        my $c = 0;
+        while ($c < 12){
+            my $temp = $w->hourly->[$c]{'temp'}{'english'};
+            my $cond = $w->hourly->[$c]{'icon'}; #condition, simplified
+            my $time = $w->hourly->[$c]{'FCTTIME'}{'hour'};
+            $c++;
 
-	$savedloc{$nick} = $location;
-	tied(%savedloc)->save;
+            #zero padding
+            $time = '00'.$time;
+            $time =~ s/0*(\d\d)$/$1/;
 
-	# print Dumper($w->data);
+            #brevity
+            $cond =~ s/fog|haz[ey]/\x{1f301}/;
+            $cond =~ s/partlycloudy|mostlysunny/\x{26c5}/;
+            $cond =~ s/(mostly)?cloudy/\x{2601}/;
+            $cond =~ s/clear/\x{2600}/;
+            $cond =~ s/(chance)?(flurries)/\x{2744}/;
+            $cond =~ s/(chance)?snow/\x{26c4}/;
+            $cond =~ s/chance(rain|sleet)/\x{2602}/;
+            $cond =~ s/rain|sleet/\x{2614}/;
+            $cond =~ s/(chance)?tstorms/\x{26a1}/;
 
-	my $out = "\x{02}".$w->conditions->observation_location->full."\x{02} "."($when): ";
+            $out .= "[$time: $temp\x{B0}F $cond]";
+            use warnings;
+        }
 
-	if ($w->conditions->observation_location->country =~ /^US$/){
-		$out .= $w->conditions->temp_f."\x{B0}F/".$w->conditions->temp_c."\x{B0}C - ";
-	} else {
-		$out .= $w->conditions->temp_c."\x{B0}C/".$w->conditions->temp_f."\x{B0}F - ";
-	}
+        # print Dumper($for);
+    } else {
+    	my $when;
+    	eval { $when = $w->conditions->observation_time; };
+    	if ($@ || ! $when){ return "$@ ($location isn't a place?)"; }
+    	$when =~ s/^.+?, //;
 
-	my $thing = $w->conditions->weather;
-	$thing =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
-	$thing =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
-	$thing =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
-	$thing =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
+    	$savedloc{$nick} = $location;
+    	tied(%savedloc)->save;
+
+    	# print Dumper($w->data);
+
+    	$out = "\x{02}".$w->conditions->observation_location->full."\x{02} "."($when): ";
+
+    	if ($w->conditions->observation_location->country =~ /^US$/){
+    		$out .= $w->conditions->temp_f."\x{B0}F/".$w->conditions->temp_c."\x{B0}C - ";
+    	} else {
+    		$out .= $w->conditions->temp_c."\x{B0}C/".$w->conditions->temp_f."\x{B0}F - ";
+    	}
+
+    	my $thing = $w->conditions->weather;
+    	$thing =~ s/Drizzle/[Snoop Dogg joke]/ if int rand 100 <= 5;
+    	$thing =~ s/.*Snow.*/Snowpocalypse/ if int rand 100 <= 10;
+    	$thing =~ s/Heavy Rain/Shauuuuuuuuuuuuuuuuuuuuun/ if int rand 100 <= 50;
+    	$thing =~ s/.*Thunder.*/Thunderbolts and Lightning/ if int rand 100 <= 75;
 
 
-	$out .= $thing." | ";
+    	$out .= $thing." | ";
 
-	if ($w->conditions->windchill_f =~ /NA/){
-		$out .= $w->conditions->relative_humidity.' Humidity | ';
-	} else {
-		$out .= 'Windchill '.$w->conditions->windchill_f."\x{B0}F | ";
-	}
+    	if ($w->conditions->windchill_f =~ /NA/){
+    		$out .= $w->conditions->relative_humidity.' Humidity | ';
+    	} else {
+    		$out .= 'Windchill '.$w->conditions->windchill_f."\x{B0}F | ";
+    	}
 
-	my $wind = $w->conditions->wind_string;
-	$wind =~ s/From the/Wind/;
-	$wind =~ s/MPH Gusting to/->/;
-	$wind =~ s{([0-9.]+) -> ([0-9.]+) MPH}{$1 eq $2 ? "$1 MPH" : "$1 -> $2 MPH"}e;
-	if ($wind =~ /Calm/){
-		$wind = "Barometer: ".$w->conditions->pressure_mb;
-	}
+    	my $wind = $w->conditions->wind_string;
+    	$wind =~ s/From the/Wind/;
+    	$wind =~ s/MPH Gusting to/->/;
+    	$wind =~ s{([0-9.]+) -> ([0-9.]+) MPH}{$1 eq $2 ? "$1 MPH" : "$1 -> $2 MPH"}e;
+    	if ($wind =~ /Calm/){
+    		$wind = "Barometer: ".$w->conditions->pressure_mb;
+    	}
 
-	$out .= $wind;
+    	$out .= $wind;
 
+    }
 	$out = encode('UTF-8', $out);
 
 	return $out;
