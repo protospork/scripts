@@ -22,7 +22,7 @@ use Data::Dumper;
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
 			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks
-            $replace_google);
+            $replace_google $waaai_key);
 # #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
@@ -37,7 +37,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.11.1";
+$VERSION = "2.12.1";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -184,6 +184,7 @@ sub event_privmsg {
 		when (/^mirror$|^gfycat$/){ $return = gfycat($terms[1], $nick, $target, $server); }
 		when (/^flight$/){			$return = 'https://flightaware.com/live/flight/'.$terms[1]; }
         when (/^space$/){           $return = space(@terms); }
+        when (/^s(hort(en)?|l)$/i){ $return = waaai($terms[1]); }
 		default { return; }
 	}
 	if (! defined $return){
@@ -460,11 +461,22 @@ sub wa { #wolfram alpha, for now just used for .time
 }
 
 sub waaai {
-	my $req = $ua->get('http://waa.ai/api.php?url='.uri_escape_utf8($_[0]));
-	if ($req->is_success && length $req->decoded_content < 24){
+	my $req = $ua->get('http://waa.ai/api.php?key='.$waaai_key.'&url='.uri_escape_utf8($_[0]));
+	if ($req->is_success){
 		print $_[0] if $debug;
 		print "Shortened to ".$req->decoded_content if $debug;
-		return $req->decoded_content;
+        my $json;
+        eval { $json = JSON->new->utf8->decode($req->decoded_content); };
+        if ($@){
+            print "uh oh - ".$req->status_line;
+            return $_[0];
+        }
+        if ($json->{'success'} !~ /true/i){
+            print $json->{'status'};
+            return $_[0];
+        }
+
+        return $json->{'data'}{'url'};
 	} else {
 		print "Shorten failed: HTTP ".$req->code." / ".$req->content_length;
 		return $_[0];
@@ -923,6 +935,9 @@ sub weather_fallback {
 	);
 
     my $out;
+    #todo: persistent F/C option and emoji toggle
+    #todo: .w -h @nick spits out:
+    # Can't call method "full" on an undefined value at [...] line 931. (network error?)
     if ($hourly){
         no warnings; #something about hash refs and cleanup
         my $for;
