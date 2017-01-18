@@ -476,7 +476,11 @@ sub waaai {
             return $_[0];
         }
 
-        return $json->{'data'}{'url'};
+        if ($json->{'data'}{'url'} && length $json->{'data'}{'url'} > 5){
+            return $json->{'data'}{'url'};
+        } else {
+            return $_[0];
+        }
 	} else {
 		print "Shorten failed: HTTP ".$req->code." / ".$req->content_length;
 		return $_[0];
