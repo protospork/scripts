@@ -426,7 +426,28 @@ sub twitter {
         if ($status->{'extended_tweet'}->{'full_text'}){
             $message = $status->{'extended_tweet'}->{'full_text'};
         } else {
-            $message =~ s/\x{2026}/\x{1F525}/;
+            if (0){
+                $message =~ s/\x{2026}/\x{1F525}/; #replace unicode ellipsis with unicode fire
+            } else {
+                my $hack = 'https://publish.twitter.com/oembed?url=https://twitter.com/' .
+                    $status->{'user'}{'screen_name'} . '/status/' . $url;
+                print $hack;
+                my $tw_card = $ua->get($hack);
+                my $oembed;
+                eval { $oembed = JSON->new->utf8->decode($tw_card->decoded_content); };
+                if ($@){ return 'this is a disaster: '.$tw_card->status_line.' '.$tw_card->content_type; }
+
+                my $mess = $oembed->{'html'};
+                my $tree;
+                eval { $tree = HTML::TreeBuilder->new_from_content($mess); };
+                if ($@ || ! $tree || ! ref $tree || ! $tree->can("look_down")){ return 'problem! '.$@; }
+
+                my $plaintext = $tree->look_down(_tag => 'p')->as_trimmed_text;
+
+                $plaintext =~ s{pic\.twitter\.com}{https://pic.twitter.com}g;
+
+                $message = $plaintext; #oh boy here we go
+            }
         }
     }
 
