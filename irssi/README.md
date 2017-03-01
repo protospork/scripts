@@ -1,4 +1,4 @@
-##c8's functions as of 06/Nov/12  
+##c8's functions as of March 2017  
   
 ###searches  
 `.ddg` - [duckduckgo](http://duckduckgo.com) (feeling lucky, works with [!bang commands](http://duckduckgo.com/bang.html))  
@@ -12,7 +12,7 @@ Some popular bangs are promoted to work without the !, notably:
  - `.steam` - Steam store  
 
 `.gs` - duckduckgo search result page  
-`.g` - google (feeling lucky)  
+`.g` - google (feeling lucky (actually duckduckgo))  
 `.yt` - youtube  
 `.wiki` - wikipedia  
 `.imdb` - imdb.com  
@@ -20,11 +20,12 @@ Some popular bangs are promoted to work without the !, notably:
 `.a(ni)db` - search anidb  
 `.i(mgops)` - return the [ImgOps](http://imgops.com/) page for an image  
 `.w(eather) [zipcode]` - it remembers  
+`.w(eather) -h` - hourly forecast
 `.lastfm [username]` - it remembers too  
 `.isup [url]` - see if a website is really down  
-<strike>`.x(e)`/`.c(alc)`/`.cvt` - google calculator and unit conversions</strike>  
+`.x(e)`/`.cvt` - [monetary unit conversions](https://en.wikipedia.org/wiki/ISO_4217#Active_codes), ex: `.x 89 USD JPY`  
 `.rpn` - [god help me](https://metacpan.org/pod/Math::RPN#OPERATORS)  
-`.ai(rtime)` - [search upcoming anime or just display some](http://www.mahou.org/Showtime/)  
+<strike>`.ai(rtime)` - [search upcoming anime or just display some](http://www.mahou.org/Showtime/)</strike>  
 `.time` - returns the current time in a place (Uses [Wolfram Alpha](http://www.wolframalpha.com/))
   
 ###misc triggers  
