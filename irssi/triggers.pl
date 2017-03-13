@@ -227,11 +227,14 @@ sub space {
         $tmp .= " || ".$this->{'location'}{'name'};
         $tmp .= " || ".(join " / ", @{$this->{'vidURLs'}});
 
-        $outlines{$this->{'id'}} = $tmp;
+        # $outlines{$this->{'id'}} = $tmp; #sorting by id instead of time isn't perfect
+        #launch window start as a standard timestamp
+        #I don't know if this is always populated
+        $outlines{$this->{'isostart'}} = $tmp;
     }
     my @go;
     for (sort keys %outlines){ #I'm having issues with duplicate ID/entries appearing, and with sorting
-        unshift @go, $outlines{$_};
+        push @go, $outlines{$_};
     }
     return \@go;
 }
