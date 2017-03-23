@@ -3,7 +3,7 @@ use Irssi::Irc;
 use LWP::UserAgent;
 use HTML::Entities;
 use HTML::TreeBuilder;
-use HTML::ExtractMeta;
+# use HTML::ExtractMeta;
 use URI::Escape;
 use File::Path qw'make_path';
 use Net::Twitter::Lite::WithAPIv1_1;
@@ -15,6 +15,7 @@ use Modern::Perl;
 use File::Slurp;
 #use warnings; #there are a lot of ininitialized value warnings I can't be bothered fixing
 no warnings qw'uninitialized';
+use experimental qw(smartmatch switch); #it's complete bullshit that I even have to do this
 use utf8;
 
 use vars qw(
@@ -27,7 +28,7 @@ use vars qw(
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "0.2.2";
+$VERSION = "0.2.4";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -66,14 +67,14 @@ my $ua = LWP::UserAgent->new(
 );
 
 sub loadconfig {
-	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
-		unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
-			print $req->status_line;
-			$tries++;
-			loadconfig() unless $tries > 2;
-		}
-
-	$tries = 0;
+	# my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
+	# 	unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
+	# 		print $req->status_line;
+	# 		$tries++;
+	# 		loadconfig() unless $tries > 2;
+	# 	}
+    #
+	# $tries = 0;
 	do $ENV{HOME}.'/.irssi/scripts/cfg/gettitle.pm';
 		unless ($maxlength){ print "error loading variables from cfg: $@" }
 
@@ -358,13 +359,13 @@ sub get_title {
 	}
 
 	return "shit's broke" if $page->content_type =~ /image/; #fuck if I know
-	my $meta = HTML::ExtractMeta->new(html => $page->decoded_content);
+	# my $meta = HTML::ExtractMeta->new(html => $page->decoded_content);
 
 	#now, anything that requires digging in source/APIs for a better link or more info
 	given ($url){
 		when (m!photobucket!){
 			# return "stop linking photobucket, you cunt";
-			return $meta->get_image_url();
+			# return $meta->get_image_url();
 			#will be rehosted in &moreshenanigans
 		}
 		when (m!tinypic.com/(?:r/|view\.php)!){
@@ -380,17 +381,18 @@ sub get_title {
 		when (m!store\.steampowered\.com/api!){ return steam($page, $url); }
 		when (m!4chan\S+/(?:res|thread)/!){ return fourchan($page); }
 		when (/instagram\.com/){
-			# if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
-			# 	print $1 if $debugmode;
-			# 	return $1;
-			# }
-			return $meta->get_image_url();
+			 if ($page->decoded_content =~ m{class="photo" src="(https?://distilleryimage\d+\.instagram\.com/\S+\.jpg)"}){
+			 	print $1 if $debugmode;
+			 	return $1;
+			 }
+			# return $meta->get_image_url();
 		}
 		default {
 			my $out;
-			if ($meta->get_title()){
-				$out = $meta->get_title();
-			} elsif ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
+			# if ($meta->get_title()){
+			# 	$out = $meta->get_title();
+			# } els
+            if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
 				print "%3THIS SHOULDN'T BE HAPPENING";
 				$out = $1;
 			}

@@ -4,6 +4,7 @@ use File::Slurp;
 use XML::Twig;
 use URI::Encode qw(uri_encode uri_decode);
 use LWP;
+use experimental qw(smartmatch switch); #it's complete bullshit that I even have to do this
 
 my $debug = 1;
 my $version = 1181530;

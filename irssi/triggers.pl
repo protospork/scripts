@@ -18,6 +18,7 @@ use WWW::Wunderground::API;
 use Encode;
 use Finance::Quote;
 use Data::Dumper;
+use experimental qw(smartmatch switch); #it's complete bullshit that I even have to do this
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
@@ -37,7 +38,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.12.1";
+$VERSION = "2.12.3";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -69,14 +70,14 @@ sub loadconfig {
 	unless (-e $ENV{HOME}."/.irssi/scripts/cfg/"){ #should I make sure it's a directory as well?
 		make_path($ENV{HOME}."/.irssi/scripts/cfg/");
 	}
-	my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");
-		unless ($req->is_success){
-			print $req->status_line;
-			$tries++;
-			loadconfig() unless $tries > 2;
-		}
-
-	$tries = 0;
+	# my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/triggers.pm");
+	# 	unless ($req->is_success){
+	# 		print $req->status_line;
+	# 		$tries++;
+	# 		loadconfig() unless $tries > 2;
+	# 	}
+    #
+	# $tries = 0;
 	do $ENV{HOME}.'/.irssi/scripts/cfg/triggers.pm';
 		unless ($cfgver =~ /./){ print "error loading variables from triggers cfg: $@" }
 
