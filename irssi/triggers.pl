@@ -23,7 +23,7 @@ use experimental qw(smartmatch switch); #it's complete bullshit that I even have
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
 			@offchans @meanthings @repeat @animuchans @donotwant @dunno $debug $cfgver
 			$promoted_bangs $lfm_key $lfm_secret $wa_appid $wu_apikey $trusted_masks
-            $replace_google $waaai_key);
+            $replace_google $waaai_key $yt_api_key);
 # #perl said to use 'our' instead of 'use vars'. it doesnt work because I am retarded
 
 #you can call functions from this script as Irssi::Script::triggers::function(); or something
@@ -335,6 +335,7 @@ sub ddg {
 	my $target = shift;
 	my $trigger = shift;
 	my @terms;
+    my $needtitle = 0;
 
 	#use the last url posted in the channel as input. really intended for .gis
 	if (@_){ #it wouldn't let me use the shorthand for some reason
@@ -351,16 +352,13 @@ sub ddg {
     given (lc $trigger){
         when (/yt/){
             unshift @terms, '\site:youtube.com';
+            $needtitle++;
         }
         when (/wiki/){
             unshift @terms, '\site:en.wikipedia.org';
         }
         when (/amzn/){
             unshift @terms, '\site:amazon.com';
-        }
-        when (/^g$/){
-            #why did I do this
-            #unshift @terms, '\site:google.com';
         }
         default {
             #nothing changes
@@ -426,7 +424,40 @@ sub ddg {
 		$orig_url = waaai($orig_url);
 	}
 
-	return $orig_url;
+    if ($needtitle){
+        my $title = yt_title($orig_url);
+        return $title . $orig_url;
+    } else {
+	    return $orig_url;
+    }
+}
+sub yt_title {
+	my $hash = $_[0];
+    $hash =~ s/^.+?([a-zA-Z0-9]{11}).*$/$1/;
+	my $junk = $ua->get('https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id='.$hash.'&key='.$yt_api_key);
+	return $junk->code unless $junk->is_success;
+	my $info;
+	eval { $info = JSON->new->utf8->decode($junk->decoded_content); };
+	if ($@ || !$info){
+		print "aah 1";
+		return $@ or return 'wtf 1 ';
+	} elsif ($info->{'pageInfo'}{'totalResults'}){
+		#technically this was a search? dumb
+		$info = $info->{'items'}[0];
+	} else {
+		print "aah 3";
+		return 'wtf 3 ';
+	}
+
+	my $out;
+	eval { $out = $info->{'snippet'}{'title'}; };
+	if ($@ || !$out){
+		print "aah 4";
+		return $@ or return 'wtf 4 ';
+	}
+
+	$out = "\00301,00You\00300,04Tube\017 - ".$out." ";
+	return $out;
 }
 
 sub wa { #wolfram alpha, for now just used for .time
