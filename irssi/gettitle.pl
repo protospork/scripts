@@ -28,7 +28,7 @@ use vars qw(
 
 #<alfalfa> obviously c8h10n4o2 should be programmed to look for .au in hostmasks and then return all requests in upsidedown text
 
-$VERSION = "0.2.4";
+$VERSION = "0.2.5";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -389,11 +389,15 @@ sub get_title {
 		}
 		default {
 			my $out;
-			# if ($meta->get_title()){
+            if ($page->decoded_content =~ m{<meta content='(Mastodon|Cybrespace|niu\.moe)' property='og:site_name'>}){
+                #this is a mastodon toot
+                return mastodon($page, $url);
+            }
+            # if ($meta->get_title()){
 			# 	$out = $meta->get_title();
 			# } els
             if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
-				print "%3THIS SHOULDN'T BE HAPPENING";
+				print "%3THIS SHOULDN'T BE HAPPENING"; #wait why
 				$out = $1;
 			}
 			decode_entities($out);
@@ -404,6 +408,40 @@ sub get_title {
 			return $out;
 		}
 	}
+}
+sub mastodon {
+    my $page = $_[0]; #lwp object
+    my $url = $_[1]; #plaintext url we prob don't need
+
+    my ($user, $toot);
+    #actually, this is bad
+    $toot = $page->decoded_content;
+    ($user, $toot) = ($toot =~ m{'og:type'>.*?<meta content='(\w+) on \S+' property='og:title'>.*?<meta content='(.+)' property='og:description'>}s);
+
+    #I give up
+    # my $tree;
+    # eval { $tree = HTML::TreeBuilder->new_from_content($page->decoded_content); };
+    # if ($@ || ! $tree || ! ref $tree || ! $tree->can("look_down")){ return 'problem! '.$@; }
+    #
+    # my $toots = $tree->look_down(_tag => 'div', class => 'activity-stream');
+    # print length $toots->as_HTML;
+    #
+    # $user = ($toots->look_down(_tag => 'span', class => 'p-nickname'))[-1];
+    # $user = ($user->as_trimmed_text =~ /^@(\w+)/);
+
+    # $toot = ($toots->look_down(_tag => 'div', class => 'status__content'))[-1];
+    # $toot = $toot->as_trimmed_text;
+
+    decode_entities($toot);
+	$toot =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
+
+    my $img = $page->decoded_content;
+    if ($img =~ m{<meta content='(https://\S+/)small(/\S+)\?\d+' property='og:image'>}){
+        $img = $1.'original'.$2;
+        return xcc($user).' '.$toot.' '.$img;
+    } else {
+        return xcc($user).' '.$toot;
+    }
 }
 sub twitter {
 	my $url = shift;
