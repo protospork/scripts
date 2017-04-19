@@ -65,6 +65,7 @@ my $ua = LWP::UserAgent->new(
 	'Accept-Encoding' => 'gzip,deflate',
 	'Accept-Language' => 'en-us,en;q=0.5',
 );
+my $ismastodon = 0;
 
 sub loadconfig {
 	# my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
@@ -99,6 +100,7 @@ sub pubmsg {
 	my $url = $1;
 
 	print $target.': '.$url if $debugmode;
+    $ismastodon = 0;
 
 	#load the link as a URI entity and just request the key you need, if possible.
 	#	canonizing it should simplify the regexes either way
@@ -213,7 +215,7 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 	}
 
 	# API transforms
-	if ($url =~ m|twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
+	if ($url =~ m|[^a-z]twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
 		#arguably pointless but I never rewrote the regex downstream #10/26/2016 yes I did
 		#$url = 'http://twitter.com/intent/retweet?tweet_id='.$1;
 		$url = 'TWITTER::'.$1;
@@ -285,7 +287,8 @@ sub moreshenanigans {
 	if (
 		length($title) > $maxlength &&
 		$title !~ /^http/ && #don't clip URLs
-		! grep $url =~ /$_/, @notruncate
+		! grep $url =~ /$_/, @notruncate &&
+        ! $ismastodon
 	){
 		my $maxless = $maxlength - 10;
 		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
@@ -389,9 +392,10 @@ sub get_title {
 		}
 		default {
 			my $out;
-            if ($page->decoded_content =~ m{<meta content='(Mastodon|Cybrespace|niu\.moe)' property='og:site_name'>}){
-                #this is a mastodon toot
-                return mastodon($page, $url);
+            if ($page->decoded_content =~ m{<link href='(https://\S+/users/\S+/updates/\S+.atom)' rel='alternate' type='application/atom\+xml'>}
+            || $page->decoded_content =~ m{<link title="Single notice \(Atom\)" href="(https://\S+/api/statuses/show/\S+.atom)" type="application/atom\+xml" rel="alternate">}){
+                #this is a mastodon || gnusocial toot || status
+                return mastodon($page, $url, $1);
             }
             # if ($meta->get_title()){
 			# 	$out = $meta->get_title();
@@ -412,33 +416,33 @@ sub get_title {
 sub mastodon {
     my $page = $_[0]; #lwp object
     my $url = $_[1]; #plaintext url we prob don't need
+    my $atom = $_[2]; #link to atom/xml api response type thing
+    $ismastodon = 1;
 
-    my ($user, $toot);
-    #actually, this is bad
-    $toot = $page->decoded_content;
-    ($user, $toot) = ($toot =~ m{'og:type'>.*?<meta content='(\w+) on \S+' property='og:title'>.*?<meta content='(.+)' property='og:description'>}s);
+    my ($user, $toot, @media);
 
-    #I give up
-    # my $tree;
-    # eval { $tree = HTML::TreeBuilder->new_from_content($page->decoded_content); };
-    # if ($@ || ! $tree || ! ref $tree || ! $tree->can("look_down")){ return 'problem! '.$@; }
-    #
-    # my $toots = $tree->look_down(_tag => 'div', class => 'activity-stream');
-    # print length $toots->as_HTML;
-    #
-    # $user = ($toots->look_down(_tag => 'span', class => 'p-nickname'))[-1];
-    # $user = ($user->as_trimmed_text =~ /^@(\w+)/);
+    print $atom if $debugmode;
+    my $slug = $ua->get($atom);
+    if ($slug->code eq '200'){
+        $slug = $slug->decoded_content;
+    } else {
+        return $slug->code;
+    }
+    ($user) = ($slug =~ m{<name>([^<]+)</name>});
+    #icosahedron, at least, doesn't have the xml:lang attribute
+    ($toot) = ($slug =~ m{<content type="html"(?: xml:lang="\w\w")?>([^<]+)</content>}s);
+    $toot = decode_entities($toot);
+    $toot =~ s[<br />][ \x{23ce} ]g; #these two collapse linebreaks
+    $toot =~ s[</p>\s*<p>][</p><p> \x{23ce} ]sg;
 
-    # $toot = ($toots->look_down(_tag => 'div', class => 'status__content'))[-1];
-    # $toot = $toot->as_trimmed_text;
+    @media = ($slug =~ m{<link rel="enclosure" type="\S+" length="\d+" href="(https://[^"]+)"/>}g);
 
-    decode_entities($toot);
-	$toot =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
+    eval { $toot = HTML::TreeBuilder->new_from_content($toot); };
+    if ($@ || ! $toot || ! ref $toot || ! $toot->can("look_down")){ return 'masto: '.$toot; }
+    $toot = $toot->as_trimmed_text;
 
-    my $img = $page->decoded_content;
-    if ($img =~ m{<meta content='(https://\S+/)small(/\S+)\?\d+' property='og:image'>}){
-        $img = $1.'original'.$2;
-        return xcc($user).' '.$toot.' '.$img;
+    if (@media && $toot !~ m{/media/}){ #some instances don't bother inlining shorlinks in toots, but most(?) do
+        return xcc($user).' '.$toot.' '.join(' ', @media);
     } else {
         return xcc($user).' '.$toot;
     }
