@@ -433,29 +433,37 @@ sub ddg {
 }
 sub yt_title {
 	my $hash = $_[0];
-    $hash =~ s/^.+?([a-zA-Z0-9]{11}).*$/$1/;
-	my $junk = $ua->get('https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id='.$hash.'&key='.$yt_api_key);
-	return $junk->code unless $junk->is_success;
+    my $out;
+    my $junk;
+    if ($hash !~ /playlist/i){
+        $hash =~ s/^.+?([a-zA-Z0-9_-]{11}).*$/$1/;
+    	$junk = $ua->get('https://www.googleapis.com/youtube/v3/videos?part=snippet&id='.$hash.'&key='.$yt_api_key);
+    	return $junk->code unless $junk->is_success;
+    } else {
+        $hash =~ s/^.+?list=([a-zA-Z0-9_-]+).*$/$1/;
+        $junk = $ua->get('https://www.googleapis.com/youtube/v3/playlists?part=snippet&id='.$hash.'&key='.$yt_api_key);
+        return $junk->code unless $junk->is_success;
+    }
 	my $info;
 	eval { $info = JSON->new->utf8->decode($junk->decoded_content); };
 	if ($@ || !$info){
 		print "aah 1";
-		return $@ or return 'wtf 1 ';
+		return $@ if $@;
+        return 'wtf 1 ';
 	} elsif ($info->{'pageInfo'}{'totalResults'}){
 		#technically this was a search? dumb
 		$info = $info->{'items'}[0];
 	} else {
 		print "aah 3";
-		return 'wtf 3 ';
+        return 'wtf 3 ';
 	}
 
-	my $out;
 	eval { $out = $info->{'snippet'}{'title'}; };
 	if ($@ || !$out){
 		print "aah 4";
-		return $@ or return 'wtf 4 ';
+		return $@ if $@;
+        return 'wtf 4 ';
 	}
-
 	$out = "\00301,00You\00300,04Tube\017 - ".$out." ";
 	return $out;
 }
