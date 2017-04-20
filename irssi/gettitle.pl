@@ -49,7 +49,6 @@ my %titlecache; my %lastlink;
 tie my %mirrored, 'Tie::YAML', $ENV{HOME}.'/.irssi/scripts/cfg/mirrored_imgs.po' or die $!;
 
 my ($lasttitle, $lastchan, $lastcfgcheck, $lastsend,$tries) = (' ', ' ', ' ', (time-5),0);
-my $cfgurl = 'http://dl.dropbox.com/u/48390/GIT/scripts/irssi/cfg/gettitle.pm';
 
 Irssi::signal_add_last('message public', 'pubmsg');
 Irssi::signal_add_last('message irc action', 'pubmsg');
@@ -68,14 +67,6 @@ my $ua = LWP::UserAgent->new(
 my $ismastodon = 0;
 
 sub loadconfig {
-	# my $req = $ua->get($cfgurl, ':content_file' => $ENV{HOME}."/.irssi/scripts/cfg/gettitle.pm");
-	# 	unless ($req->is_success){ #this is actually pretty unnecessary; it'll keep using the old config no prob
-	# 		print $req->status_line;
-	# 		$tries++;
-	# 		loadconfig() unless $tries > 2;
-	# 	}
-    #
-	# $tries = 0;
 	do $ENV{HOME}.'/.irssi/scripts/cfg/gettitle.pm';
 		unless ($maxlength){ print "error loading variables from cfg: $@" }
 
@@ -96,7 +87,7 @@ sub pubmsg {
 
 	#fix this immediately (what is regexp::common using?)
 	#return unless $data =~ m{(?:^|\s)((?:https?://)?([^/@\s>.]+\.([a-z]{2,4}))[^\s>]*|https?://(?:boards|images)\.4chan\.org.+(?:jpe?g|gif|png)?)}ix;	#shit's fucked
-	return unless $data =~ m{(?:^|\s)(https?://\S+)|c8h10n4o2://reload.config}ix;
+	return unless $data =~ m{(?:^|\s)(https?://\S+)}ix;
 	my $url = $1;
 
 	print $target.': '.$url if $debugmode;
@@ -104,15 +95,9 @@ sub pubmsg {
 
 	#load the link as a URI entity and just request the key you need, if possible.
 	#	canonizing it should simplify the regexes either way
-	#	canonizing doesn't change the text so the :c8 commands still work, but they shouldn't be hardcoded to c8h10n4o2
 	$url = URI->new($url)->canonical;
 
-	if ($url eq 'c8h10n4o2://reload.config' && $target =~ $controlchan){	#remotely trigger a config reload (duh?) ##DOESN'T WORK
-		$server->command("msg $controlchan reloading");
-		loadconfig() || return;
-		$server->command("msg $controlchan $ver complete.");
-		return;
-	} elsif ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
+if ($url =~ m=^https?://$url_shorteners=){ #this CANNOT be part of the upcoming elsif chain
 		my $url_sh = unwrap_shortener($url); #TODO: stop maintaining a list of shorteners ('maintaining')
 		if ($url_sh eq '=\\' || $url_sh eq $url){ return; }
 		if (! grep lc $target eq lc $_, @dont_unshorten){
@@ -172,10 +157,7 @@ sub pubmsg {
 
 	$title = moreshenanigans($title,$nick,$target,$url,$server);
 
-	#send the pic if you rehosted it
-	if ($title =~ /i\.imgur\.com/ && grep $target eq $_, (@mirrorchans)){
-		$notitle = 0;
-	} elsif ($url =~ /twitter\.com/){
+    if ($url =~ /twitter\.com/){
 		$notitle = 0;
 		$notitle++ if $target ~~ @offtwitter;
 	}
@@ -204,10 +186,6 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# bare image links, possibly produced by that last block
 	if ($url =~ /\.(?:jpe?g|gif|png)\s*(?:$|\?.+)|puu\.sh\/[a-z]+/i){
-		if ($url =~ /4c(?:ha|d)n\.org.+(?:jpe?g|png|gif)/i){
-			$return = imgur($url,$chan,$data,$server,$nick);
-			return ($return,$url,1);
-		}
 		my $this = check_image_size($url,$nick,$chan,$server);
 		if ($this && $this ne '0'){
 			return ($this,$url);
@@ -216,19 +194,11 @@ sub shenaniganry {	#reformats the URLs or perhaps bitches about them
 
 	# API transforms
 	if ($url =~ m|[^a-z]twitter\.com/.*status(?:es)?/(\d+)\D*\S*$|i){
-		#arguably pointless but I never rewrote the regex downstream #10/26/2016 yes I did
-		#$url = 'http://twitter.com/intent/retweet?tweet_id='.$1;
 		$url = 'TWITTER::'.$1;
 		if (grep $chan eq $_, (@offtwitter)){ return; }
 	} elsif ($url =~ m[youtu(\.?be|be\.com)|listenonrepeat\.com]i){
 		$url =~ s{youtu\.be/([\w-]{11})}{YOUTUBE::$1}i;
 		$url =~ s{(?:youtube|listenonrepeat)\.com/(?:watch\S+v=|embed/)([\w-]{11})}{YOUTUBE::$1}i;
-	# } elsif ($url->can('host') && $url->host eq 'www.newegg.com'){ #URI's more trouble than it's worth really
-	# 	my %que = $url->query_form;
-	# 	return unless $url =~ /item=\S+/i;
-	# 	$url->host('www.ows.newegg.com');
-	# 	$url->path('/Products.egg/'.$que{'Item'}.'/');
-	# 	$url->query_form(undef);
 	} elsif ($url =~ m{https?://(?:www\.)?amazon\.(\S{2,5})/(?:[a-zA-Z0-9-]+)?/[dg]p(?:/product)?/([A-Z0-9]{10})}){
 		$url = 'http://www.amazon.'.$1.'/dp/'.$2;
 	} elsif ($url =~ m{boards\.4chan\.org/([^/]+/thread/\d++)}){
@@ -285,10 +255,10 @@ sub moreshenanigans {
 
 	#truncate
 	if (
-		length($title) > $maxlength &&
-		$title !~ /^http/ && #don't clip URLs
-		! grep $url =~ /$_/, @notruncate &&
-        ! $ismastodon
+		length($title) > $maxlength
+	&&	$title !~ /^http/  #don't clip URLs
+	&&	! grep $url =~ /$_/, @notruncate
+    &&  ! $ismastodon
 	){
 		my $maxless = $maxlength - 10;
 		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
@@ -362,15 +332,9 @@ sub get_title {
 	}
 
 	return "shit's broke" if $page->content_type =~ /image/; #fuck if I know
-	# my $meta = HTML::ExtractMeta->new(html => $page->decoded_content);
 
 	#now, anything that requires digging in source/APIs for a better link or more info
 	given ($url){
-		when (m!photobucket!){
-			# return "stop linking photobucket, you cunt";
-			# return $meta->get_image_url();
-			#will be rehosted in &moreshenanigans
-		}
 		when (m!tinypic.com/(?:r/|view\.php)!){
 			if  ($page->decoded_content =~ m|<link rel="image_src" href="(http://i\d+.tinypic.com/\S+_th.jpg)"/>|i){
 				my $title = $1;
@@ -379,7 +343,6 @@ sub get_title {
 			}
 		}
 		when (m{deviantart\.com/art/}){ return deviantart($page); }
-		when (m!newegg[^f]\S+Product!){ return newegg($page); }
 		when (m!amazon\S+[dg]p!){ return; }# amazon($page); }
 		when (m!store\.steampowered\.com/api!){ return steam($page, $url); }
 		when (m!4chan\S+/(?:res|thread)/!){ return fourchan($page); }
@@ -388,7 +351,6 @@ sub get_title {
 			 	print $1 if $debugmode;
 			 	return $1;
 			 }
-			# return $meta->get_image_url();
 		}
 		default {
 			my $out;
@@ -397,11 +359,7 @@ sub get_title {
                 #this is a mastodon || gnusocial toot || status
                 return mastodon($page, $url, $1);
             }
-            # if ($meta->get_title()){
-			# 	$out = $meta->get_title();
-			# } els
             if ($page->decoded_content =~ m|<title>([^<]*)</title>|i){
-				print "%3THIS SHOULDN'T BE HAPPENING"; #wait why
 				$out = $1;
 			}
 			decode_entities($out);
@@ -498,6 +456,8 @@ sub twitter {
 	decode_entities($message);
 	$message =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
 
+    $ismastodon = 1; #oops I fucked up the title shortener
+
 	# these two loops replace t.co links with their real targets
 	for (@{$status->{'entities'}->{'urls'}}) {
 		$message =~ s{$_->{'url'}}{$_->{'expanded_url'}};
@@ -570,24 +530,6 @@ sub deviantart {
 	$page->decoded_content =~ m{id="download-button" href="([^"]+)"|src="([^"]+)"\s+width="\d+"\s+height="\d+"\s+alt="[^"]*"\s+class="fullview}s;
 	$title = $1 || $2 || 0;
 	return $title unless $title =~ /\.swf$/; #hawk doesn't want videos spoiled or something
-}
-sub newegg {
-	my $page = shift;
-	my $obj;
-	eval { $obj = JSON->new->utf8->decode($page->decoded_content); };
-	if ($@){ return 'newegg: '.$page->status_line.' '.$page->content_type; }
-
-	my $rating = $obj->{"ReviewSummary"}{"Rating"} || 'no rating';
-
-	my $info = $obj->{"Title"} || 'no info';
-
-	$info =~ s/$_->[0]/$_->[1]/g for @neweggreplace;
-
-	my $price = $obj->{"FinalPrice"} || 'no price';
-
-	$rating eq 'no rating'
-	? return decode_entities('Newegg - '.$price.' || '.$info)
-	: return decode_entities('Newegg - '.$rating.'/5 Eggs || '.$price.' || '.$info);
 }
 sub fourchan {
 	my $page = shift;
@@ -755,92 +697,6 @@ sub sendresponse {
 	if (time - $lastcfgcheck > 86400){ loadconfig(); }
 }
 
-sub imgur {
-	my ($url,$chan,$msg,$server,$nick) = (@_);
-
-	#convert thumb URL to normal one
-	#NOTE: thumbs are always jpeg. this won't work for png or gif/webm
-	$url =~ s/\d+\.t\.4cdn/i.4cdn/;
-	$url =~ s{/(\d+)s\.}{/$1.};
-	$url = URI->new($url);
-
-
-	#make sure it's okay to do this here
-	my ($stop,$go) = (0,0);
-	if (grep $nick =~ /$_/i, (@nomirrornicks)){
-		$stop = 1;
-
-		#on second thought, pb is annoying for everybody
-		if ($url =~ /photobucket/){
-			$stop = 0;
-		}
-	}
-	if (grep $chan =~ /$_/i, (@mirrorchans)){
-		$go = 1;
-	}
-	if ($stop == 1 || $go == 0){
-		print $chan.' isn\'t in mirrorchans, switching to check size' if $debugmode == 1;
-		return check_image_size($url,$nick,$chan,$server);
-	} elsif ($imgurkey eq 'replaceme'){
-		print "c8_imgur_key not set";
-		return check_image_size($url,$nick,$chan,$server);
-	}
-
-	#OH GOD YOU FORGOT TO CHECK FOR DUPES
-	if ($url =~ /photobucket/ && defined $mirrored{$url}){	#there has to be a more graceful way to do this
-		$mirrored{$url}->[5]++; #repost counter
-
-		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan ".xcc($nick).' '.$msg) unless $chan eq $controlchan;
-		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Stop using photobucket, you cunt.\017";
-	} elsif (defined $mirrored{$url}){
-		$mirrored{$url}->[5]++;
-
-		$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-		$server->command("msg $controlchan ".xcc($nick).' '.$msg) unless $chan eq $controlchan;
-		$server->command("msg $controlchan $chan || $url || \00304Reposted $mirrored{$url}->[5] times.\017");
-
-		return $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024))."KB || \00304Posted ".$mirrored{$url}->[5]." times.\017";
-	}
-
-	#now ...actually do it
-	my $resp = $ua->post('http://api.imgur.com/2/upload.json', ['key' => $imgurkey, 'image' => $url, 'caption' => $url])
-	|| print "I can't work out why it would die here";
-	#okay what broke
-	unless ($resp->is_success){ print 'imgur: '.$resp->status_line; return; }
-	#nothing broke? weird.
-
-	my $hash;
-	eval { $hash = decode_json($resp->content) };
-	if ($@){ print 'OH NO THERE ISNT ANY CONTENT'; }
-
-	my ($imgurlink, $delete, $size) = ($hash->{'upload'}->{'links'}->{'original'}, $hash->{'upload'}->{'links'}->{'delete_page'}, $hash->{'upload'}->{'image'}->{'size'});
-
-	#remap gif to something better
-	$imgurlink =~ s/gif$/gifv/;
-
-	#push all this junk into %mirrored
-	$mirrored{$url} = [$nick, $chan, time, $size, $delete, 1, $imgurlink];
-	tied(%mirrored)->save;
-	print	$mirrored{$url}->[0].', '.$mirrored{$url}->[1].', '.$mirrored{$url}->[2].', '.$mirrored{$url}->[3].', '.
-			$mirrored{$url}->[4].', '.$mirrored{$url}->[5].', '.$mirrored{$url}->[6] || print 'empty mirror return values';
-
-	#return some shit
-	$msg =~ s/$url\S*/$mirrored{$url}->[-1]/g;
-	$server->command("msg $controlchan ".xcc($nick).$msg) unless $chan eq $controlchan;
-	$server->command("msg $controlchan $chan || $url || ".$mirrored{$url}->[4]);
-
-	$server->command('msg '.$image_chan.' '.xcc($chan,$chan).': '.xcc($nick,$mirrored{$url}[-1]).' ('.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB)') if $image_chan;
-
-	my $return = $mirrored{$url}->[-1].' || '.(sprintf "%.0f", ($mirrored{$url}->[3]/1024)).'KB';
-	if ($url =~ /photobucket/){
-		$return .= " || \00304Stop using photobucket, you cunt.\017";
-	}
-
-	return $return;
-}
 sub xcc { #xchat-alike nick coloring
 		my ($source,$clr,$string,$brk) = (shift,0);
 		if (@_){ $string = shift; }
