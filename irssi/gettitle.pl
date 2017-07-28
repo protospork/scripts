@@ -253,17 +253,22 @@ sub moreshenanigans {
 	$title =~ s/^Newegg(\.com)?/\00302,08Newegg\017/i;
 	$title =~ s/^BBC( News)?/\00300BBC\017/i;
 
-	#truncate
-	if (
-		length($title) > $maxlength
-	&&	$title !~ /^http/  #don't clip URLs
-	&&	! grep $url =~ /$_/, @notruncate
-    &&  ! $ismastodon
-	){
-		my $maxless = $maxlength - 10;
-		$title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
-		$title .= "..."; # \x{2026} makes a single-width ellipsis
-	}
+    if (length($title) > $maxlength){
+        if ($title =~ /^http/){
+            #skip
+        } elsif (grep $url =~ /$_/, @notruncate){
+            #skip
+        } elsif ($ismastodon){
+            #skip
+        } elsif ($title =~ m{pic\.twitter\.com/\w+ \]}){
+            #skip
+        } else {
+            my $maxless = $maxlength - 10;
+            $title =~ s/(.{$maxless,$maxlength}) .*/$1/;	# looks for a space so no words are broken
+            # $title .= "..."; # \x{2026} makes a single-width ellipsis
+            $title .= " \x{07}";
+        }
+    }
 
 	$title;
 }
@@ -455,6 +460,9 @@ sub twitter {
 
 	decode_entities($message);
 	$message =~ s/\n+|\x{0A}+|\r+/ \x{23ce} /g;
+    $message =~ s/\u003Cbr\u003E|<br>/ \x{23ce} /g;
+    #collapse multi newlines
+    $message =~ s/\x{23ce}(?: \x{23ce})+/\x{23ce}/g;
 
     $ismastodon = 1; #oops I fucked up the title shortener
 
