@@ -18,6 +18,7 @@ use WWW::Wunderground::API;
 use Encode;
 use Finance::Quote;
 use Data::Dumper;
+use Text::UpsideDown;
 use experimental qw(smartmatch switch); #it's complete bullshit that I even have to do this
 
 use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timers @yield_to
@@ -38,7 +39,7 @@ use vars qw($botnick $botpass $owner $listloc $tmdb_key $maxdicedisplayed %timer
 # <~anime_reference> I don't have quote submission built into every trigger but that is something possible for the future
 
 
-$VERSION = "2.12.3";
+$VERSION = "2.13.0";
 %IRSSI = (
     authors => 'protospork',
     contact => 'protospork\@gmail.com',
@@ -140,9 +141,6 @@ sub event_privmsg {
 	} elsif ($text =~ /\b(http\S+\.[jpengif]{3,4})\b/ig){
 		$last{$target} = $1;
 		return;
-	} elsif ($text =~ /shatter/ && ($text =~ /weed/ || $nick =~ /pieceofnothing/i)){
-		$server->command('msg '.$target.' shut up');
-		return;
 	} else {
 		return;
 	}
@@ -177,6 +175,15 @@ sub event_privmsg {
 			}
 			$return = weather_fallback($server, $nick, @terms);
 		}
+        when (/^m$/i){
+            if ($#terms >= 1 && $terms[1] =~ s/^\@//){
+				$nick = pop @terms;
+			}
+			$return = upside_down(weather_fallback($server, $nick, @terms));
+            $return =~ s/4/h/g; #Text::UpsideDown is not perfect
+            $return =~ s/\xB0/\N{HALFWIDTH IDEOGRAPHIC FULL STOP}/g; #degrees
+            $return =~ s/Â//g; #also because of degrees
+        }
 		when (/^isup$/){			$return = isup(@terms); }
 		when (/^ord$|^utf8$/i){		$return = codepoint($terms[1]); }
 		when (/^l(?:ast)?fm$/i){	$return = lastfm($server, $nick, @terms); }
