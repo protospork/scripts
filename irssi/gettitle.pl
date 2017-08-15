@@ -482,13 +482,38 @@ sub twitter {
 	###FIGURE OUT HOW TO INCLUDE MULTIPLE IMAGES, USE OTHER SCHEME FOR VIDEOS,
 	#	$message =~ s{$_->{'url'}}{$_->{'media_url'}:orig};
 	}
-    if ($status->{'user'}->{'verified'} eq 'true'){
+    # print join ', ', (keys $status->{'user'});
+    # ^^ returns:
+    # profile_background_tile, profile_background_image_url_https,
+    #   has_extended_profile, screen_name, listed_count, geo_enabled,
+    #   favourites_count, verified, translator_type, withheld_in_countries,
+    #   profile_text_color, profile_link_color, name, follow_request_sent,
+    #   time_zone, profile_sidebar_border_color,
+    #   profile_background_image_url, id_str, profile_image_url_https, url,
+    #   profile_banner_url, location, lang, profile_image_url,
+    #   profile_background_color, protected, profile_use_background_image,
+    #   id, is_translator, notifications, followers_count, utc_offset,
+    #   profile_sidebar_fill_color, statuses_count, default_profile,
+    #   following, contributors_enabled, entities, friends_count,
+    #   is_translation_enabled, default_profile_image, created_at, description
+    my $nazi;
+    eval { $nazi = join ', ', @{$status->{'user'}{'withheld_in_countries'}}; };
+    if ($nazi =~ /DE|FR/){ #the two countries twitter is legally required to block nazis
+        $nazi = "\x{5350}";
+    } else { #turkey and whoever else also force blocks
+        undef $nazi;
+    }
+    if ($status->{'user'}->{'verified'} =~ /^true$|^1$/){
 		my $mess = xcc($status->{'user'}->{'screen_name'}, '<', 0);
 		$mess .= "\x0313\x{2714}\x0F";
+        if ($nazi){ $mess .= "\x0313\x{5350}\x0F"; }
 		$mess .= (xcc($status->{'user'}{'screen_name'}, $status->{'user'}{'screen_name'}.'>', 0).' '.$message);
 		return $mess;
 	} else {
-		return(xcc($status->{'user'}->{'screen_name'}).' '.$message);
+        my $mess = xcc($status->{'user'}->{'screen_name'}, '<', 0);
+		if ($nazi){ $mess .= "\x0313\x{5350}\x0F"; }
+		$mess .= (xcc($status->{'user'}{'screen_name'}, $status->{'user'}{'screen_name'}.'>', 0).' '.$message);
+		return $mess;
 	}
 }
 sub youtube {
