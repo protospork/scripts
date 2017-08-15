@@ -498,7 +498,7 @@ sub twitter {
     #   is_translation_enabled, default_profile_image, created_at, description
     my $nazi;
     eval { $nazi = join ', ', @{$status->{'user'}{'withheld_in_countries'}}; };
-    if ($nazi =~ /DE|FR/){ #the two countries twitter is legally required to block nazis
+    if ($nazi =~ /DE/ && $nazi =~ /FR/){ #the two countries twitter is legally required to block nazis
         $nazi = "\x{5350}";
     } else { #turkey and whoever else also force blocks
         undef $nazi;
